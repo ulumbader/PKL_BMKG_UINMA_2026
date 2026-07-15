@@ -1,0 +1,42 @@
+name: Usulan fitur
+description: Ajukan fitur atau peningkatan untuk MyFarmer
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Backend Laravel
+        - Frontend Next.js
+        - Database
+        - Dataset
+        - Dokumentasi
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Masalah yang ingin diselesaikan
+      description: Jelaskan kebutuhan pengguna atau tim yang melatarbelakangi usulan ini.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Solusi yang diusulkan
+      description: Jelaskan perilaku atau hasil yang diharapkan.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatif
+      description: Sebutkan alternatif yang sudah dipertimbangkan, jika ada.
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Kriteria penerimaan
+      description: Tuliskan kondisi yang menandakan fitur selesai.

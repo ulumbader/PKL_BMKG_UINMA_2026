@@ -1,0 +1,323 @@
+"use client";
+import React from 'react';
+import {
+  MenuIcon,
+  MiniCloud,
+  WindIcon,
+  SunriseIcon,
+  SunsetIcon,
+} from './Icons';
+import { BmkgWeatherData, WeatherSlot } from '@/lib/bmkgClient';
+import { BackendCards, useBackendCards } from './BackendCards';
+import { InfoSection } from './InfoSection';
+import { PublicFooter } from './PublicFooter';
+
+
+type Unit = 'C' | 'F';
+
+export const MainContent = ({
+  onOpenSidebar,
+  weatherData,
+  loading,
+  error,
+  unit,
+  setUnit
+}: {
+  onOpenSidebar: () => void;
+  weatherData: BmkgWeatherData | null;
+  loading: boolean;
+  error?: string | null;
+  unit: Unit;
+  setUnit: (u: Unit) => void;
+}) => {
+
+  const backendCards = useBackendCards();
+
+  // Convert temp based on unit
+  const temp = (c: number) => unit === 'C' ? Math.round(c) : Math.round((c * 9 / 5) + 32);
+
+  // Group forecast by day
+  const getDailyForecasts = (slots: WeatherSlot[] | undefined) => {
+    if (!slots || slots.length === 0) return [];
+
+    const grouped = new Map<string, { max: number; min: number; condition: string }>();
+
+    slots.forEach(slot => {
+      const date = new Date(slot.waktu_prakiraan.replace(" ", "T"));
+      if (isNaN(date.getTime())) return;
+
+      const dayStr = new Intl.DateTimeFormat('en-US', { weekday: 'short' }).format(date);
+      const tempVal = parseFloat(slot.suhu_celsius);
+
+      if (!grouped.has(dayStr)) {
+        grouped.set(dayStr, { max: tempVal, min: tempVal, condition: slot.kondisi_cuaca });
+      } else {
+        const data = grouped.get(dayStr)!;
+        if (tempVal > data.max) data.max = tempVal;
+        if (tempVal < data.min) data.min = tempVal;
+      }
+    });
+
+    return Array.from(grouped.entries()).map(([day, data]) => ({
+      day,
+      max: data.max,
+      min: data.min,
+      condition: data.condition
+    })).slice(0, 7);
+  };
+
+  const getWeatherIcon = (condition: string) => {
+    const norm = condition.toLowerCase();
+    if (norm.includes('hujan')) {
+      return <><div className="mini-sun"></div><MiniCloud className="mini-cloud" /><div className="mini-rain short"><span></span><span></span><span></span></div></>;
+    } else if (norm.includes('berawan') || norm.includes('mendung')) {
+      return <><div className="mini-sun"></div><MiniCloud className="mini-cloud" style={{ width: 36, top: -4 }} fill="#e0e0e2" /></>;
+    }
+    return <div className="mini-sun"></div>;
+  };
+
+  const dailyForecasts = getDailyForecasts(weatherData?.prakiraan);
+  const currentSlot = weatherData?.prakiraan[0];
+
+  let day = '--';
+  let timeStr = '--:--';
+  if (currentSlot) {
+    const date = new Date(currentSlot.waktu_prakiraan.replace(" ", "T"));
+    if (!isNaN(date.getTime())) {
+      day = new Intl.DateTimeFormat('en-US', { weekday: 'long' }).format(date);
+      timeStr = new Intl.DateTimeFormat('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }).format(date);
+    }
+  }
+  const condition = currentSlot?.kondisi_cuaca || '--';
+  const locationText = weatherData ? weatherData.wilayah : 'Memuat lokasi...';
+  const locationShort = weatherData ? weatherData.kecamatan : 'Memuat...';
+
+  // Navbar date/time
+  const now = new Date();
+  const navDateText = currentSlot
+    ? (() => {
+        const d = new Date(currentSlot.waktu_prakiraan.replace(' ', 'T'));
+        if (isNaN(d.getTime())) return '--';
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const dd = String(d.getDate()).padStart(2, '0');
+        return `${mm}/${dd}/${d.getFullYear()} - ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')} WIB`;
+      })()
+    : `${String(now.getMonth()+1).padStart(2,'0')}/${String(now.getDate()).padStart(2,'0')}/${now.getFullYear()} - ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')} WIB`;
+
+  const h = now.getHours();
+  const greeting = h < 12 ? 'Good Morning...' : h < 17 ? 'Good Afternoon...' : 'Good Evening...';
+
+  return (
+    <main className="flex-1 py-10 px-6 lg:px-11 min-w-0 bg-[#fafafa] overflow-y-auto h-screen">
+
+      {/* Top Nav */}
+      <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center gap-4 lg:gap-5">
+          <button onClick={onOpenSidebar} className="lg:hidden p-2 -ml-2 text-gray-600 hover:text-black">
+            <MenuIcon className="w-6 h-6" />
+          </button>
+
+          <div className="flex items-center gap-2">
+            <svg className="w-4 h-4 shrink-0 text-[#1c1c1e]" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+            </svg>
+            {/* Mobile: kecamatan only */}
+            <span className="md:hidden text-[13px] font-medium text-[#1c1c1e]">{locationShort}</span>
+            {/* Desktop: full location + date */}
+            <div className="hidden md:flex flex-col leading-tight">
+              <span className="text-[14px] font-medium text-[#1c1c1e]">{locationText}</span>
+              <span className="text-[12px] text-[#9a9aa2]">{navDateText}</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <span className="text-[14px] font-medium text-[#1c1c1e] hidden lg:inline whitespace-nowrap">{greeting}</span>
+          <div className="flex items-center gap-2.5">
+            <button
+              onClick={() => setUnit('C')}
+              className={`w-9 h-9 rounded-full flex items-center justify-center text-[13px] font-semibold transition-colors cursor-pointer ${unit === 'C' ? 'bg-[#1c1c1e] text-white' : 'text-[#1c1c1e] bg-white hover:bg-gray-200'}`}
+            >
+              °C
+            </button>
+            <button
+              onClick={() => setUnit('F')}
+              className={`w-9 h-9 rounded-full flex items-center justify-center text-[13px] font-semibold transition-colors cursor-pointer ${unit === 'F' ? 'bg-[#1c1c1e] text-white' : 'text-[#1c1c1e] bg-white hover:bg-gray-200'}`}
+            >
+              °F
+            </button>
+            <div className="w-11 h-11 rounded-xl overflow-hidden ml-1.5 bg-gray-200">
+              <svg viewBox="0 0 44 44" width="100%" height="100%">
+                <defs>
+                  <linearGradient id="avatarGrad" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stopColor="#6b6f9c" />
+                    <stop offset="100%" stopColor="#2f3352" />
+                  </linearGradient>
+                </defs>
+                <rect width="44" height="44" fill="url(#avatarGrad)" />
+                <circle cx="22" cy="17" r="8" fill="#d8b48f" />
+                <path d="M6 44c0-10 7-16 16-16s16 6 16 16" fill="#d8b48f" />
+              </svg>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile Main Weather (Visible only on narrow screens) */}
+      <div className="lg:hidden flex flex-col items-center justify-center mb-10 text-center bg-white p-8 rounded-[32px] shadow-[0_4px_20px_rgb(0,0,0,0.02)] border border-gray-50">
+        <div className="text-[72px] font-semibold leading-none tracking-tight flex items-start justify-center">
+          {loading ? '...' : (
+            <>
+              {temp(parseFloat(currentSlot?.suhu_celsius || '0'))}
+              <span className="text-[36px] font-medium ml-1 mt-2 text-[#1c1c1e]">°{unit}</span>
+            </>
+          )}
+        </div>
+        <div className="flex items-center justify-center gap-3 mt-4 text-[#1c1c1e] text-[18px] font-semibold capitalize">
+          <div className="relative w-8 h-8 flex items-center justify-center scale-110 mr-2">
+            {getWeatherIcon(condition)}
+          </div>
+          {condition}
+        </div>
+        <div className="mt-3 text-[15px] text-[#1c1c1e] font-medium">
+          {day}, <span className="text-[#9a9aa2] font-normal">{timeStr}</span>
+        </div>
+        <div className="mt-1.5 text-[14px] text-gray-400 font-medium flex items-center justify-center gap-1.5">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+          {locationText}
+        </div>
+      </div>
+
+      <div className="flex flex-col xl:flex-row gap-6 mb-10 items-stretch">
+        {/* Week Strip */}
+        <div className="flex-1 w-full">
+          <div className="flex gap-4 h-[220px] w-full">
+            {loading ? (
+              <div className="w-full text-center text-gray-500 py-4 flex items-center justify-center">Memuat prakiraan...</div>
+            ) : error && dailyForecasts.length === 0 ? (
+              <div className="w-full text-center text-red-500 py-4 px-6 flex items-center justify-center font-medium">{error}</div>
+            ) : dailyForecasts.length === 0 ? (
+              <div className="w-full text-center text-gray-500 py-4 flex items-center justify-center">Tidak ada data prakiraan.</div>
+            ) : dailyForecasts.map((d, i) => (
+              <div key={i} className="flex-1 bg-white rounded-[24px] p-6 text-center hover:shadow-lg hover:-translate-y-1 transition-all cursor-pointer h-full flex flex-col justify-between items-center shadow-[0_4px_20px_rgb(0,0,0,0.02)]">
+                <div className="text-[16px] font-medium text-[#9a9aa2]">{d.day}</div>
+                <div className="flex-1 flex items-center justify-center relative scale-[1.3] my-4">
+                  {getWeatherIcon(d.condition)}
+                </div>
+                <div className="text-[18px] font-semibold text-[#1c1c1e]">
+                  {temp(d.max)}°<span className="text-[#c6c6cc] font-medium ml-1.5">{temp(d.min)}°</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Backend Integration Cards Slider */}
+        <div className="w-full xl:w-[420px] shrink-0 h-[220px]">
+          <BackendCards cards={backendCards} />
+        </div>
+      </div>
+
+      <InfoSection cards={backendCards} />
+
+      <div className="text-[20px] font-semibold mb-5">Today&apos;s Highlights</div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 pb-8">
+
+        {/* Curah Hujan (Rainfall - replacing UV Index) */}
+        <div className="bg-white rounded-[22px] p-[22px_24px] min-h-[170px] flex flex-col shadow-sm">
+          <div className="text-[14px] text-[#a9a9b0] mb-3.5">Curah Hujan</div>
+          <div className="relative flex-1 flex flex-col justify-end">
+            <div className="text-[34px] font-semibold leading-none">
+              {currentSlot?.curah_hujan_mm || '0'}<span className="text-[14px] font-medium text-[#a9a9b0] ml-[2px]">mm</span>
+            </div>
+            <div className="flex items-center gap-1.5 text-[14px] font-medium mt-3.5 text-blue-600">
+              Prakiraan {currentSlot?.curah_hujan_mm !== "0" ? 'Hujan' : 'Cerah'}
+            </div>
+          </div>
+        </div>
+
+        {/* Wind Status */}
+        <div className="bg-white rounded-[22px] p-[22px_24px] min-h-[170px] flex flex-col shadow-sm">
+          <div className="text-[14px] text-[#a9a9b0] mb-3.5">Wind Status</div>
+          <div className="text-[34px] font-semibold mb-auto">
+            {currentSlot?.kecepatan_angin_kmjam || '--'}<span className="text-[14px] font-medium text-[#a9a9b0] ml-[2px]">km/h</span>
+          </div>
+          <div className="flex items-center gap-2 text-[14px] font-medium mt-3.5">
+            <div className="w-6 h-6 rounded-full bg-white flex items-center justify-center shadow-[0_2px_6px_rgba(0,0,0,0.06)]">
+              <WindIcon className="w-3 h-3" />
+            </div>
+            {currentSlot?.arah_angin || '--'}
+          </div>
+        </div>
+
+        {/* Sunrise Sunset (Kept dummy for aesthetics) */}
+        <div className="bg-white rounded-[22px] p-[22px_24px] min-h-[170px] flex flex-col shadow-sm">
+          <div className="text-[14px] text-[#a9a9b0] mb-3.5">Sunrise & Sunset</div>
+          <div className="flex flex-col gap-4 mt-1">
+            <div className="flex items-center gap-3">
+              <div className="w-[34px] h-[34px] rounded-full flex items-center justify-center shrink-0 bg-gradient-to-br from-[#ffd45e] to-[#ffb100]">
+                <SunriseIcon className="w-4 h-4 stroke-white" />
+              </div>
+              <div>
+                <div className="text-[15px] font-semibold">6:35 AM</div>
+                <div className="text-[12px] text-[#b3b3ba]">- 1m 46s</div>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="w-[34px] h-[34px] rounded-full flex items-center justify-center shrink-0 bg-gradient-to-br from-[#ffd45e] to-[#ffb100] opacity-85">
+                <SunsetIcon className="w-4 h-4 stroke-white" />
+              </div>
+              <div>
+                <div className="text-[15px] font-semibold">5:42 PM</div>
+                <div className="text-[12px] text-[#b3b3ba]">+ 2m 22s</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Humidity */}
+        <div className="bg-white rounded-[22px] p-[22px_24px] min-h-[170px] flex flex-col shadow-sm">
+          <div className="text-[14px] text-[#a9a9b0] mb-3.5">Humidity</div>
+          <div className="flex items-start justify-between">
+            <div className="text-[34px] font-semibold leading-none">
+              {currentSlot?.kelembapan_persen || '--'}<span className="text-[14px] font-medium text-[#a9a9b0] ml-[2px]">%</span>
+            </div>
+            <div className="track-vertical"><div className="dot" style={{ top: '38px' }}></div></div>
+          </div>
+          <div className="flex items-center gap-1.5 text-[14px] font-medium mt-auto pt-2.5">
+            Normal 👍
+          </div>
+        </div>
+
+        {/* Visibility */}
+        <div className="bg-white rounded-[22px] p-[22px_24px] min-h-[170px] flex flex-col shadow-sm">
+          <div className="text-[14px] text-[#a9a9b0] mb-3.5">Visibility</div>
+          <div className="text-[34px] font-semibold">
+            {currentSlot?.jarak_pandang ? currentSlot.jarak_pandang.replace(/km/i, '').trim() : '--'}
+            <span className="text-[14px] font-medium text-[#a9a9b0] ml-[2px]">km</span>
+          </div>
+          <div className="flex items-center gap-1.5 text-[14px] font-medium mt-auto pt-2.5">
+            Average 😕
+          </div>
+        </div>
+
+        {/* Air Quality (Kept dummy for aesthetics) */}
+        <div className="bg-white rounded-[22px] p-[22px_24px] min-h-[170px] flex flex-col shadow-sm">
+          <div className="text-[14px] text-[#a9a9b0] mb-3.5">Air Quality</div>
+          <div className="flex items-start justify-between">
+            <div className="text-[34px] font-semibold leading-none">105</div>
+            <div className="track-vertical"><div className="dot" style={{ top: '6px' }}></div></div>
+          </div>
+          <div className="flex items-center gap-1.5 text-[14px] font-medium mt-auto pt-2.5">
+            Unhealthy 👎
+          </div>
+        </div>
+
+      </div>
+
+      <PublicFooter />
+
+    </main>
+  );
+};

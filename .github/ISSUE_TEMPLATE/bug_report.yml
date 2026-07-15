@@ -1,0 +1,45 @@
+name: Laporan bug
+description: Laporkan perilaku aplikasi yang tidak sesuai
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Backend Laravel
+        - Frontend Next.js
+        - Database
+        - Dataset
+        - Dokumentasi
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Deskripsi bug
+      description: Jelaskan apa yang terjadi dan apa yang seharusnya terjadi.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Langkah reproduksi
+      placeholder: |
+        1. Buka ...
+        2. Klik ...
+        3. Amati ...
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Cantumkan OS, browser, versi PHP/Node.js, dan branch atau commit bila relevan.
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Log atau screenshot
+      description: Jangan menyertakan token, password, API key, atau data sensitif.
