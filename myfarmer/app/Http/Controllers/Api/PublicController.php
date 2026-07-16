@@ -5,17 +5,14 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\CuacaDasarianResource;
 use App\Http\Resources\KontenPublicResource;
-use App\Http\Resources\PrakiraanCuacaPublicResource;
 use App\Http\Resources\RekomendasiPublicResource;
 use App\Http\Resources\RingkasanPublicResource;
 use App\Models\DataIklimDasarian;
 use App\Models\HasilRekomendasi;
 use App\Models\KontenLandingPage;
-use App\Models\PrakiraanCuacaBmkg;
 use App\Models\RingkasanAi;
 use App\Models\StasiunIklim;
 use App\Traits\ApiResponse;
-use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 
 /**
@@ -150,46 +147,4 @@ class PublicController extends Controller
         );
     }
 
-    // =========================================================================
-    // PRAKIRAAN CUACA REAL-TIME — dari API BMKG
-    // =========================================================================
-
-    /**
-     * Kembalikan data prakiraan cuaca real-time dari API BMKG.
-     *
-     * Mengambil data terbaru dari tabel prakiraan_cuaca_bmkg
-     * untuk kode_adm4 default (dari config), hanya slot prakiraan
-     * dari waktu saat ini ke depan (bukan yang sudah lewat).
-     *
-     * Data ini TERPISAH dari data_iklim_harian dan TIDAK dipakai
-     * sebagai input rule engine (AGENTS.md bagian 8a).
-     */
-    public function cuacaRealtime(): JsonResponse
-    {
-        $kodeAdm4 = config('myfarmer.kode_adm4_default');
-
-        if (empty($kodeAdm4)) {
-            return $this->successResponse(null, 'Konfigurasi kode wilayah belum diatur.');
-        }
-
-        // Ambil prakiraan dari sekarang ke depan (yang belum lewat)
-        $prakiraan = PrakiraanCuacaBmkg::where('kode_adm4', $kodeAdm4)
-            ->where('datetime_prakiraan', '>=', Carbon::now('UTC'))
-            ->orderBy('datetime_prakiraan', 'asc')
-            ->limit(24) // Max 24 slot = 3 hari ke depan (per 3 jam)
-            ->get();
-
-        if ($prakiraan->isEmpty()) {
-            return $this->successResponse(null, 'Belum ada data prakiraan cuaca. Admin perlu melakukan fetch dari API BMKG terlebih dahulu.');
-        }
-
-        // Ambil info wilayah dari record pertama
-        $namaWilayah = $prakiraan->first()->nama_wilayah;
-
-        return $this->successResponse([
-            'wilayah'    => $namaWilayah,
-            'kode_adm4'  => $kodeAdm4,
-            'prakiraan'  => PrakiraanCuacaPublicResource::collection($prakiraan),
-        ], 'Data prakiraan cuaca real-time berhasil diambil.');
-    }
 }

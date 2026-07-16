@@ -36,7 +36,7 @@ Dokumen ini adalah **aturan paten** proyek MyFarmer yang WAJIB dipatuhi oleh  CL
 ## 3. Package yang Diizinkan
 
 - `laravel/sanctum` — autentikasi token API
-- `guzzlehttp/guzzle` — HTTP client untuk fetch API BMKG dan Groq API (biasanya sudah bundled di Laravel)
+- `guzzlehttp/guzzle` — HTTP client untuk Groq API (biasanya sudah bundled di Laravel)
 - Package testing bawaan Laravel (PHPUnit)
 
 Jangan menambah package lain (misal library JWT pihak ketiga, library CSV eksternal) kecuali disebutkan eksplisit di prompt atau dicatat alasannya di CHANGELOG.md.
@@ -54,12 +54,11 @@ Database `myfarmer` sudah didesain dengan 11 tabel inti (lihat detail lengkap di
 | `stasiun_iklim` | Metadata stasiun BMKG (kode WMO, lintang, bujur, dst) |
 | `data_iklim_harian` | **Raw layer** — data curah hujan harian apa adanya, sumber HANYA dari input manual admin atau import file CSV (BMKG tidak menyediakan API untuk data historis curah hujan — hanya download manual lewat Data Online BMKG) |
 | `data_iklim_dasarian` | **Aggregated layer** — hasil agregasi per 10 hari |
-| `prakiraan_cuaca_bmkg` | **Forecast layer** — data prakiraan cuaca real-time (bukan historis) dari API publik BMKG (`api.bmkg.go.id/publik/prakiraan-cuaca`), diambil via fetch API otomatis, dikelompokkan per kode wilayah `adm4`. Dipakai khusus untuk widget "cuaca real-time" di landing page, TIDAK dipakai sebagai input rule engine |
 | `rule_rekomendasi` | Definisi rule beserta parameter (kolom JSON) |
 | `hasil_rekomendasi` | Output rule engine per periode dasarian |
 | `ringkasan_ai` | Hasil ringkasan dari Groq API |
 | `konten_landing_page` | Pengumuman/tips untuk petani, dikelola admin |
-| `log_import_data` | Log setiap proses fetch/import data BMKG |
+| `log_import_data` | Log setiap proses import data CSV BMKG |
 | `audit_log` | Jejak aktivitas admin (untuk super admin) |
 
 Alur data: `data_iklim_harian` → (agregasi) → `data_iklim_dasarian` → (rule engine) → `hasil_rekomendasi` → (Groq) → `ringkasan_ai` → ditampilkan di landing page.
@@ -133,7 +132,7 @@ Jangan menghapus entry lama. CHANGELOG.md adalah sumber kebenaran konteks proyek
 **BMKG tidak menyediakan API untuk data historis curah hujan.** Data historis hanya bisa didapat lewat download manual dari Data Online BMKG (`dataonline.bmkg.go.id`), lalu diimpor ke sistem lewat fitur import CSV. Oleh karena itu:
 
 - Kolom `sumber_data` di tabel `data_iklim_harian` HANYA boleh bernilai `manual` (input langsung oleh admin) atau `import_csv` (upload file). Jangan membuat service/job yang mencoba fetch data historis dari API BMKG karena API tersebut tidak ada.
-- Data **prakiraan cuaca real-time** (untuk widget landing page) berbeda sumbernya — ini TERSEDIA lewat API publik BMKG (`api.bmkg.go.id/publik/prakiraan-cuaca`), diambil per kode wilayah administratif `adm4`, granularitas per 3 jam, dan sifatnya prediksi ke depan (bukan historis). Data ini disimpan di tabel terpisah `prakiraan_cuaca_bmkg`, TIDAK dicampur ke `data_iklim_harian`, dan TIDAK dipakai sebagai input rule engine (karena rule engine butuh data historis aktual, bukan prediksi).
+- Data **prakiraan cuaca real-time** untuk widget landing page diambil langsung oleh frontend dari API publik BMKG. Backend tidak menyediakan route, service, model, konfigurasi, atau tabel untuk prakiraan tersebut. Data prakiraan tetap TIDAK boleh dicampur ke `data_iklim_harian` dan TIDAK dipakai sebagai input rule engine karena rule engine membutuhkan data historis aktual.
 
 ## 8. Aturan Khusus Import CSV Data BMKG
 

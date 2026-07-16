@@ -9,6 +9,27 @@ Format tanggal: YYYY-MM-DD.
 
 ## [Unreleased]
 
+## [Tahap 22] - Pembersihan UI Prakiraan Cuaca Backend - 2026-07-16
+### Ditambahkan
+- Tidak ada fitur baru.
+
+### Diubah
+- `AGENTS.md` diselaraskan dengan arsitektur aktual: empat endpoint publik backend untuk data aplikasi dan `lib/bmkgClient.ts` sebagai satu-satunya client langsung ke API publik BMKG.
+- Struktur folder dan daftar endpoint panel admin diperbarui agar tidak lagi mencantumkan pengelolaan prakiraan backend.
+
+### Dihapus
+- Route/page yatim `/admin/prakiraan-cuaca` yang masih memanggil endpoint backend yang telah dihapus.
+
+### File Terkait
+- `app/admin/prakiraan-cuaca/page.tsx`
+- `AGENTS.md`
+- `CHANGELOG.md`
+
+### Catatan
+- Integrasi prakiraan cuaca landing page tidak berubah dan tetap langsung ke API BMKG melalui `lib/bmkgClient.ts`.
+- `npm run lint` selesai tanpa error dengan 4 warning lama di luar cakupan perubahan.
+- `npm run build` berhasil; daftar route produksi tidak lagi memuat `/admin/prakiraan-cuaca`.
+
 ## [Tahap 21] - Perbaikan Dropdown Periode Agregasi - 2026-07-15
 ### Ditambahkan
 - Helper `apiGetAllPages` pada API client terpusat untuk memuat seluruh opsi dari endpoint Laravel yang berpaginasi.

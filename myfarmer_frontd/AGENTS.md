@@ -26,8 +26,8 @@ Dokumen ini adalah **aturan paten** proyek frontend MyFarmer yang WAJIB dipatuhi
 ## 2. Golden Rules (WAJIB, tanpa kecuali)
 
 1. **Landing page publik dan panel admin harus terasa seperti dua "dunia" yang terpisah** — layout, navigasi, dan struktur folder berbeda total. Jangan campur komponen navigasi publik dengan navigasi admin.
-2. **Landing page publik TIDAK PERNAH memanggil endpoint yang butuh token.** Hanya boleh memanggil endpoint `/api/publik/*` dari `../API_DOCUMENTATION.md`.
-3. **Semua request ke backend HARUS lewat satu API client terpusat** (`lib/apiClient` atau sejenis) yang dibuat di Tahap 1 — jangan panggil `fetch()` langsung tersebar di berbagai komponen.
+2. **Landing page publik TIDAK PERNAH memanggil endpoint yang butuh token.** Data aplikasi hanya boleh diambil dari endpoint `/api/publik/*`; prakiraan cuaca diambil langsung dari API publik BMKG melalui `lib/bmkgClient.ts`.
+3. **Semua request ke backend HARUS lewat satu API client terpusat** (`lib/apiClient` atau sejenis) yang dibuat di Tahap 1. Request langsung ke API BMKG hanya boleh berada di `lib/bmkgClient.ts`; jangan panggil `fetch()` langsung tersebar di berbagai komponen.
 4. **Base URL backend WAJIB dari environment variable** (`NEXT_PUBLIC_API_BASE_URL`), jangan hardcode `http://localhost:8000` di kode manapun.
 5. **Route di dalam `/admin/*` WAJIB dilindungi** — kalau user belum login (tidak ada token valid), redirect ke halaman login admin. Jangan biarkan ada halaman admin yang bisa diakses tanpa autentikasi.
 6. **UI harus menyesuaikan role user yang sedang login** — elemen yang hanya boleh diakses `super_admin` (kelola user, ubah struktur rule, audit log) HARUS disembunyikan/dinonaktifkan di UI untuk role `admin`, meskipun validasi utama tetap di backend. Ini untuk mencegah kebingungan (bukan satu-satunya lapisan keamanan).
@@ -59,7 +59,6 @@ myfarmer_frontd/
 │   │   ├── rekomendasi/
 │   │   ├── ringkasan-ai/
 │   │   ├── konten/
-│   │   ├── prakiraan-cuaca/
 │   │   ├── users/              # khusus super_admin
 │   │   └── audit-log/          # khusus super_admin
 │   └── layout.tsx              # root layout
@@ -114,9 +113,9 @@ Ringkasan pembagian akses (detail lengkap ada di `../API_DOCUMENTATION.md`):
 
 | Area Frontend | Endpoint yang dipanggil | Butuh Token? |
 |---|---|---|
-| Landing page publik | `/api/publik/*` (5 endpoint) | Tidak |
+| Landing page publik | `/api/publik/*` (4 endpoint) dan API publik BMKG melalui `lib/bmkgClient.ts` | Tidak |
 | Login admin | `/api/auth/login`, `/api/auth/logout` | Login: tidak, Logout: ya |
-| Panel admin (umum) | `/api/admin/data-iklim/*`, `/api/admin/agregasi/*`, `/api/admin/rekomendasi/*`, `/api/admin/ringkasan/*`, `/api/admin/konten/*`, `/api/admin/log-import`, `/api/admin/prakiraan-cuaca/fetch` | Ya (role admin/super_admin) |
+| Panel admin (umum) | `/api/admin/data-iklim/*`, `/api/admin/agregasi/*`, `/api/admin/rekomendasi/*`, `/api/admin/ringkasan/*`, `/api/admin/konten/*`, `/api/admin/log-import` | Ya (role admin/super_admin) |
 | Panel admin (khusus super_admin) | `/api/admin/users/*`, `/api/admin/audit-log`, sebagian `/api/admin/rules/*` (create/delete) | Ya (role super_admin) |
 
 ---

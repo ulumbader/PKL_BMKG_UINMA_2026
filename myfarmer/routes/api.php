@@ -6,7 +6,6 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\DataIklimHarianController;
 use App\Http\Controllers\Api\KontenLandingPageController;
 use App\Http\Controllers\Api\LogImportDataController;
-use App\Http\Controllers\Api\PrakiraanCuacaController;
 use App\Http\Controllers\Api\PublicController;
 use App\Http\Controllers\Api\RingkasanAiController;
 use App\Http\Controllers\Api\RuleRekomendasiController;
@@ -33,7 +32,6 @@ use Illuminate\Support\Facades\Route;
 |   - /api/admin/konten/*      → CRUD konten landing page (admin)
 |   - /api/admin/log-import/*  → histori import data BMKG (admin, read-only)
 |   - /api/admin/audit-log/*   → audit log aktivitas admin (super_admin, read-only)
-|   - /api/admin/prakiraan-cuaca/* → fetch prakiraan cuaca dari API BMKG (admin)
 |   - /api/publik/*            → endpoint publik landing page (TANPA auth, GET only)
 |
 */
@@ -168,16 +166,6 @@ Route::middleware(['auth:sanctum', 'role:super_admin'])->group(function () {
 });
 
 // ============================================================================
-// ADMIN — Fetch Prakiraan Cuaca Real-Time dari API BMKG
-// (Data ini TERPISAH dari data_iklim_harian dan TIDAK dipakai oleh rule engine)
-// ============================================================================
-Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
-    Route::prefix('admin/prakiraan-cuaca')->group(function () {
-        Route::post('/fetch', [PrakiraanCuacaController::class, 'fetch']);
-    });
-});
-
-// ============================================================================
 // PUBLIK — Landing Page Petani (TANPA auth, GET only — Golden Rule #7)
 // ============================================================================
 Route::prefix('publik')->group(function () {
@@ -185,5 +173,4 @@ Route::prefix('publik')->group(function () {
     Route::get('/rekomendasi-terkini', [PublicController::class, 'rekomendasiTerkini']);
     Route::get('/ringkasan-terkini', [PublicController::class, 'ringkasanTerkini']);
     Route::get('/konten', [PublicController::class, 'kontenAktif']);
-    Route::get('/prakiraan-cuaca', [PublicController::class, 'cuacaRealtime']);
 });

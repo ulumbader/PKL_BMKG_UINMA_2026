@@ -22,7 +22,6 @@ Dokumentasi lengkap seluruh endpoint REST API backend MyFarmer.
 10. [Log Import Data](#10-log-import-data)
 11. [Audit Log](#11-audit-log)
 12. [Endpoint Publik (Landing Page)](#12-endpoint-publik-landing-page)
-13. [Prakiraan Cuaca Real-Time (BMKG API)](#13-prakiraan-cuaca-real-time-bmkg-api)
 
 ---
 
@@ -990,6 +989,8 @@ Jejak aktivitas admin (otomatis dicatat oleh Observer).
 ## 12. Endpoint Publik (Landing Page)
 
 > **TANPA middleware auth.** Hanya method GET. Siapa saja bisa mengakses.
+>
+> Prakiraan cuaca real-time tidak disediakan oleh backend. Landing page mengambil data tersebut langsung dari API publik BMKG.
 
 ### GET `/api/publik/cuaca-terkini`
 
@@ -1097,111 +1098,6 @@ Daftar konten landing page yang aktif (`is_active = true`), diurutkan `urutan_ta
 
 ---
 
-### GET `/api/publik/prakiraan-cuaca`
-
-Data prakiraan cuaca real-time dari API BMKG untuk wilayah default (Kec. Karangploso). Menampilkan slot prakiraan dari waktu saat ini ke depan (max 24 slot ≈ 3 hari).
-
-> Data ini TERPISAH dari data historis (data_iklim_harian) dan TIDAK dipakai sebagai input rule engine.
-
-**Response Sukses (200):**
-```json
-{
-  "status": "success",
-  "message": "Data prakiraan cuaca real-time berhasil diambil.",
-  "data": {
-    "wilayah": "Gelanggang, Pakisaji, Malang",
-    "kode_adm4": "35.07.20.2001",
-    "prakiraan": [
-      {
-        "waktu_prakiraan": "2026-07-05 15:00",
-        "waktu_utc": "2026-07-05 08:00",
-        "suhu_celsius": "28.0",
-        "curah_hujan_mm": "0.0",
-        "kelembapan_persen": "64.0",
-        "kecepatan_angin_kmjam": "10.4",
-        "kondisi_cuaca": "Cerah"
-      },
-      {
-        "waktu_prakiraan": "2026-07-05 18:00",
-        "waktu_utc": "2026-07-05 11:00",
-        "suhu_celsius": "23.0",
-        "curah_hujan_mm": "0.0",
-        "kelembapan_persen": "89.0",
-        "kecepatan_angin_kmjam": "5.2",
-        "kondisi_cuaca": "Cerah"
-      }
-    ]
-  }
-}
-```
-
-**Response — Belum ada data (200):**
-```json
-{
-  "status": "success",
-  "message": "Belum ada data prakiraan cuaca. Admin perlu melakukan fetch dari API BMKG terlebih dahulu.",
-  "data": null
-}
-```
-
----
-
-## 13. Prakiraan Cuaca Real-Time (BMKG API)
-
-> Middleware `auth:sanctum` + `role:admin`.
-> Data ini TERPISAH dari `data_iklim_harian` dan TIDAK dipakai sebagai input rule engine.
-> Sumber: API publik BMKG (`api.bmkg.go.id/publik/prakiraan-cuaca`).
-
-### POST `/api/admin/prakiraan-cuaca/fetch`
-
-Trigger fetch data prakiraan cuaca dari API BMKG untuk kode wilayah adm4 default (dari `config/myfarmer.php`).
-
-| Field | Nilai |
-|---|---|
-| Method | `POST` |
-| Middleware | `auth:sanctum`, `role:admin` |
-| Header | `Authorization: Bearer {token}` |
-| Request Body | — (tidak ada, kode_adm4 diambil dari config) |
-
-**Response Sukses (201):**
-```json
-{
-  "status": "success",
-  "message": "Prakiraan cuaca berhasil diambil dari API BMKG. 19 slot prakiraan disimpan, 0 gagal. Wilayah: Gelanggang, Pakisaji, Malang.",
-  "data": {
-    "sukses": 19,
-    "gagal": 0,
-    "nama_wilayah": "Gelanggang, Pakisaji, Malang",
-    "kode_adm4": "35.07.20.2001"
-  }
-}
-```
-
-**Response Gagal — API BMKG down/timeout (502):**
-```json
-{
-  "status": "error",
-  "message": "Gagal mengambil data prakiraan cuaca dari API BMKG: Koneksi ke API BMKG gagal (timeout atau jaringan). Coba lagi nanti.",
-  "errors": {
-    "sukses": 0,
-    "gagal": 0,
-    "nama_wilayah": null,
-    "kode_adm4": "35.07.20.2001",
-    "error": "Koneksi ke API BMKG gagal (timeout atau jaringan). Coba lagi nanti."
-  }
-}
-```
-
-**Response Gagal — Kode ADM4 belum dikonfigurasi (422):**
-```json
-{
-  "status": "error",
-  "message": "Kode ADM4 belum dikonfigurasi. Set BMKG_KODE_ADM4 di file .env atau config/myfarmer.php."
-}
-```
-
----
-
 ## Ringkasan Seluruh Endpoint
 
 | # | Method | Path | Middleware | Fungsi |
@@ -1239,11 +1135,9 @@ Trigger fetch data prakiraan cuaca dari API BMKG untuk kode wilayah adm4 default
 | 31 | DELETE | `/api/admin/konten/{id}` | `auth:sanctum`, `role:admin` | Hapus konten |
 | 32 | GET | `/api/admin/log-import` | `auth:sanctum`, `role:admin` | Histori import |
 | 33 | GET | `/api/admin/audit-log` | `auth:sanctum`, `role:super_admin` | Audit log |
-| 34 | POST | `/api/admin/prakiraan-cuaca/fetch` | `auth:sanctum`, `role:admin` | Fetch prakiraan cuaca BMKG |
-| 35 | GET | `/api/publik/cuaca-terkini` | — | Cuaca terkini (dasarian) |
-| 36 | GET | `/api/publik/rekomendasi-terkini` | — | Rekomendasi terkini |
-| 37 | GET | `/api/publik/ringkasan-terkini` | — | Ringkasan AI terkini |
-| 38 | GET | `/api/publik/konten` | — | Konten landing page |
-| 39 | GET | `/api/publik/prakiraan-cuaca` | — | Prakiraan cuaca real-time |
+| 34 | GET | `/api/publik/cuaca-terkini` | — | Cuaca terkini (dasarian) |
+| 35 | GET | `/api/publik/rekomendasi-terkini` | — | Rekomendasi terkini |
+| 36 | GET | `/api/publik/ringkasan-terkini` | — | Ringkasan AI terkini |
+| 37 | GET | `/api/publik/konten` | — | Konten landing page |
 
-**Total: 39 endpoint**
+**Total: 37 endpoint**

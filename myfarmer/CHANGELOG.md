@@ -8,6 +8,40 @@ Format tanggal: YYYY-MM-DD.
 
 ## [Unreleased]
 
+## [Tahap 22] - Penghapusan Jalur Prakiraan Cuaca Backend - 2026-07-16
+### Ditambahkan
+- Migration `2026_07_16_000014_drop_prakiraan_cuaca_bmkg_table.php` untuk menghapus tabel prakiraan dari database existing tanpa mengubah migration lama yang sudah pernah dijalankan.
+- Feature test yang memastikan tabel `prakiraan_cuaca_bmkg` tidak ada dan endpoint prakiraan lama membalas 404.
+
+### Diubah
+- `PublicController` dan `routes/api.php` dibersihkan dari endpoint prakiraan publik dan admin.
+- Konfigurasi environment, aturan proyek, README monorepo, dokumentasi API, dokumentasi database, ERD, jumlah tabel, dan jumlah endpoint diselaraskan dengan arsitektur baru.
+- Total kontrak backend menjadi 37 endpoint dan skema akhir menjadi 14 tabel.
+
+### Dihapus
+- Controller, service, resource, model, dan file konfigurasi khusus prakiraan cuaca backend.
+- Route `POST /api/admin/prakiraan-cuaca/fetch` dan `GET /api/publik/prakiraan-cuaca`.
+- Halaman admin frontend yang memanggil endpoint fetch prakiraan backend.
+
+### File Terkait
+- `app/Http/Controllers/Api/PublicController.php`
+- `routes/api.php`
+- `database/migrations/2026_07_16_000014_drop_prakiraan_cuaca_bmkg_table.php`
+- `tests/Feature/ApiTest.php`
+- `.env.example`
+- `AGENTS.md`
+- `../API_DOCUMENTATION.md`
+- `../DB_DOCUMENTATION.md`
+- `../README.md`
+- `../myfarmer_frontd/app/admin/prakiraan-cuaca/page.tsx`
+- `../myfarmer_frontd/AGENTS.md`
+- `CHANGELOG.md`
+
+### Catatan
+- Landing page tetap mengambil prakiraan cuaca langsung dari API publik BMKG melalui `myfarmer_frontd/lib/bmkgClient.ts`; data tersebut tidak melewati atau disimpan oleh backend.
+- Migration pembuatan tabel lama dipertahankan sebagai histori sesuai Golden Rule migration, lalu dibatalkan secara efektif oleh migration penghapusan baru.
+- Verifikasi berhasil: `php artisan test` (36 test, 85 assertion), syntax check PHP, dan route prakiraan tidak lagi terdaftar.
+
 ## [Tahap 21] - Perbaikan Periode Proses Agregasi - 2026-07-15
 ### Ditambahkan
 - Endpoint `GET /api/admin/agregasi/periode-tersedia` untuk mengambil metadata tahun dan bulan langsung dari `data_iklim_harian`, serta tahun hasil dari `data_iklim_dasarian`.

@@ -31,7 +31,7 @@ php artisan migrate --seed
 php artisan serve
 ```
 
-Untuk PowerShell, gunakan `Copy-Item .env.example .env` sebagai pengganti perintah `cp`. Sebelum migrasi, sesuaikan konfigurasi `DB_*`, `GROQ_API_KEY`, dan `BMKG_KODE_ADM4` di `myfarmer/.env`.
+Untuk PowerShell, gunakan `Copy-Item .env.example .env` sebagai pengganti perintah `cp`. Sebelum migrasi, sesuaikan konfigurasi `DB_*` dan `GROQ_API_KEY` di `myfarmer/.env`.
 
 Backend berjalan secara default di `http://localhost:8000`.
 

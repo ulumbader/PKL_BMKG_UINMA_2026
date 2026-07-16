@@ -9,7 +9,7 @@
 | **DBMS** | MySQL |
 | **Framework** | Laravel v10.50.2 |
 | **PHP Version** | 8.1.10 |
-| **Tanggal Dokumentasi** | 5 Juli 2026 |
+| **Tanggal Dokumentasi** | 16 Juli 2026 |
 
 ---
 
@@ -31,15 +31,15 @@ Raw Layer          →  Aggregated Layer      →  Rule Engine         →  AI S
 3. **Rule Engine Layer** — Evaluasi rule rekomendasi terhadap data dasarian untuk menghasilkan rekomendasi tanam
 4. **AI Summary Layer** — Ringkasan berbahasa Indonesia yang dihasilkan oleh Groq API berdasarkan hasil rekomendasi
 
-Selain itu, terdapat tabel pendukung untuk manajemen pengguna, konten landing page, prakiraan cuaca real-time, pencatatan log, dan audit trail.
+Selain itu, terdapat tabel pendukung untuk manajemen pengguna, konten landing page, pencatatan log, dan audit trail. Prakiraan cuaca real-time diambil langsung oleh frontend dari API publik BMKG dan tidak disimpan di database backend.
 
 ### Jumlah Tabel
 
-Database terdiri dari **15 tabel**, dengan rincian:
+Database terdiri dari **14 tabel**, dengan rincian:
 
 | Kategori | Tabel | Jumlah |
 |---|---|---|
-| **Inti Proyek** | `roles`, `users`, `stasiun_iklim`, `data_iklim_harian`, `data_iklim_dasarian`, `rule_rekomendasi`, `hasil_rekomendasi`, `ringkasan_ai`, `konten_landing_page`, `prakiraan_cuaca_bmkg` | 10 |
+| **Inti Proyek** | `roles`, `users`, `stasiun_iklim`, `data_iklim_harian`, `data_iklim_dasarian`, `rule_rekomendasi`, `hasil_rekomendasi`, `ringkasan_ai`, `konten_landing_page` | 9 |
 | **Logging & Audit** | `log_import_data`, `audit_log` | 2 |
 | **Bawaan Laravel** | `personal_access_tokens`, `password_reset_tokens`, `failed_jobs` | 3 |
 
@@ -61,9 +61,8 @@ Database terdiri dari **15 tabel**, dengan rincian:
 | 10 | `hasil_rekomendasi` | Output evaluasi rule engine per periode dasarian | Rule Engine |
 | 11 | `ringkasan_ai` | Ringkasan kondisi iklim dari Groq API | AI Summary |
 | 12 | `konten_landing_page` | Konten pengumuman dan tips untuk petani | Konten |
-| 13 | `prakiraan_cuaca_bmkg` | Data prakiraan cuaca real-time dari API publik BMKG | Prakiraan Cuaca |
-| 14 | `log_import_data` | Log proses import data dari file CSV BMKG | Logging |
-| 15 | `audit_log` | Jejak aktivitas admin untuk keperluan audit | Audit |
+| 13 | `log_import_data` | Log proses import data dari file CSV BMKG | Logging |
+| 14 | `audit_log` | Jejak aktivitas admin untuk keperluan audit | Audit |
 
 ---
 
@@ -376,42 +375,7 @@ Database terdiri dari **15 tabel**, dengan rincian:
 
 ---
 
-### 3.13. Tabel `prakiraan_cuaca_bmkg`
-
-**Fungsi:** Menyimpan data prakiraan cuaca real-time yang diambil dari API publik BMKG (`api.bmkg.go.id/publik/prakiraan-cuaca`). Data ini digunakan khusus untuk widget cuaca real-time di landing page dan **tidak** digunakan sebagai input rule engine. Data diidentifikasi berdasarkan kode wilayah administratif level 4 (`adm4`), bukan kode WMO stasiun.
-
-| No | Kolom | Tipe Data | Constraint | Nullable | Default | Keterangan |
-|----|---|---|---|---|---|---|
-| 1 | `id` | `bigint unsigned` | PRIMARY KEY, AUTO_INCREMENT | Tidak | — | Identifier unik |
-| 2 | `kode_adm4` | `varchar(20)` | UNIQUE (dengan `datetime_prakiraan`) | Tidak | — | Kode wilayah administratif level 4 |
-| 3 | `nama_wilayah` | `varchar(255)` | — | Ya | `NULL` | Nama wilayah administratif |
-| 4 | `datetime_prakiraan` | `datetime` | UNIQUE (dengan `kode_adm4`) | Tidak | — | Waktu prakiraan (UTC) |
-| 5 | `suhu` | `decimal(4,1)` | — | Ya | `NULL` | Suhu udara (°C) |
-| 6 | `curah_hujan_3jam` | `decimal(5,1)` | — | Ya | `NULL` | Curah hujan per 3 jam (mm) |
-| 7 | `kelembapan` | `decimal(5,1)` | — | Ya | `NULL` | Kelembapan udara (%) |
-| 8 | `kecepatan_angin` | `decimal(5,1)` | — | Ya | `NULL` | Kecepatan angin (km/jam) |
-| 9 | `kondisi_cuaca` | `varchar(255)` | — | Ya | `NULL` | Deskripsi kondisi cuaca (contoh: "Cerah Berawan") |
-| 10 | `analysis_date` | `datetime` | — | Ya | `NULL` | Tanggal analisis prakiraan oleh BMKG |
-| 11 | `fetched_at` | `datetime` | — | Tidak | — | Waktu data diambil dari API BMKG |
-
-- **Primary Key:** `id`
-- **Unique Constraint:** `(kode_adm4, datetime_prakiraan)` — nama constraint: `uq_prakiraan_wilayah_waktu` (mencegah duplikat saat fetch ulang)
-- **Timestamps:** Tidak ada (`$timestamps = false`)
-- **Soft Delete:** Tidak digunakan
-- **Cast di Model:**
-  - `datetime_prakiraan` → `datetime`
-  - `suhu` → `decimal:1`
-  - `curah_hujan_3jam` → `decimal:1`
-  - `kelembapan` → `decimal:1`
-  - `kecepatan_angin` → `decimal:1`
-  - `analysis_date` → `datetime`
-  - `fetched_at` → `datetime`
-
-> **Catatan Penting:** Tabel ini **tidak memiliki foreign key** ke `stasiun_iklim` karena menggunakan sistem identifikasi wilayah yang berbeda (kode `adm4` vs kode WMO).
-
----
-
-### 3.14. Tabel `log_import_data`
+### 3.13. Tabel `log_import_data`
 
 **Fungsi:** Mencatat setiap proses import data dari file CSV BMKG. Diisi oleh `CsvImportService` secara otomatis saat proses import berjalan.
 
@@ -436,7 +400,7 @@ Database terdiri dari **15 tabel**, dengan rincian:
 
 ---
 
-### 3.15. Tabel `audit_log`
+### 3.14. Tabel `audit_log`
 
 **Fungsi:** Menyimpan jejak aktivitas admin sebagai *audit trail*. Diisi secara otomatis oleh `AuditLogObserver` yang terpasang pada event `created`, `updated`, dan `deleted` di model tertentu. Hanya dapat dilihat oleh super admin.
 
@@ -511,9 +475,8 @@ Tidak ada relasi many-to-many dalam database ini. Hubungan antara `data_iklim_da
 
 | No | Tabel | Keterangan |
 |----|---|---|
-| 1 | `prakiraan_cuaca_bmkg` | Tidak memiliki FK ke tabel lain. Menggunakan `kode_adm4` sebagai identifikasi wilayah (bukan kode WMO stasiun). |
-| 2 | `password_reset_tokens` | Tabel bawaan Laravel, primary key adalah kolom `email`. |
-| 3 | `failed_jobs` | Tabel bawaan Laravel untuk pencatatan job queue yang gagal. |
+| 1 | `password_reset_tokens` | Tabel bawaan Laravel, primary key adalah kolom `email`. |
+| 2 | `failed_jobs` | Tabel bawaan Laravel untuk pencatatan job queue yang gagal. |
 
 ---
 
@@ -633,20 +596,6 @@ erDiagram
         timestamp updated_at
     }
 
-    prakiraan_cuaca_bmkg {
-        bigint_unsigned id PK
-        varchar kode_adm4
-        varchar nama_wilayah
-        datetime datetime_prakiraan
-        decimal suhu
-        decimal curah_hujan_3jam
-        decimal kelembapan
-        decimal kecepatan_angin
-        varchar kondisi_cuaca
-        datetime analysis_date
-        datetime fetched_at
-    }
-
     log_import_data {
         bigint_unsigned id PK
         varchar sumber
@@ -703,7 +652,7 @@ erDiagram
 
 ## 6. Penjelasan ERD
 
-Entity Relationship Diagram di atas menggambarkan keseluruhan struktur database proyek MyFarmer yang terdiri dari 15 tabel. Berikut penjelasan alur relasi utama:
+Entity Relationship Diagram di atas menggambarkan keseluruhan struktur database proyek MyFarmer yang terdiri dari 14 tabel. Berikut penjelasan alur relasi utama:
 
 ### 6.1. Alur Data Inti (Pipeline Rekomendasi)
 
@@ -718,7 +667,6 @@ Alur data utama sistem mengikuti pola *pipeline* bertahap:
 ### 6.2. Tabel Pendukung
 
 - **`konten_landing_page`** berdiri relatif independen, hanya terhubung ke `users` sebagai pencatat konten.
-- **`prakiraan_cuaca_bmkg`** sepenuhnya *standalone* — tidak memiliki foreign key ke tabel lain karena menggunakan kode wilayah `adm4` (bukan kode WMO stasiun) dan bersumber dari API yang berbeda (API publik BMKG untuk prakiraan, bukan data historis).
 - **`log_import_data`** dan **`audit_log`** berfungsi sebagai tabel pencatatan (*logging*) yang terhubung ke `users` untuk traceability.
 
 ### 6.3. Peran Tabel `users`
@@ -808,7 +756,6 @@ Proyek ini memiliki satu factory bawaan Laravel:
 | `stasiun_iklim` | `kode_wmo` | *(auto-generated)* | Mencegah duplikasi stasiun |
 | `data_iklim_harian` | `(stasiun_id, tanggal)` | *(auto-generated)* | Satu stasiun hanya memiliki satu data per tanggal |
 | `data_iklim_dasarian` | `(stasiun_id, tahun, bulan, dasarian_ke)` | `uq_dasarian_periode` | Satu stasiun hanya memiliki satu data per periode dasarian |
-| `prakiraan_cuaca_bmkg` | `(kode_adm4, datetime_prakiraan)` | `uq_prakiraan_wilayah_waktu` | Mencegah duplikat data prakiraan saat fetch ulang |
 | `personal_access_tokens` | `token` | *(auto-generated)* | Setiap token harus unik |
 | `failed_jobs` | `uuid` | *(auto-generated)* | Setiap job memiliki UUID unik |
 
@@ -839,10 +786,10 @@ Proyek ini memiliki satu factory bawaan Laravel:
 1. **Soft Delete tidak digunakan** di seluruh tabel. Penonaktifan user dilakukan melalui kolom `is_active = false`, bukan penghapusan fisik.
 2. **Tabel `data_iklim_harian` bersifat immutable secara prinsip** — kolom `UPDATED_AT` diset `null` di model, menandakan bahwa data mentah idealnya tidak diubah setelah masuk. Namun, endpoint update tetap disediakan untuk keperluan koreksi admin.
 3. **Tabel `audit_log` bersifat append-only** — kolom `UPDATED_AT` diset `null` di model, sehingga log yang sudah tercatat tidak dapat diubah.
-4. **Tabel `prakiraan_cuaca_bmkg` terpisah sepenuhnya** dari alur data iklim historis. Data ini bersifat prakiraan (forecast ke depan) dan digunakan hanya untuk widget cuaca real-time di landing page, bukan sebagai input rule engine.
+4. **Prakiraan cuaca real-time berada di luar skema backend.** Frontend mengambil data tersebut langsung dari API publik BMKG; data prakiraan tidak disimpan dan tidak digunakan sebagai input rule engine.
 5. **Konvensi penamaan database menggunakan Bahasa Indonesia** dengan format `snake_case` (contoh: `data_iklim_harian`, `curah_hujan_mm`, `dibuat_oleh`). Ini merupakan aturan proyek yang ditetapkan di `AGENTS.md`.
 6. **Tabel bawaan Laravel** (`personal_access_tokens`, `password_reset_tokens`, `failed_jobs`) tetap menggunakan penamaan asli berbahasa Inggris karena merupakan bagian dari framework dan tidak dimodifikasi.
 
 ---
 
-*Dokumentasi ini disusun berdasarkan analisis kode aktual pada file migration, model Eloquent, seeder, dan factory yang terdapat dalam proyek MyFarmer per tanggal 5 Juli 2026.*
+*Dokumentasi ini disusun berdasarkan analisis kode aktual pada file migration, model Eloquent, seeder, dan factory yang terdapat dalam proyek MyFarmer per tanggal 16 Juli 2026.*

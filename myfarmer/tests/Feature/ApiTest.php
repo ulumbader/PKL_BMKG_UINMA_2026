@@ -8,6 +8,7 @@ use App\Models\Role;
 use App\Models\StasiunIklim;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
 /**
@@ -609,40 +610,13 @@ class ApiTest extends TestCase
         $this->assertEquals('error', $response->json('status'));
     }
 
-    // =========================================================================
-    // PRAKIRAAN CUACA — Endpoint baru Tahap 12
-    // =========================================================================
-
     /** @test */
-    public function endpoint_publik_prakiraan_cuaca_tanpa_token_berhasil(): void
+    public function jalur_prakiraan_cuaca_backend_telah_dihapus(): void
     {
-        $response = $this->getJson('/api/publik/prakiraan-cuaca');
-
-        $response->assertStatus(200)
-            ->assertJson([
-                'status' => 'success',
-            ]);
-    }
-
-    /** @test */
-    public function endpoint_admin_prakiraan_cuaca_fetch_tanpa_token_ditolak(): void
-    {
-        $response = $this->postJson('/api/admin/prakiraan-cuaca/fetch');
-
-        $response->assertStatus(401);
-    }
-
-    /** @test */
-    public function admin_bisa_akses_endpoint_fetch_prakiraan_cuaca(): void
-    {
-        // Test ini hanya memastikan endpoint bisa diakses oleh admin
-        // (tidak benar-benar memanggil API BMKG karena kode adm4 placeholder)
-        $response = $this->withHeader('Authorization', 'Bearer ' . $this->adminToken)
-            ->postJson('/api/admin/prakiraan-cuaca/fetch');
-
-        // Menerima 201 (berhasil fetch) ATAU 502 (API BMKG gagal/kode adm4 salah)
-        // Keduanya valid karena tidak crash — error handling bekerja
-        $this->assertContains($response->status(), [201, 502]);
-        $response->assertJsonStructure(['status', 'message']);
+        $this->assertFalse(Schema::hasTable('prakiraan_cuaca_bmkg'));
+        $this->getJson('/api/publik/prakiraan-cuaca')->assertNotFound();
+        $this->withHeader('Authorization', 'Bearer ' . $this->adminToken)
+            ->postJson('/api/admin/prakiraan-cuaca/fetch')
+            ->assertNotFound();
     }
 }
