@@ -6,6 +6,14 @@ export type ApiSuccess<T> = {
   data: T;
 };
 
+export type PaginatedData<T> = {
+  current_page?: number;
+  data?: T[];
+  last_page?: number;
+  per_page?: number;
+  total?: number;
+};
+
 type ApiFailure = {
   status: "error";
   message: string;
@@ -89,6 +97,34 @@ async function apiRequest<T>(
 
 export function apiGet<T>(path: string, init?: Omit<ApiRequestInit, "body">) {
   return apiRequest<T>("GET", path, init);
+}
+
+function pathWithPage(path: string, page: number) {
+  const [pathname, query = ""] = path.split("?", 2);
+  const params = new URLSearchParams(query);
+  params.set("page", String(page));
+  return `${pathname}?${params.toString()}`;
+}
+
+/**
+ * Mengambil seluruh halaman dari endpoint paginator Laravel.
+ * Dipakai untuk dropdown yang harus menampilkan semua pilihan, bukan hanya
+ * halaman pertama dari endpoint list.
+ */
+export async function apiGetAllPages<T>(
+  path: string,
+  init?: Omit<ApiRequestInit, "body">,
+) {
+  const firstResponse = await apiGet<PaginatedData<T>>(pathWithPage(path, 1), init);
+  const items = [...(firstResponse.data.data ?? [])];
+  const lastPage = Math.max(1, firstResponse.data.last_page ?? 1);
+
+  for (let page = 2; page <= lastPage; page += 1) {
+    const response = await apiGet<PaginatedData<T>>(pathWithPage(path, page), init);
+    items.push(...(response.data.data ?? []));
+  }
+
+  return items;
 }
 
 export function apiPost<T>(path: string, body?: ApiBody, init?: Omit<ApiRequestInit, "body">) {

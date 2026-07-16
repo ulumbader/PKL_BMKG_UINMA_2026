@@ -91,6 +91,7 @@ Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
 // ============================================================================
 Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
     Route::prefix('admin/agregasi')->group(function () {
+        Route::get('/periode-tersedia', [AggregationController::class, 'periodeTersedia']);
         Route::get('/', [AggregationController::class, 'index']);
         Route::post('/proses', [AggregationController::class, 'proses']);
     });

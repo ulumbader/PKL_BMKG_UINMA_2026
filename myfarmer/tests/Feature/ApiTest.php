@@ -227,6 +227,14 @@ class ApiTest extends TestCase
     }
 
     /** @test */
+    public function endpoint_periode_agregasi_tanpa_token_ditolak(): void
+    {
+        $response = $this->getJson('/api/admin/agregasi/periode-tersedia');
+
+        $response->assertStatus(401);
+    }
+
+    /** @test */
     public function endpoint_admin_rules_tanpa_token_ditolak(): void
     {
         $response = $this->getJson('/api/admin/rules');
@@ -432,6 +440,138 @@ class ApiTest extends TestCase
             ]);
 
         $response->assertStatus(422);
+    }
+
+    // =========================================================================
+    // AGREGASI DASARIAN — Periode tersedia & validasi data sumber
+    // =========================================================================
+
+    /** @test */
+    public function periode_agregasi_mengambil_tahun_dari_data_harian(): void
+    {
+        foreach (['2025-01-01', '2025-02-15'] as $tanggal) {
+            DataIklimHarian::create([
+                'stasiun_id'     => $this->stasiun->id,
+                'tanggal'        => $tanggal,
+                'curah_hujan_mm' => 10.0,
+                'kode_status'    => 'normal',
+                'sumber_data'    => 'manual',
+                'dibuat_oleh'    => $this->adminUser->id,
+            ]);
+        }
+
+        $this->assertDatabaseCount('data_iklim_dasarian', 0);
+
+        $response = $this->withHeader('Authorization', 'Bearer ' . $this->adminToken)
+            ->getJson('/api/admin/agregasi/periode-tersedia');
+
+        $response->assertStatus(200)
+            ->assertJsonPath('data.periode_sumber.0.stasiun_id', $this->stasiun->id)
+            ->assertJsonPath('data.periode_sumber.0.tahun', 2025)
+            ->assertJsonPath('data.periode_sumber.0.bulan', [1, 2])
+            ->assertJsonPath('data.tahun_hasil', []);
+    }
+
+    /** @test */
+    public function periode_agregasi_bisa_difilter_per_stasiun(): void
+    {
+        $stasiunLain = StasiunIklim::create([
+            'kode_wmo'      => '99999',
+            'nama_stasiun'  => 'Stasiun Lain',
+            'lintang'       => -7.5,
+            'bujur'         => 112.5,
+            'elevasi_meter' => 100,
+        ]);
+
+        DataIklimHarian::create([
+            'stasiun_id'     => $stasiunLain->id,
+            'tanggal'        => '2024-03-01',
+            'curah_hujan_mm' => 5.0,
+            'kode_status'    => 'normal',
+            'sumber_data'    => 'manual',
+            'dibuat_oleh'    => $this->adminUser->id,
+        ]);
+
+        $response = $this->withHeader('Authorization', 'Bearer ' . $this->adminToken)
+            ->getJson("/api/admin/agregasi/periode-tersedia?stasiun_id={$this->stasiun->id}");
+
+        $response->assertStatus(200)
+            ->assertJsonPath('data.periode_sumber', []);
+    }
+
+    /** @test */
+    public function proses_agregasi_menolak_dasarian_tanpa_data_harian(): void
+    {
+        $response = $this->withHeader('Authorization', 'Bearer ' . $this->adminToken)
+            ->postJson('/api/admin/agregasi/proses', [
+                'stasiun_id'  => $this->stasiun->id,
+                'tahun'       => 2025,
+                'bulan'       => 1,
+                'dasarian_ke' => 1,
+            ]);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['dasarian_ke']);
+
+        $this->assertDatabaseCount('data_iklim_dasarian', 0);
+    }
+
+    /** @test */
+    public function proses_semua_dasarian_ditolak_tanpa_menulis_sebagian_hasil(): void
+    {
+        DataIklimHarian::create([
+            'stasiun_id'     => $this->stasiun->id,
+            'tanggal'        => '2025-01-05',
+            'curah_hujan_mm' => 12.5,
+            'kode_status'    => 'normal',
+            'sumber_data'    => 'manual',
+            'dibuat_oleh'    => $this->adminUser->id,
+        ]);
+
+        $response = $this->withHeader('Authorization', 'Bearer ' . $this->adminToken)
+            ->postJson('/api/admin/agregasi/proses', [
+                'stasiun_id' => $this->stasiun->id,
+                'tahun'      => 2025,
+                'bulan'      => 1,
+            ]);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['bulan']);
+
+        $this->assertDatabaseCount('data_iklim_dasarian', 0);
+    }
+
+    /** @test */
+    public function proses_agregasi_berhasil_jika_data_harian_tersedia(): void
+    {
+        DataIklimHarian::create([
+            'stasiun_id'     => $this->stasiun->id,
+            'tanggal'        => '2025-01-05',
+            'curah_hujan_mm' => 12.5,
+            'kode_status'    => 'normal',
+            'sumber_data'    => 'manual',
+            'dibuat_oleh'    => $this->adminUser->id,
+        ]);
+
+        $response = $this->withHeader('Authorization', 'Bearer ' . $this->adminToken)
+            ->postJson('/api/admin/agregasi/proses', [
+                'stasiun_id'  => $this->stasiun->id,
+                'tahun'       => 2025,
+                'bulan'       => 1,
+                'dasarian_ke' => 1,
+            ]);
+
+        $response->assertStatus(201)
+            ->assertJsonPath('data.0.tahun', 2025)
+            ->assertJsonPath('data.0.bulan', 1)
+            ->assertJsonPath('data.0.dasarian_ke', 1);
+
+        $this->assertDatabaseHas('data_iklim_dasarian', [
+            'stasiun_id'  => $this->stasiun->id,
+            'tahun'       => 2025,
+            'bulan'       => 1,
+            'dasarian_ke' => 1,
+        ]);
     }
 
     // =========================================================================

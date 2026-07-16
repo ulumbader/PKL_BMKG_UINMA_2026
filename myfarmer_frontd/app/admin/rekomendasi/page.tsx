@@ -3,7 +3,7 @@
 import { type FormEvent, type ReactNode, useEffect, useState } from "react";
 
 import { Alert, Button, Card, Skeleton, Spinner } from "@/components/ui";
-import { ApiError, apiGet, apiPost } from "@/lib/apiClient";
+import { ApiError, apiGet, apiGetAllPages, apiPost } from "@/lib/apiClient";
 
 type Paginated<T> = {
   data?: T[];
@@ -171,9 +171,9 @@ export default function Page() {
       setOptionsLoading(true);
 
       try {
-        const response = await apiGet<Paginated<AggregationOption>>("/admin/agregasi?per_page=200");
+        const options = await apiGetAllPages<AggregationOption>("/admin/agregasi?per_page=200");
         if (!active) return;
-        setDasarianOptions(response.data.data ?? []);
+        setDasarianOptions(options);
       } catch {
         if (!active) return;
         setDasarianOptions([]);

@@ -434,6 +434,40 @@ Import data iklim harian dari file CSV BMKG.
 
 > Semua endpoint membutuhkan middleware `auth:sanctum` + `role:admin`.
 
+### GET `/api/admin/agregasi/periode-tersedia`
+
+Mengambil periode sumber yang tersedia untuk proses agregasi langsung dari
+`data_iklim_harian`, serta daftar tahun yang sudah memiliki hasil agregasi.
+Endpoint ini tidak berpaginasi karena hanya mengembalikan metadata tahun dan
+bulan, bukan seluruh baris data iklim.
+
+| Query Param | Tipe | Deskripsi |
+|---|---|---|
+| `stasiun_id` | integer | Opsional; batasi periode sumber dan tahun hasil ke satu stasiun |
+
+**Response Sukses (200):**
+```json
+{
+  "status": "success",
+  "message": "Periode agregasi tersedia berhasil diambil.",
+  "data": {
+    "periode_sumber": [
+      {
+        "stasiun_id": 1,
+        "tahun": 2025,
+        "bulan": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+      }
+    ],
+    "tahun_hasil": [2025]
+  }
+}
+```
+
+`periode_sumber` tetap tersedia meskipun tabel `data_iklim_dasarian` masih
+kosong. `tahun_hasil` khusus dipakai untuk memfilter tabel hasil agregasi.
+
+---
+
 ### GET `/api/admin/agregasi`
 
 List data iklim dasarian (hasil agregasi).
@@ -495,6 +529,10 @@ Trigger proses agregasi.
 | `tahun` | Ya | Integer, 1900–2100 |
 | `bulan` | Ya | Integer, 1–12 |
 | `dasarian_ke` | Tidak | Integer 1–3. Jika kosong, proses ke-3 sekaligus |
+
+Setiap dasarian yang diminta harus memiliki setidaknya satu data harian pada
+stasiun dan periode tersebut. Request dibalas `422` dan tidak menulis hasil
+apa pun apabila salah satu dasarian tidak memiliki data sumber.
 
 **Response Sukses (201):**
 ```json
@@ -1180,31 +1218,32 @@ Trigger fetch data prakiraan cuaca dari API BMKG untuk kode wilayah adm4 default
 | 10 | PUT | `/api/admin/data-iklim/{id}` | `auth:sanctum`, `role:admin` | Update data iklim |
 | 11 | DELETE | `/api/admin/data-iklim/{id}` | `auth:sanctum`, `role:admin` | Hapus data iklim |
 | 12 | POST | `/api/admin/data-iklim/import` | `auth:sanctum`, `role:admin` | Import CSV |
-| 13 | GET | `/api/admin/agregasi` | `auth:sanctum`, `role:admin` | List dasarian |
-| 14 | POST | `/api/admin/agregasi/proses` | `auth:sanctum`, `role:admin` | Trigger agregasi |
-| 15 | GET | `/api/admin/rules` | `auth:sanctum`, `role:admin` | List rule |
-| 16 | GET | `/api/admin/rules/{id}` | `auth:sanctum`, `role:admin` | Detail rule |
-| 17 | POST | `/api/admin/rules` | `auth:sanctum`, `role:admin` | Buat rule (super_admin) |
-| 18 | PUT | `/api/admin/rules/{id}` | `auth:sanctum`, `role:admin` | Update rule |
-| 19 | DELETE | `/api/admin/rules/{id}` | `auth:sanctum`, `role:admin` | Hapus rule (super_admin) |
-| 20 | GET | `/api/admin/rekomendasi` | `auth:sanctum`, `role:admin` | Histori rekomendasi |
-| 21 | POST | `/api/admin/rekomendasi/evaluasi` | `auth:sanctum`, `role:admin` | Evaluasi rule engine |
-| 22 | GET | `/api/admin/ringkasan` | `auth:sanctum`, `role:admin` | List ringkasan AI |
-| 23 | POST | `/api/admin/ringkasan/generate` | `auth:sanctum`, `role:admin` | Generate ringkasan |
-| 24 | PUT | `/api/admin/ringkasan/{id}` | `auth:sanctum`, `role:admin` | Edit/publish ringkasan |
-| 25 | DELETE | `/api/admin/ringkasan/{id}` | `auth:sanctum`, `role:admin` | Hapus ringkasan |
-| 26 | GET | `/api/admin/konten` | `auth:sanctum`, `role:admin` | List konten |
-| 27 | GET | `/api/admin/konten/{id}` | `auth:sanctum`, `role:admin` | Detail konten |
-| 28 | POST | `/api/admin/konten` | `auth:sanctum`, `role:admin` | Buat konten |
-| 29 | PUT | `/api/admin/konten/{id}` | `auth:sanctum`, `role:admin` | Update konten |
-| 30 | DELETE | `/api/admin/konten/{id}` | `auth:sanctum`, `role:admin` | Hapus konten |
-| 31 | GET | `/api/admin/log-import` | `auth:sanctum`, `role:admin` | Histori import |
-| 32 | GET | `/api/admin/audit-log` | `auth:sanctum`, `role:super_admin` | Audit log |
-| 33 | POST | `/api/admin/prakiraan-cuaca/fetch` | `auth:sanctum`, `role:admin` | Fetch prakiraan cuaca BMKG |
-| 34 | GET | `/api/publik/cuaca-terkini` | — | Cuaca terkini (dasarian) |
-| 35 | GET | `/api/publik/rekomendasi-terkini` | — | Rekomendasi terkini |
-| 36 | GET | `/api/publik/ringkasan-terkini` | — | Ringkasan AI terkini |
-| 37 | GET | `/api/publik/konten` | — | Konten landing page |
-| 38 | GET | `/api/publik/prakiraan-cuaca` | — | Prakiraan cuaca real-time |
+| 13 | GET | `/api/admin/agregasi/periode-tersedia` | `auth:sanctum`, `role:admin` | Metadata periode agregasi tersedia |
+| 14 | GET | `/api/admin/agregasi` | `auth:sanctum`, `role:admin` | List dasarian |
+| 15 | POST | `/api/admin/agregasi/proses` | `auth:sanctum`, `role:admin` | Trigger agregasi |
+| 16 | GET | `/api/admin/rules` | `auth:sanctum`, `role:admin` | List rule |
+| 17 | GET | `/api/admin/rules/{id}` | `auth:sanctum`, `role:admin` | Detail rule |
+| 18 | POST | `/api/admin/rules` | `auth:sanctum`, `role:admin` | Buat rule (super_admin) |
+| 19 | PUT | `/api/admin/rules/{id}` | `auth:sanctum`, `role:admin` | Update rule |
+| 20 | DELETE | `/api/admin/rules/{id}` | `auth:sanctum`, `role:admin` | Hapus rule (super_admin) |
+| 21 | GET | `/api/admin/rekomendasi` | `auth:sanctum`, `role:admin` | Histori rekomendasi |
+| 22 | POST | `/api/admin/rekomendasi/evaluasi` | `auth:sanctum`, `role:admin` | Evaluasi rule engine |
+| 23 | GET | `/api/admin/ringkasan` | `auth:sanctum`, `role:admin` | List ringkasan AI |
+| 24 | POST | `/api/admin/ringkasan/generate` | `auth:sanctum`, `role:admin` | Generate ringkasan |
+| 25 | PUT | `/api/admin/ringkasan/{id}` | `auth:sanctum`, `role:admin` | Edit/publish ringkasan |
+| 26 | DELETE | `/api/admin/ringkasan/{id}` | `auth:sanctum`, `role:admin` | Hapus ringkasan |
+| 27 | GET | `/api/admin/konten` | `auth:sanctum`, `role:admin` | List konten |
+| 28 | GET | `/api/admin/konten/{id}` | `auth:sanctum`, `role:admin` | Detail konten |
+| 29 | POST | `/api/admin/konten` | `auth:sanctum`, `role:admin` | Buat konten |
+| 30 | PUT | `/api/admin/konten/{id}` | `auth:sanctum`, `role:admin` | Update konten |
+| 31 | DELETE | `/api/admin/konten/{id}` | `auth:sanctum`, `role:admin` | Hapus konten |
+| 32 | GET | `/api/admin/log-import` | `auth:sanctum`, `role:admin` | Histori import |
+| 33 | GET | `/api/admin/audit-log` | `auth:sanctum`, `role:super_admin` | Audit log |
+| 34 | POST | `/api/admin/prakiraan-cuaca/fetch` | `auth:sanctum`, `role:admin` | Fetch prakiraan cuaca BMKG |
+| 35 | GET | `/api/publik/cuaca-terkini` | — | Cuaca terkini (dasarian) |
+| 36 | GET | `/api/publik/rekomendasi-terkini` | — | Rekomendasi terkini |
+| 37 | GET | `/api/publik/ringkasan-terkini` | — | Ringkasan AI terkini |
+| 38 | GET | `/api/publik/konten` | — | Konten landing page |
+| 39 | GET | `/api/publik/prakiraan-cuaca` | — | Prakiraan cuaca real-time |
 
-**Total: 38 endpoint**
+**Total: 39 endpoint**

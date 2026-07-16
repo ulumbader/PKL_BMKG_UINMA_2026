@@ -33,6 +33,17 @@ type AggregationPage = {
   per_page?: number;
 };
 
+type SourcePeriod = {
+  stasiun_id: number;
+  tahun: number;
+  bulan: number[];
+};
+
+type AggregationPeriodOptions = {
+  periode_sumber?: SourcePeriod[];
+  tahun_hasil?: number[];
+};
+
 type FieldErrors = Record<string, string>;
 
 type Filters = {
@@ -145,33 +156,47 @@ export default function Page() {
   const [processing, setProcessing] = useState(false);
 
   const [stasiunOptions, setStasiunOptions] = useState<StasiunOption[]>([]);
-  const [tahunOptions, setTahunOptions] = useState<number[]>([]);
+  const [sourcePeriods, setSourcePeriods] = useState<SourcePeriod[]>([]);
+  const [resultYearOptions, setResultYearOptions] = useState<number[]>([]);
   const [optionsLoading, setOptionsLoading] = useState(true);
+  const [optionsError, setOptionsError] = useState("");
+
+  const processYearOptions = Array.from(
+    new Set(
+      sourcePeriods
+        .filter((period) => String(period.stasiun_id) === processForm.stasiun_id)
+        .map((period) => period.tahun),
+    ),
+  ).sort((a, b) => b - a);
+
+  const processMonthOptions = sourcePeriods.find(
+    (period) =>
+      String(period.stasiun_id) === processForm.stasiun_id &&
+      String(period.tahun) === processForm.tahun,
+  )?.bulan ?? [];
 
   useEffect(() => {
     let active = true;
 
     async function loadOptions() {
       setOptionsLoading(true);
+      setOptionsError("");
       try {
-        const response = await apiGet<StasiunOption[]>("/admin/stasiun");
+        const [stationResponse, periodResponse] = await Promise.all([
+          apiGet<StasiunOption[]>("/admin/stasiun"),
+          apiGet<AggregationPeriodOptions>("/admin/agregasi/periode-tersedia"),
+        ]);
         if (!active) return;
-        const stations = response.data ?? [];
-        const tahunSet = new Set<number>();
-        try {
-          const agResponse = await apiGet<AggregationPage>("/admin/agregasi?per_page=200");
-          if (!active) return;
-          const agRows = agResponse.data.data ?? [];
-          for (const row of agRows) {
-            if (row.tahun) tahunSet.add(row.tahun);
-          }
-        } catch { /* ignore secondary fetch failure */ }
+        const stations = stationResponse.data ?? [];
         setStasiunOptions(stations.sort((a, b) => a.nama_stasiun.localeCompare(b.nama_stasiun)));
-        setTahunOptions(Array.from(tahunSet).sort((a, b) => b - a));
-      } catch {
+        setSourcePeriods(periodResponse.data.periode_sumber ?? []);
+        setResultYearOptions(periodResponse.data.tahun_hasil ?? []);
+      } catch (caught) {
         if (!active) return;
         setStasiunOptions([]);
-        setTahunOptions([]);
+        setSourcePeriods([]);
+        setResultYearOptions([]);
+        setOptionsError(errorMessage(caught, "Pilihan periode agregasi gagal dimuat."));
       } finally {
         if (active) setOptionsLoading(false);
       }
@@ -179,7 +204,7 @@ export default function Page() {
 
     loadOptions();
     return () => { active = false; };
-  }, []);
+  }, [reloadKey]);
 
   useEffect(() => {
     let active = true;
@@ -253,6 +278,7 @@ export default function Page() {
       </div>
 
       {notice ? <Alert variant="success">{notice}</Alert> : null}
+      {optionsError ? <Alert variant="error">{optionsError}</Alert> : null}
       {tableError ? <Alert variant="error">{tableError}</Alert> : null}
 
       <Card>
@@ -270,7 +296,12 @@ export default function Page() {
                 className={inputClass}
                 disabled={optionsLoading}
                 value={processForm.stasiun_id}
-                onChange={(event) => setProcessForm({ ...processForm, stasiun_id: event.target.value })}
+                onChange={(event) => setProcessForm({
+                  ...processForm,
+                  stasiun_id: event.target.value,
+                  tahun: "",
+                  bulan: "",
+                })}
               >
                 <option value="">{optionsLoading ? "Memuat stasiun..." : "Pilih stasiun"}</option>
                 {stasiunOptions.map((s) => (
@@ -284,12 +315,24 @@ export default function Page() {
               <select
                 required
                 className={inputClass}
-                disabled={optionsLoading}
+                disabled={optionsLoading || !processForm.stasiun_id}
                 value={processForm.tahun}
-                onChange={(event) => setProcessForm({ ...processForm, tahun: event.target.value })}
+                onChange={(event) => setProcessForm({
+                  ...processForm,
+                  tahun: event.target.value,
+                  bulan: "",
+                })}
               >
-                <option value="">{optionsLoading ? "Memuat tahun..." : "Pilih tahun"}</option>
-                {tahunOptions.map((y) => (
+                <option value="">
+                  {optionsLoading
+                    ? "Memuat tahun..."
+                    : !processForm.stasiun_id
+                      ? "Pilih stasiun dahulu"
+                      : processYearOptions.length
+                        ? "Pilih tahun"
+                        : "Tidak ada tahun tersedia"}
+                </option>
+                {processYearOptions.map((y) => (
                   <option key={y} value={y}>{y}</option>
                 ))}
               </select>
@@ -298,12 +341,15 @@ export default function Page() {
               <select
                 required
                 className={inputClass}
+                disabled={!processForm.tahun}
                 value={processForm.bulan}
                 onChange={(event) => setProcessForm({ ...processForm, bulan: event.target.value })}
               >
-                <option value="">Pilih bulan</option>
-                {monthNames.map((month, index) => (
-                  <option key={month} value={index + 1}>{month}</option>
+                <option value="">
+                  {processForm.tahun ? "Pilih bulan" : "Pilih tahun dahulu"}
+                </option>
+                {processMonthOptions.map((month) => (
+                  <option key={month} value={month}>{monthNames[month - 1]}</option>
                 ))}
               </select>
             </Field>
@@ -352,7 +398,7 @@ export default function Page() {
               onChange={(event) => setFilters({ ...filters, tahun: event.target.value })}
             >
               <option value="">{optionsLoading ? "Memuat tahun..." : "Semua"}</option>
-              {tahunOptions.map((y) => (
+              {resultYearOptions.map((y) => (
                 <option key={y} value={y}>{y}</option>
               ))}
             </select>

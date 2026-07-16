@@ -9,6 +9,30 @@ Format tanggal: YYYY-MM-DD.
 
 ## [Unreleased]
 
+## [Tahap 21] - Perbaikan Dropdown Periode Agregasi - 2026-07-15
+### Ditambahkan
+- Helper `apiGetAllPages` pada API client terpusat untuk memuat seluruh opsi dari endpoint Laravel yang berpaginasi.
+- State error khusus pemuatan opsi agregasi agar kegagalan metadata terlihat oleh admin.
+
+### Diubah
+- Dropdown Tahun pada form Proses Agregasi sekarang memakai metadata `periode_sumber` dari data iklim harian dan difilter berdasarkan stasiun terpilih.
+- Dropdown Bulan hanya menampilkan bulan sumber yang tersedia untuk kombinasi stasiun dan tahun terpilih.
+- Filter Tahun hasil agregasi memakai `tahun_hasil`, terpisah dari periode sumber proses.
+- Opsi Dasarian pada halaman Rekomendasi dan opsi Hasil Rekomendasi pada halaman Ringkasan AI memuat semua halaman, bukan hanya 200 baris pertama.
+- Opsi periode dan tabel agregasi dimuat ulang setelah proses berhasil.
+
+### File Terkait
+- `app/admin/agregasi/page.tsx`
+- `app/admin/rekomendasi/page.tsx`
+- `app/admin/ringkasan-ai/page.tsx`
+- `lib/apiClient.ts`
+- `CHANGELOG.md`
+
+### Catatan
+- Tidak ada dependency baru.
+- `npm run lint` selesai tanpa error (4 warning lama di luar cakupan perubahan).
+- `npm run build` berhasil pada Next.js 16.2.10 tanpa error TypeScript maupun kompilasi.
+
 ## [Tahap 20] - Konfigurasi Monorepo dan Kolaborasi GitHub - 2026-07-15
 ### Ditambahkan
 - README root, panduan kontribusi, konfigurasi Git bersama, dan template kolaborasi GitHub.

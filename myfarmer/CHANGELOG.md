@@ -8,6 +8,30 @@ Format tanggal: YYYY-MM-DD.
 
 ## [Unreleased]
 
+## [Tahap 21] - Perbaikan Periode Proses Agregasi - 2026-07-15
+### Ditambahkan
+- Endpoint `GET /api/admin/agregasi/periode-tersedia` untuk mengambil metadata tahun dan bulan langsung dari `data_iklim_harian`, serta tahun hasil dari `data_iklim_dasarian`.
+- `PeriodeAgregasiRequest` untuk validasi filter stasiun pada endpoint metadata periode.
+- Enam feature test untuk autentikasi endpoint, periode sumber, filter stasiun, penolakan periode kosong/parsial, dan proses agregasi valid.
+
+### Diubah
+- `ProsesAgregatRequest` memvalidasi keberadaan data harian pada setiap dasarian sebelum proses menulis hasil agregasi.
+- Route dan dokumentasi API diperbarui untuk endpoint periode tersedia; total endpoint menjadi 39.
+
+### File Terkait
+- `app/Http/Controllers/Api/AggregationController.php`
+- `app/Http/Requests/Admin/PeriodeAgregasiRequest.php`
+- `app/Http/Requests/Admin/ProsesAgregatRequest.php`
+- `routes/api.php`
+- `tests/Feature/ApiTest.php`
+- `../API_DOCUMENTATION.md`
+- `CHANGELOG.md`
+
+### Catatan
+- Periode proses tidak lagi bergantung pada isi tabel hasil agregasi, sehingga tahun data harian tetap tersedia saat belum ada satu pun hasil dasarian.
+- Request agregasi untuk dasarian tanpa data harian membalas HTTP 422 dan tidak membuat hasil `0 mm` yang menyesatkan.
+- Verifikasi berhasil: `php artisan test` (38 test, 88 assertion) dan route agregasi menampilkan 3 endpoint.
+
 ## [Tahap 20] - Konfigurasi Monorepo dan Kolaborasi GitHub - 2026-07-15
 ### Ditambahkan
 - README dan panduan kontribusi pada root monorepo.

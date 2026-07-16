@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\PeriodeAgregasiRequest;
 use App\Http\Requests\Admin\ProsesAgregatRequest;
 use App\Models\DataIklimDasarian;
+use App\Models\DataIklimHarian;
 use App\Services\AggregationService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
@@ -13,6 +15,58 @@ use Illuminate\Http\Request;
 class AggregationController extends Controller
 {
     use ApiResponse;
+
+    /**
+     * Daftar periode yang tersedia untuk proses dan filter agregasi.
+     *
+     * Periode sumber dibaca langsung dari data_iklim_harian agar proses agregasi
+     * tidak bergantung pada keberadaan hasil di data_iklim_dasarian.
+     */
+    public function periodeTersedia(PeriodeAgregasiRequest $request): JsonResponse
+    {
+        $stasiunId = $request->validated('stasiun_id');
+
+        $querySumber = DataIklimHarian::query()
+            ->selectRaw('stasiun_id, YEAR(tanggal) as tahun, MONTH(tanggal) as bulan');
+
+        $queryHasil = DataIklimDasarian::query()
+            ->select('tahun')
+            ->distinct();
+
+        if ($stasiunId !== null) {
+            $querySumber->where('stasiun_id', $stasiunId);
+            $queryHasil->where('stasiun_id', $stasiunId);
+        }
+
+        $periodeSumber = $querySumber
+            ->groupBy('stasiun_id', 'tahun', 'bulan')
+            ->orderBy('stasiun_id')
+            ->orderByDesc('tahun')
+            ->orderBy('bulan')
+            ->get()
+            ->groupBy(fn ($item) => "{$item->stasiun_id}-{$item->tahun}")
+            ->map(function ($items) {
+                $pertama = $items->first();
+
+                return [
+                    'stasiun_id' => (int) $pertama->stasiun_id,
+                    'tahun'      => (int) $pertama->tahun,
+                    'bulan'      => $items->pluck('bulan')->map(fn ($bulan) => (int) $bulan)->values(),
+                ];
+            })
+            ->values();
+
+        $tahunHasil = $queryHasil
+            ->orderByDesc('tahun')
+            ->pluck('tahun')
+            ->map(fn ($tahun) => (int) $tahun)
+            ->values();
+
+        return $this->successResponse([
+            'periode_sumber' => $periodeSumber,
+            'tahun_hasil'    => $tahunHasil,
+        ], 'Periode agregasi tersedia berhasil diambil.');
+    }
 
     /**
      * List data iklim dasarian (hasil agregasi) dengan filter opsional.

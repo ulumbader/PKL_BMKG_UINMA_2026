@@ -3,7 +3,7 @@
 import { type FormEvent, type ReactNode, useCallback, useEffect, useState } from "react";
 
 import { Alert, Button, Card, Skeleton, Spinner } from "@/components/ui";
-import { ApiError, apiDelete, apiGet, apiPost, apiPut } from "@/lib/apiClient";
+import { ApiError, apiDelete, apiGet, apiGetAllPages, apiPost, apiPut } from "@/lib/apiClient";
 
 /* ────────────────────────────────────────────
    Types
@@ -167,11 +167,11 @@ export default function Page() {
     async function loadOptions() {
       setOptionsLoading(true);
       try {
-        const response = await apiGet<ListResult<RecommendationOption>>(
+        const options = await apiGetAllPages<RecommendationOption>(
           "/admin/rekomendasi?per_page=200",
         );
         if (!active) return;
-        setRekomOptions(listItems(response.data));
+        setRekomOptions(options);
       } catch {
         if (!active) return;
         setRekomOptions([]);
