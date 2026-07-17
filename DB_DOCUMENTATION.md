@@ -243,7 +243,7 @@ Database terdiri dari **14 tabel**, dengan rincian:
 | 6 | `tanggal_mulai` | `date` | — | Tidak | — | Tanggal awal periode dasarian |
 | 7 | `tanggal_selesai` | `date` | — | Tidak | — | Tanggal akhir periode dasarian |
 | 8 | `total_curah_hujan_mm` | `decimal(7,1)` | — | Tidak | `0` | Total curah hujan dalam periode (mm) |
-| 9 | `jumlah_hari_hujan` | `tinyint unsigned` | — | Tidak | `0` | Jumlah hari dengan curah hujan > 0 |
+| 9 | `jumlah_hari_hujan` | `tinyint unsigned` | — | Tidak | `0` | Jumlah hari dengan curah hujan ≥ 0,5 mm sesuai definisi hari hujan Ulfah dan Sulistya (2015) |
 | 10 | `jumlah_hari_valid` | `tinyint unsigned` | — | Tidak | `0` | Jumlah hari dengan kode_status `normal` |
 | 11 | `jumlah_hari_missing` | `tinyint unsigned` | — | Tidak | `0` | Jumlah hari dengan kode_status selain `normal` |
 | 12 | `status_musim` | `enum('basah','normal','kering')` | — | Ya | `NULL` | Klasifikasi status musim berdasarkan curah hujan |
@@ -291,9 +291,20 @@ Database terdiri dari **14 tabel**, dengan rincian:
   ```json
   {
       "min_curah_hujan_dasarian": 50,
-      "min_dasarian_berturut": 3
+      "min_dasarian_berturut": 3,
+      "total_alternatif_mm": 150,
+      "pakai_kriteria_hari_hujan": true,
+      "min_hari_hujan_dasarian": 3
   }
   ```
+
+- **Makna Parameter Rule:**
+  - `min_curah_hujan_dasarian`: minimum CH untuk kriteria utama dan dasarian pertama kriteria alternatif.
+  - `min_dasarian_berturut`: jumlah dasarian dalam jendela evaluasi.
+  - `total_alternatif_mm`: minimum total CH jendela ketika salah satu dasarian lanjutan berada di bawah minimum.
+  - `pakai_kriteria_hari_hujan`: mengaktifkan atau menonaktifkan penguatan HH untuk keperluan evaluasi metodologi.
+  - `min_hari_hujan_dasarian`: minimum HH setiap dasarian ketika penguatan HH aktif.
+- Penambahan parameter tidak mengubah skema karena seluruh konfigurasi tetap disimpan dalam kolom JSON `parameter`.
 
 ---
 
@@ -661,7 +672,7 @@ Alur data utama sistem mengikuti pola *pipeline* bertahap:
 1. **`stasiun_iklim`** menjadi referensi induk bagi data iklim. Setiap stasiun memiliki banyak data harian dan data dasarian.
 2. **`data_iklim_harian`** (*raw layer*) menyimpan data curah hujan mentah per hari. Data ini bersumber dari input manual admin atau import CSV. Setiap record terikat ke satu stasiun dan (opsional) satu user sebagai pencatat.
 3. **`data_iklim_dasarian`** (*aggregated layer*) merupakan hasil agregasi data harian per periode 10 hari (dasarian). Proses agregasi hanya membaca dari `data_iklim_harian` tanpa mengubah data asli.
-4. **`hasil_rekomendasi`** menyimpan output evaluasi rule engine. Tabel `rule_rekomendasi` mendefinisikan aturan dengan parameter JSON yang fleksibel. Setiap data dasarian dievaluasi terhadap rule yang aktif, menghasilkan status: `optimal_tanam`, `tunggu`, atau `tidak_disarankan`.
+4. **`hasil_rekomendasi`** menyimpan output evaluasi rule engine. Tabel `rule_rekomendasi` mendefinisikan kriteria utama CH berturut-turut, kriteria alternatif berdasarkan total CH, dan penguatan HH opsional melalui parameter JSON. Setiap data dasarian dievaluasi terhadap rule yang aktif, menghasilkan status: `optimal_tanam`, `tunggu`, atau `tidak_disarankan`.
 5. **`ringkasan_ai`** adalah tahap akhir pipeline — ringkasan bahasa Indonesia yang dihasilkan oleh Groq API berdasarkan hasil rekomendasi. Hubungannya bersifat one-to-one: satu hasil rekomendasi maksimal memiliki satu ringkasan.
 
 ### 6.2. Tabel Pendukung
@@ -686,7 +697,7 @@ Proyek ini memiliki 4 seeder yang dijalankan secara berurutan sesuai dependency:
 | 1 | `RoleSeeder` | Mengisi role dasar | `admin`, `super_admin` |
 | 2 | `AdminSeeder` | Membuat akun super admin awal | Email: `superadmin@myfarmer.test`, Password: `password123` |
 | 3 | `StasiunIklimSeeder` | Mendaftarkan stasiun iklim utama | Stasiun Klimatologi Jawa Timur (WMO: 96943, koordinat: -7.90080, 112.59790, elevasi: 590m) |
-| 4 | `RuleRekomendasiSeeder` | Membuat rule default | "Rule Awal Musim Tanam" dengan parameter `min_curah_hujan_dasarian: 50mm`, `min_dasarian_berturut: 3` |
+| 4 | `RuleRekomendasiSeeder` | Membuat rule default | "Rule Awal Musim Tanam" dengan CH minimum 50 mm/dasarian, jendela 3 dasarian, total alternatif 150 mm, dan HH minimum 3 hari/dasarian dalam keadaan aktif |
 
 **Urutan eksekusi penting:** `RoleSeeder` harus dijalankan sebelum `AdminSeeder` (karena user butuh `role_id`), dan `AdminSeeder` harus sebelum `RuleRekomendasiSeeder` (karena rule butuh `dibuat_oleh` yang merujuk ke user super admin).
 

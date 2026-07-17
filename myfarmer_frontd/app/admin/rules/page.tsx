@@ -10,7 +10,7 @@ type Rule = {
   id: number;
   nama_rule: string;
   deskripsi?: string;
-  parameter: Record<string, number | string | null>;
+  parameter: Partial<RuleParameter>;
   is_active: boolean;
   updated_at?: string;
 };
@@ -20,13 +20,32 @@ type FieldErrors = Record<string, string>;
 type RuleForm = {
   nama_rule: string;
   deskripsi: string;
-  parameter: Record<string, string>;
+  parameter: RuleParameterForm;
   is_active: boolean;
 };
 
-const defaultParameter = {
-  min_curah_hujan_dasarian: "",
-  min_dasarian_berturut: "",
+type RuleParameter = {
+  min_curah_hujan_dasarian: number;
+  min_dasarian_berturut: number;
+  total_alternatif_mm: number;
+  pakai_kriteria_hari_hujan: boolean;
+  min_hari_hujan_dasarian: number;
+};
+
+type RuleParameterForm = {
+  min_curah_hujan_dasarian: string;
+  min_dasarian_berturut: string;
+  total_alternatif_mm: string;
+  pakai_kriteria_hari_hujan: boolean;
+  min_hari_hujan_dasarian: string;
+};
+
+const defaultParameter: RuleParameterForm = {
+  min_curah_hujan_dasarian: "50",
+  min_dasarian_berturut: "3",
+  total_alternatif_mm: "150",
+  pakai_kriteria_hari_hujan: true,
+  min_hari_hujan_dasarian: "3",
 };
 
 const emptyForm: RuleForm = {
@@ -64,20 +83,39 @@ function formatDateTime(value?: string) {
 }
 
 function makeRuleForm(rule: Rule): RuleForm {
+  const parameter = rule.parameter ?? {};
+
   return {
     nama_rule: rule.nama_rule,
     deskripsi: rule.deskripsi ?? "",
-    parameter: Object.fromEntries(
-      Object.entries(rule.parameter ?? defaultParameter).map(([key, value]) => [key, value == null ? "" : String(value)]),
-    ),
+    parameter: {
+      min_curah_hujan_dasarian: String(
+        parameter.min_curah_hujan_dasarian ?? defaultParameter.min_curah_hujan_dasarian,
+      ),
+      min_dasarian_berturut: String(
+        parameter.min_dasarian_berturut ?? defaultParameter.min_dasarian_berturut,
+      ),
+      total_alternatif_mm: String(
+        parameter.total_alternatif_mm ?? defaultParameter.total_alternatif_mm,
+      ),
+      pakai_kriteria_hari_hujan:
+        parameter.pakai_kriteria_hari_hujan ?? defaultParameter.pakai_kriteria_hari_hujan,
+      min_hari_hujan_dasarian: String(
+        parameter.min_hari_hujan_dasarian ?? defaultParameter.min_hari_hujan_dasarian,
+      ),
+    },
     is_active: Boolean(rule.is_active),
   };
 }
 
 function makePayload(form: RuleForm, isSuperAdmin: boolean) {
-  const parameter = Object.fromEntries(
-    Object.entries(form.parameter).map(([key, value]) => [key, Number(value)]),
-  );
+  const parameter: RuleParameter = {
+    min_curah_hujan_dasarian: Number(form.parameter.min_curah_hujan_dasarian),
+    min_dasarian_berturut: Number(form.parameter.min_dasarian_berturut),
+    total_alternatif_mm: Number(form.parameter.total_alternatif_mm),
+    pakai_kriteria_hari_hujan: form.parameter.pakai_kriteria_hari_hujan,
+    min_hari_hujan_dasarian: Number(form.parameter.min_hari_hujan_dasarian),
+  };
   const payload: Record<string, unknown> = { parameter, is_active: form.is_active };
 
   if (isSuperAdmin) {
@@ -86,6 +124,24 @@ function makePayload(form: RuleForm, isSuperAdmin: boolean) {
   }
 
   return payload;
+}
+
+const parameterDisplay: Array<{
+  key: keyof RuleParameter;
+  label: string;
+  unit?: string;
+}> = [
+  { key: "min_curah_hujan_dasarian", label: "CH minimum", unit: "mm/dasarian" },
+  { key: "min_dasarian_berturut", label: "Jendela evaluasi", unit: "dasarian" },
+  { key: "total_alternatif_mm", label: "Total CH alternatif", unit: "mm" },
+  { key: "pakai_kriteria_hari_hujan", label: "Kriteria hari hujan" },
+  { key: "min_hari_hujan_dasarian", label: "HH minimum", unit: "hari/dasarian" },
+];
+
+function formatParameterValue(key: keyof RuleParameter, value: RuleParameter[keyof RuleParameter] | undefined, unit?: string) {
+  if (value == null) return "-";
+  if (key === "pakai_kriteria_hari_hujan") return value ? "Aktif" : "Nonaktif";
+  return unit ? `${value} ${unit}` : String(value);
 }
 
 export default function Page() {
@@ -139,7 +195,7 @@ export default function Page() {
 
   function openCreateForm() {
     setEditing(null);
-    setForm(emptyForm);
+    setForm({ ...emptyForm, parameter: { ...defaultParameter } });
     setFormErrors({});
     setFormMessage("");
     setFormOpen(true);
@@ -148,6 +204,28 @@ export default function Page() {
   function openEditForm(rule: Rule) {
     setEditing(rule);
     setForm(makeRuleForm(rule));
+    setFormErrors({});
+    setFormMessage("");
+    setFormOpen(true);
+  }
+
+  function openComparisonForm(rule: Rule) {
+    const source = makeRuleForm(rule);
+    const pakaiHariHujan = !source.parameter.pakai_kriteria_hari_hujan;
+
+    setEditing(null);
+    setForm({
+      ...source,
+      nama_rule: `${rule.nama_rule} (${pakaiHariHujan ? "Dengan HH" : "Tanpa HH"})`,
+      deskripsi: `${source.deskripsi || rule.nama_rule} Salinan untuk perbandingan metodologi ${
+        pakaiHariHujan ? "dengan" : "tanpa"
+      } kriteria hari hujan.`,
+      parameter: {
+        ...source.parameter,
+        pakai_kriteria_hari_hujan: pakaiHariHujan,
+      },
+      is_active: true,
+    });
     setFormErrors({});
     setFormMessage("");
     setFormOpen(true);
@@ -242,7 +320,7 @@ export default function Page() {
 
       <Card className="p-0">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[900px] border-collapse text-sm">
+          <table className="w-full min-w-[1050px] border-collapse text-sm">
             <thead className="border-b border-border bg-background text-left text-muted">
               <tr>
                 <th className="px-4 py-3 font-medium">Rule</th>
@@ -270,10 +348,12 @@ export default function Page() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="space-y-1">
-                        {Object.entries(rule.parameter ?? {}).map(([key, value]) => (
-                          <div key={key} className="flex gap-2 text-xs">
-                            <span className="text-muted">{key}</span>
-                            <span className="font-medium">{String(value)}</span>
+                        {parameterDisplay.map(({ key, label, unit }) => (
+                          <div key={key} className="flex items-center justify-between gap-4 text-xs">
+                            <span className="text-muted">{label}</span>
+                            <span className="text-right font-medium">
+                              {formatParameterValue(key, rule.parameter?.[key], unit)}
+                            </span>
                           </div>
                         ))}
                       </div>
@@ -281,7 +361,17 @@ export default function Page() {
                     <td className="px-4 py-3"><RuleStatus active={rule.is_active} /></td>
                     <td className="whitespace-nowrap px-4 py-3">{formatDateTime(rule.updated_at)}</td>
                     <td className="px-4 py-3">
-                      <div className="flex justify-end gap-2">
+                      <div className="flex flex-wrap justify-end gap-2">
+                        {isSuperAdmin ? (
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => openComparisonForm(rule)}
+                          >
+                            Bandingkan HH
+                          </Button>
+                        ) : null}
                         <Button type="button" size="sm" variant="secondary" onClick={() => openEditForm(rule)}>
                           Edit
                         </Button>
@@ -312,7 +402,11 @@ export default function Page() {
 
       {formOpen ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/30 p-4">
-          <Card className="w-full max-w-2xl" role="dialog" aria-modal="true">
+          <Card
+            className="max-h-[calc(100vh-2rem)] w-full max-w-2xl overflow-y-auto"
+            role="dialog"
+            aria-modal="true"
+          >
             <form onSubmit={submitRule} className="space-y-4">
               <div className="flex items-start justify-between gap-4">
                 <div>
@@ -343,32 +437,185 @@ export default function Page() {
                   />
                   Rule aktif
                 </label>
-                <Field label="Deskripsi" error={formErrors.deskripsi}>
-                  <textarea
-                    className="min-h-24 w-full rounded-control border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 disabled:bg-background disabled:text-muted"
-                    disabled={!isSuperAdmin}
-                    value={form.deskripsi}
-                    onChange={(event) => setForm({ ...form, deskripsi: event.target.value })}
-                  />
-                </Field>
-                <div className="space-y-3">
-                  {Object.keys(form.parameter).map((key) => (
-                    <Field key={key} label={key} error={formErrors[`parameter.${key}`]}>
+                <div className="sm:col-span-2">
+                  <Field label="Deskripsi" error={formErrors.deskripsi}>
+                    <textarea
+                      className="min-h-24 w-full rounded-control border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 disabled:bg-background disabled:text-muted"
+                      disabled={!isSuperAdmin}
+                      value={form.deskripsi}
+                      onChange={(event) => setForm({ ...form, deskripsi: event.target.value })}
+                    />
+                  </Field>
+                </div>
+              </div>
+
+              <div className="space-y-4 rounded-card border border-border bg-background p-4">
+                <div>
+                  <h3 className="text-sm font-semibold">Parameter Metodologi AMH</h3>
+                  <p className="mt-1 text-xs text-muted">
+                    Kriteria utama dan alternatif memakai curah hujan. Kriteria hari hujan dapat diaktifkan
+                    untuk penguatan metodologi Jawa Timur.
+                  </p>
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Field
+                    label="Curah Hujan Minimum"
+                    hint="Batas CH setiap dasarian pada kriteria utama."
+                    error={formErrors["parameter.min_curah_hujan_dasarian"]}
+                  >
+                    <div className="relative">
                       <input
                         required
-                        className={inputClass}
-                        step="any"
+                        className={`${inputClass} pr-28`}
+                        min="0"
+                        step="0.1"
                         type="number"
-                        value={form.parameter[key]}
+                        value={form.parameter.min_curah_hujan_dasarian}
                         onChange={(event) => setForm({
                           ...form,
-                          parameter: { ...form.parameter, [key]: event.target.value },
+                          parameter: {
+                            ...form.parameter,
+                            min_curah_hujan_dasarian: event.target.value,
+                          },
                         })}
                       />
-                    </Field>
-                  ))}
-                  {formErrors.parameter ? <p className="text-xs text-danger">{formErrors.parameter}</p> : null}
+                      <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-xs text-muted">
+                        mm/dasarian
+                      </span>
+                    </div>
+                  </Field>
+
+                  <Field
+                    label="Jendela Evaluasi"
+                    hint="Jumlah dasarian berturut-turut yang diperiksa."
+                    error={formErrors["parameter.min_dasarian_berturut"]}
+                  >
+                    <div className="relative">
+                      <input
+                        required
+                        className={`${inputClass} pr-24`}
+                        min="1"
+                        max="36"
+                        step="1"
+                        type="number"
+                        value={form.parameter.min_dasarian_berturut}
+                        onChange={(event) => setForm({
+                          ...form,
+                          parameter: {
+                            ...form.parameter,
+                            min_dasarian_berturut: event.target.value,
+                          },
+                        })}
+                      />
+                      <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-xs text-muted">
+                        dasarian
+                      </span>
+                    </div>
+                  </Field>
+
+                  <Field
+                    label="Total Curah Hujan Alternatif"
+                    hint="Minimum total CH agar jalur alternatif dapat dinyatakan terpenuhi."
+                    error={formErrors["parameter.total_alternatif_mm"]}
+                  >
+                    <div className="relative">
+                      <input
+                        required
+                        className={`${inputClass} pr-12`}
+                        min="0"
+                        step="0.1"
+                        type="number"
+                        value={form.parameter.total_alternatif_mm}
+                        onChange={(event) => setForm({
+                          ...form,
+                          parameter: {
+                            ...form.parameter,
+                            total_alternatif_mm: event.target.value,
+                          },
+                        })}
+                      />
+                      <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-xs text-muted">
+                        mm
+                      </span>
+                    </div>
+                  </Field>
+
+                  <Field
+                    label="Hari Hujan Minimum"
+                    hint="Tetap disimpan, tetapi hanya dipakai ketika toggle HH aktif."
+                    error={formErrors["parameter.min_hari_hujan_dasarian"]}
+                  >
+                    <div className="relative">
+                      <input
+                        required
+                        className={`${inputClass} pr-28`}
+                        disabled={!form.parameter.pakai_kriteria_hari_hujan}
+                        min="1"
+                        max="11"
+                        step="1"
+                        type="number"
+                        value={form.parameter.min_hari_hujan_dasarian}
+                        onChange={(event) => setForm({
+                          ...form,
+                          parameter: {
+                            ...form.parameter,
+                            min_hari_hujan_dasarian: event.target.value,
+                          },
+                        })}
+                      />
+                      <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-xs text-muted">
+                        hari/dasarian
+                      </span>
+                    </div>
+                  </Field>
+
+                  <div className="rounded-control border border-border bg-surface p-3 sm:col-span-2">
+                    <div className="flex items-center justify-between gap-4">
+                      <div>
+                        <p className="text-sm font-medium">Gunakan Kriteria Hari Hujan</p>
+                        <p className="mt-1 text-xs text-muted">
+                          Aktifkan untuk mewajibkan jumlah hari hujan minimum pada setiap dasarian.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={form.parameter.pakai_kriteria_hari_hujan}
+                        className={[
+                          "relative h-6 w-11 shrink-0 rounded-full border transition-colors",
+                          form.parameter.pakai_kriteria_hari_hujan
+                            ? "border-primary bg-primary"
+                            : "border-border bg-background",
+                        ].join(" ")}
+                        onClick={() => setForm({
+                          ...form,
+                          parameter: {
+                            ...form.parameter,
+                            pakai_kriteria_hari_hujan: !form.parameter.pakai_kriteria_hari_hujan,
+                          },
+                        })}
+                      >
+                        <span
+                          className={[
+                            "absolute left-0.5 top-0.5 size-4 rounded-full bg-white transition-transform",
+                            form.parameter.pakai_kriteria_hari_hujan ? "translate-x-5" : "translate-x-0",
+                          ].join(" ")}
+                        />
+                        <span className="sr-only">
+                          {form.parameter.pakai_kriteria_hari_hujan ? "Kriteria HH aktif" : "Kriteria HH nonaktif"}
+                        </span>
+                      </button>
+                    </div>
+                    {formErrors["parameter.pakai_kriteria_hari_hujan"] ? (
+                      <p className="mt-2 text-xs text-danger">
+                        {formErrors["parameter.pakai_kriteria_hari_hujan"]}
+                      </p>
+                    ) : null}
+                  </div>
                 </div>
+
+                {formErrors.parameter ? <p className="text-xs text-danger">{formErrors.parameter}</p> : null}
               </div>
 
               <div className="flex justify-end gap-2">
@@ -386,10 +633,21 @@ export default function Page() {
   );
 }
 
-function Field({ label, error, children }: { label: string; error?: string; children: ReactNode }) {
+function Field({
+  label,
+  hint,
+  error,
+  children,
+}: {
+  label: string;
+  hint?: string;
+  error?: string;
+  children: ReactNode;
+}) {
   return (
     <label className="block space-y-1 text-sm font-medium">
       <span>{label}</span>
+      {hint ? <span className="block text-xs font-normal text-muted">{hint}</span> : null}
       {children}
       {error ? <span className="block text-xs font-normal text-danger">{error}</span> : null}
     </label>

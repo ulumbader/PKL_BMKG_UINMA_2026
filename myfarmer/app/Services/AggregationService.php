@@ -26,12 +26,17 @@ use Carbon\Carbon;
 class AggregationService
 {
     /**
+     * Definisi hari hujan menurut Ulfah & Sulistya (2015).
+     */
+    private const MIN_CURAH_HUJAN_HARI_HUJAN_MM = 0.5;
+
+    /**
      * Generate atau update satu record dasarian.
      *
-     * @param int $stasiunId  ID stasiun_iklim
-     * @param int $tahun      Tahun (misal 2025)
-     * @param int $bulan      Bulan (1–12)
-     * @param int $dasarianKe Nomor dasarian (1, 2, atau 3)
+     * @param  int  $stasiunId  ID stasiun_iklim
+     * @param  int  $tahun  Tahun (misal 2025)
+     * @param  int  $bulan  Bulan (1–12)
+     * @param  int  $dasarianKe  Nomor dasarian (1, 2, atau 3)
      * @return DataIklimDasarian Record yang di-upsert
      */
     public function generateDasarian(int $stasiunId, int $tahun, int $bulan, int $dasarianKe): DataIklimDasarian
@@ -48,7 +53,9 @@ class AggregationService
         $dataValid = $dataHarian->where('kode_status', 'normal');
 
         $totalCurahHujan = $dataValid->sum('curah_hujan_mm');
-        $jumlahHariHujan = $dataValid->where('curah_hujan_mm', '>', 0)->count();
+        $jumlahHariHujan = $dataValid
+            ->where('curah_hujan_mm', '>=', self::MIN_CURAH_HUJAN_HARI_HUJAN_MM)
+            ->count();
         $jumlahHariValid = $dataValid->count();
         $jumlahHariMissing = $dataHarian->where('kode_status', '!=', 'normal')->count();
 
@@ -58,20 +65,20 @@ class AggregationService
         // Upsert ke data_iklim_dasarian berdasarkan unique constraint
         return DataIklimDasarian::updateOrCreate(
             [
-                'stasiun_id'  => $stasiunId,
-                'tahun'       => $tahun,
-                'bulan'       => $bulan,
+                'stasiun_id' => $stasiunId,
+                'tahun' => $tahun,
+                'bulan' => $bulan,
                 'dasarian_ke' => $dasarianKe,
             ],
             [
-                'tanggal_mulai'        => $tanggalMulai,
-                'tanggal_selesai'      => $tanggalSelesai,
+                'tanggal_mulai' => $tanggalMulai,
+                'tanggal_selesai' => $tanggalSelesai,
                 'total_curah_hujan_mm' => $totalCurahHujan,
-                'jumlah_hari_hujan'    => $jumlahHariHujan,
-                'jumlah_hari_valid'    => $jumlahHariValid,
-                'jumlah_hari_missing'  => $jumlahHariMissing,
-                'status_musim'         => $statusMusim,
-                'dihitung_pada'        => Carbon::now(),
+                'jumlah_hari_hujan' => $jumlahHariHujan,
+                'jumlah_hari_valid' => $jumlahHariValid,
+                'jumlah_hari_missing' => $jumlahHariMissing,
+                'status_musim' => $statusMusim,
+                'dihitung_pada' => Carbon::now(),
             ]
         );
     }
@@ -81,11 +88,11 @@ class AggregationService
      *
      * Berguna untuk memproses data historis (misal 1 tahun penuh).
      *
-     * @param int $stasiunId   ID stasiun_iklim
-     * @param int $tahunMulai  Tahun awal
-     * @param int $bulanMulai  Bulan awal (1–12)
-     * @param int $tahunAkhir  Tahun akhir
-     * @param int $bulanAkhir  Bulan akhir (1–12)
+     * @param  int  $stasiunId  ID stasiun_iklim
+     * @param  int  $tahunMulai  Tahun awal
+     * @param  int  $bulanMulai  Bulan awal (1–12)
+     * @param  int  $tahunAkhir  Tahun akhir
+     * @param  int  $bulanAkhir  Bulan akhir (1–12)
      * @return array Ringkasan: ['total_diproses' => int, 'hasil' => array]
      */
     public function generateForRange(
@@ -110,11 +117,11 @@ class AggregationService
                 $record = $this->generateDasarian($stasiunId, $tahun, $bulan, $dasarianKe);
 
                 $hasil[] = [
-                    'tahun'                => $tahun,
-                    'bulan'                => $bulan,
-                    'dasarian_ke'          => $dasarianKe,
+                    'tahun' => $tahun,
+                    'bulan' => $bulan,
+                    'dasarian_ke' => $dasarianKe,
                     'total_curah_hujan_mm' => $record->total_curah_hujan_mm,
-                    'status_musim'         => $record->status_musim,
+                    'status_musim' => $record->status_musim,
                 ];
 
                 $totalDiproses++;
@@ -125,16 +132,14 @@ class AggregationService
 
         return [
             'total_diproses' => $totalDiproses,
-            'hasil'          => $hasil,
+            'hasil' => $hasil,
         ];
     }
 
     /**
      * Hitung tanggal mulai dan selesai untuk suatu dasarian.
      *
-     * @param int $tahun
-     * @param int $bulan
-     * @param int $dasarianKe (1, 2, atau 3)
+     * @param  int  $dasarianKe  (1, 2, atau 3)
      * @return array [tanggal_mulai (string Y-m-d), tanggal_selesai (string Y-m-d)]
      */
     private function hitungRentangDasarian(int $tahun, int $bulan, int $dasarianKe): array
@@ -170,7 +175,7 @@ class AggregationService
      * Ke depan, threshold sebaiknya dipindah ke konfigurasi database
      * agar bisa diubah tanpa deploy ulang.
      *
-     * @param float $totalCurahHujan Total curah hujan dalam mm
+     * @param  float  $totalCurahHujan  Total curah hujan dalam mm
      * @return string 'basah', 'normal', atau 'kering'
      */
     private function tentukanStatusMusim(float $totalCurahHujan): string

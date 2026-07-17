@@ -8,6 +8,62 @@ Format tanggal: YYYY-MM-DD.
 
 ## [Unreleased]
 
+## [Tahap 24] - Dokumentasi Akademis Rule Base - 2026-07-17
+### Ditambahkan
+- `RULE_BASE.md` pada root proyek yang menjelaskan landasan akademis, alur data, parameter JSON, logika evaluasi, pseudocode, pemetaan status, contoh perhitungan, skenario pembanding HH, dan keterbatasan metodologis rule rekomendasi AMH.
+- Daftar ketertelusuran yang membedakan kriteria dari jurnal dengan keputusan operasional proyek, termasuk penegasan bahwa total alternatif 150 mm dan status rekomendasi bukan kesimpulan langsung jurnal.
+
+### Diubah
+- README root menambahkan `RULE_BASE.md` pada struktur proyek dan daftar dokumentasi.
+
+### File Terkait
+- `../RULE_BASE.md`
+- `../README.md`
+- `CHANGELOG.md`
+
+### Catatan
+- Referensi utama adalah Ulfah dan Sulistya (2015) untuk kriteria hari hujan Jawa Timur serta Surmaini dan Syahbuddin (2016) untuk tinjauan kriteria awal musim tanam di Indonesia.
+- Perubahan hanya mencakup dokumentasi; tidak ada perubahan pada API, skema database, maupun logika aplikasi dalam tahap ini.
+- Verifikasi berhasil: `git diff --check` dan `php artisan test` lulus 47 test dengan 123 assertion.
+
+## [Tahap 23] - Peningkatan Rule Engine AMH Berbasis Referensi - 2026-07-16
+### Ditambahkan
+- Kriteria alternatif AMH berbasis total curah hujan tiga dasarian dan penguatan jumlah hari hujan yang dapat diaktifkan melalui parameter JSON.
+- Migration data `2026_07_16_000015_expand_rule_rekomendasi_parameters.php` untuk melengkapi parameter rule existing tanpa mengubah skema database.
+- Feature test khusus rule engine yang mencakup kriteria utama, alternatif, toggle HH, pemetaan status, data tidak lengkap, pergantian tahun, validasi API, seeder, dan migration data.
+- Feature test agregasi untuk memastikan hari hujan dihitung mulai CH harian 0,5 mm.
+
+### Diubah
+- `RuleEngineService` sekarang mengevaluasi jendela dasarian secara kronologis dengan kriteria utama, kriteria alternatif, dan penguatan HH opsional.
+- Form Request rule mewajibkan lima parameter metodologi: `min_curah_hujan_dasarian`, `min_dasarian_berturut`, `total_alternatif_mm`, `pakai_kriteria_hari_hujan`, dan `min_hari_hujan_dasarian`.
+- Seeder rule default memakai CH minimum 50 mm, tiga dasarian, total alternatif 150 mm, dan HH minimum 3 hari dalam keadaan aktif.
+- `AggregationService` menyelaraskan definisi hari hujan menjadi CH harian >= 0,5 mm sesuai Ulfah dan Sulistya (2015).
+- Histori rekomendasi menyertakan `jumlah_hari_hujan` pada relasi dasarian, sedangkan dokumentasi API dan database diperbarui sesuai kontrak baru.
+
+### File Terkait
+- `app/Services/RuleEngineService.php`
+- `app/Services/AggregationService.php`
+- `app/Http/Requests/Admin/StoreRuleRekomendasiRequest.php`
+- `app/Http/Requests/Admin/UpdateRuleRekomendasiRequest.php`
+- `app/Http/Controllers/Api/RuleRekomendasiController.php`
+- `database/seeders/RuleRekomendasiSeeder.php`
+- `database/migrations/2026_07_16_000015_expand_rule_rekomendasi_parameters.php`
+- `tests/Feature/RuleEngineServiceTest.php`
+- `tests/Feature/AggregationServiceTest.php`
+- `../API_DOCUMENTATION.md`
+- `../DB_DOCUMENTATION.md`
+- `../../reference/PENENTUAN KRITERIA AWAL MUSIM ALTERNATIF DI WILAYAH JAWA TIMUR.pdf`
+- `../../reference/KRITERIA AWAL MUSIM TANAM_TINJAUAN PREDIKSI WAKTU  TANAM PADI DI INDONESIA.pdf`
+- `CHANGELOG.md`
+
+### Catatan
+- Kajian Ulfah dan Sulistya mendukung penguatan `CH >= 50 mm` dan `HH >= 3 hari` per dasarian untuk Jawa Timur; kriteria total alternatif 150 mm merupakan perluasan metodologi berdasarkan arahan pembimbing, bukan kesimpulan utama jurnal tersebut.
+- Untuk membandingkan hasil dengan dan tanpa HH tanpa kehilangan histori, gunakan dua record rule berbeda dengan toggle HH berbeda. Evaluasi ulang satu `rule_id` pada `dasarian_id` yang sama akan memperbarui hasil sebelumnya.
+- Data dasarian yang sudah pernah diagregasi perlu diproses ulang agar `jumlah_hari_hujan` mengikuti batas baru CH harian >= 0,5 mm.
+- Migration data tidak menghapus key JSON saat rollback untuk menghindari kerusakan konfigurasi yang sudah disunting admin.
+- Migration data berhasil diterapkan pada database development dan rule default terkonfirmasi memiliki kelima parameter baru.
+- Verifikasi berhasil: Laravel Pint lulus dan `php artisan test` lulus 47 test dengan 123 assertion.
+
 ## [Tahap 22] - Penghapusan Jalur Prakiraan Cuaca Backend - 2026-07-16
 ### Ditambahkan
 - Migration `2026_07_16_000014_drop_prakiraan_cuaca_bmkg_table.php` untuk menghapus tabel prakiraan dari database existing tanpa mengubah migration lama yang sudah pernah dijalankan.

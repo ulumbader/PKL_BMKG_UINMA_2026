@@ -11,6 +11,7 @@ MyFarmer adalah sistem informasi curah hujan berbasis AI untuk membantu optimali
 | `data_curah_hujan/` | Dataset contoh/sumber data curah hujan |
 | `API_DOCUMENTATION.md` | Kontrak endpoint REST API |
 | `DB_DOCUMENTATION.md` | Dokumentasi skema, relasi, dan ERD database |
+| `RULE_BASE.md` | Landasan akademis dan cara kerja rule base rekomendasi tanam |
 
 ## Prasyarat
 
@@ -69,6 +70,7 @@ npm run build
 
 - [Dokumentasi API](API_DOCUMENTATION.md)
 - [Dokumentasi database](DB_DOCUMENTATION.md)
+- [Dokumentasi rule base](RULE_BASE.md)
 - [Panduan kontribusi](CONTRIBUTING.md)
 - [Changelog backend](myfarmer/CHANGELOG.md)
 - [Changelog frontend](myfarmer_frontd/CHANGELOG.md)

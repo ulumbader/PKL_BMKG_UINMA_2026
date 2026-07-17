@@ -569,7 +569,10 @@ List semua rule rekomendasi.
       "deskripsi": "Evaluasi curah hujan dasarian berturut-turut",
       "parameter": {
         "min_curah_hujan_dasarian": 50,
-        "min_dasarian_berturut": 3
+        "min_dasarian_berturut": 3,
+        "total_alternatif_mm": 150,
+        "pakai_kriteria_hari_hujan": true,
+        "min_hari_hujan_dasarian": 3
       },
       "is_active": true,
       "dibuat_oleh": 1,
@@ -599,7 +602,10 @@ Buat rule baru (**super_admin only**, dicek di Form Request authorize).
   "deskripsi": "Deskripsi rule",
   "parameter": {
     "min_curah_hujan_dasarian": 75,
-    "min_dasarian_berturut": 2
+    "min_dasarian_berturut": 3,
+    "total_alternatif_mm": 225,
+    "pakai_kriteria_hari_hujan": true,
+    "min_hari_hujan_dasarian": 3
   },
   "is_active": true
 }
@@ -627,10 +633,25 @@ Update rule rekomendasi.
 {
   "parameter": {
     "min_curah_hujan_dasarian": 60,
-    "min_dasarian_berturut": 3
+    "min_dasarian_berturut": 3,
+    "total_alternatif_mm": 180,
+    "pakai_kriteria_hari_hujan": false,
+    "min_hari_hujan_dasarian": 3
   }
 }
 ```
+
+Semua key di dalam `parameter` wajib dikirim ketika parameter dibuat atau diperbarui:
+
+| Key | Tipe | Fungsi |
+|---|---|---|
+| `min_curah_hujan_dasarian` | number | Minimum curah hujan setiap dasarian untuk kriteria utama dan dasarian pertama kriteria alternatif |
+| `min_dasarian_berturut` | integer | Ukuran jendela dasarian yang dievaluasi |
+| `total_alternatif_mm` | number | Minimum total curah hujan seluruh jendela untuk kriteria alternatif |
+| `pakai_kriteria_hari_hujan` | boolean | Toggle penguatan kriteria hari hujan Jawa Timur |
+| `min_hari_hujan_dasarian` | integer | Minimum jumlah hari hujan pada setiap dasarian jika toggle aktif |
+
+> Untuk membandingkan metodologi dengan dan tanpa kriteria hari hujan, buat dua record rule dengan parameter yang sama dan nilai toggle berbeda. Jangan hanya mengganti toggle pada satu rule karena evaluasi ulang pasangan `dasarian_id` + `rule_id` akan memperbarui hasil lama.
 
 ---
 
@@ -669,6 +690,14 @@ Histori hasil rekomendasi.
 
 Trigger evaluasi rule engine terhadap satu dasarian.
 
+Rule membaca jendela dasarian secara kronologis sampai periode yang dipilih:
+
+1. **Kriteria utama:** semua dasarian memiliki curah hujan minimal sesuai `min_curah_hujan_dasarian`.
+2. **Kriteria alternatif:** dasarian pertama memenuhi minimum, sedikitnya satu dasarian berikutnya berada di bawah minimum, tetapi total seluruh jendela mencapai `total_alternatif_mm`.
+3. **Penguatan hari hujan:** jika `pakai_kriteria_hari_hujan = true`, setiap dasarian juga wajib mencapai `min_hari_hujan_dasarian`.
+
+Kriteria hari hujan mengikuti kajian Ulfah dan Sulistya untuk Jawa Timur (`CH >= 50 mm` dan `HH >= 3 hari` per dasarian). Pada proses agregasi, satu hari dihitung sebagai hari hujan jika CH harian `>= 0,5 mm`. Kriteria total alternatif merupakan konfigurasi metodologi proyek berdasarkan arahan pembimbing, bukan kesimpulan utama kajian Ulfah dan Sulistya.
+
 **Request Body:**
 ```json
 {
@@ -687,7 +716,7 @@ Trigger evaluasi rule engine terhadap satu dasarian.
       "dasarian_id": 1,
       "rule_id": 1,
       "status_rekomendasi": "tunggu",
-      "catatan_teknis": "Data dasarian kurang dari 3...",
+      "catatan_teknis": "Rule 'Rule Awal Musim Tanam': OPTIMAL - kriteria alternatif terpenuhi... Detail kronologis: D1 01/2026: CH 80.0mm (CH lulus), HH 3 hari (HH lulus)...",
       "generated_at": "2026-07-05T14:00:00.000000Z"
     }
   ]

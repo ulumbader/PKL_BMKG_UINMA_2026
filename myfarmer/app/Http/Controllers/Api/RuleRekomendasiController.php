@@ -45,7 +45,7 @@ class RuleRekomendasiController extends Controller
         $rule = RuleRekomendasi::with(['dibuatOleh:id,nama_lengkap', 'diubahOleh:id,nama_lengkap'])
             ->find($ruleRekomendasi);
 
-        if (!$rule) {
+        if (! $rule) {
             return $this->errorResponse('Rule rekomendasi tidak ditemukan.', null, 404);
         }
 
@@ -63,10 +63,10 @@ class RuleRekomendasiController extends Controller
         $validated = $request->validated();
 
         $rule = RuleRekomendasi::create([
-            'nama_rule'   => $validated['nama_rule'],
-            'deskripsi'   => $validated['deskripsi'] ?? null,
-            'parameter'   => $validated['parameter'],
-            'is_active'   => $validated['is_active'] ?? true,
+            'nama_rule' => $validated['nama_rule'],
+            'deskripsi' => $validated['deskripsi'] ?? null,
+            'parameter' => $validated['parameter'],
+            'is_active' => $validated['is_active'] ?? true,
             'dibuat_oleh' => $request->user()->id,
             'diubah_oleh' => $request->user()->id,
         ]);
@@ -87,7 +87,7 @@ class RuleRekomendasiController extends Controller
     {
         $rule = RuleRekomendasi::find($ruleRekomendasi);
 
-        if (!$rule) {
+        if (! $rule) {
             return $this->errorResponse('Rule rekomendasi tidak ditemukan.', null, 404);
         }
 
@@ -95,13 +95,13 @@ class RuleRekomendasiController extends Controller
         $user = $request->user();
 
         // Pembatasan field berdasarkan role
-        if (!$user->hasRole('super_admin')) {
+        if (! $user->hasRole('super_admin')) {
             // Admin biasa: hanya boleh ubah parameter dan is_active
             $allowedFields = ['parameter', 'is_active'];
             $attemptedFields = array_keys($validated);
             $forbiddenFields = array_diff($attemptedFields, $allowedFields);
 
-            if (!empty($forbiddenFields)) {
+            if (! empty($forbiddenFields)) {
                 return $this->errorResponse(
                     'Admin hanya boleh mengubah field parameter dan is_active.',
                     ['forbidden_fields' => array_values($forbiddenFields)],
@@ -128,13 +128,13 @@ class RuleRekomendasiController extends Controller
     {
         $user = request()->user();
 
-        if (!$user->hasRole('super_admin')) {
+        if (! $user->hasRole('super_admin')) {
             return $this->errorResponse('Hanya super_admin yang boleh menghapus rule.', null, 403);
         }
 
         $rule = RuleRekomendasi::find($ruleRekomendasi);
 
-        if (!$rule) {
+        if (! $rule) {
             return $this->errorResponse('Rule rekomendasi tidak ditemukan.', null, 404);
         }
 
@@ -187,7 +187,7 @@ class RuleRekomendasiController extends Controller
     public function hasilRekomendasi(Request $request): JsonResponse
     {
         $query = HasilRekomendasi::with([
-            'dasarian:id,stasiun_id,tahun,bulan,dasarian_ke,total_curah_hujan_mm,status_musim',
+            'dasarian:id,stasiun_id,tahun,bulan,dasarian_ke,total_curah_hujan_mm,jumlah_hari_hujan,status_musim',
             'dasarian.stasiun:id,kode_wmo,nama_stasiun',
             'rule:id,nama_rule,is_active',
         ]);

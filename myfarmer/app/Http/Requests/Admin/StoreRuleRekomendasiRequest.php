@@ -25,12 +25,15 @@ class StoreRuleRekomendasiRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'nama_rule'  => ['required', 'string', 'max:255'],
-            'deskripsi'  => ['nullable', 'string'],
-            'parameter'  => ['required', 'array'],
+            'nama_rule' => ['required', 'string', 'max:255'],
+            'deskripsi' => ['nullable', 'string'],
+            'parameter' => ['required', 'array'],
             'parameter.min_curah_hujan_dasarian' => ['required', 'numeric', 'min:0'],
-            'parameter.min_dasarian_berturut'    => ['required', 'integer', 'min:1', 'max:36'],
-            'is_active'  => ['sometimes', 'boolean'],
+            'parameter.min_dasarian_berturut' => ['required', 'integer', 'min:1', 'max:36'],
+            'parameter.total_alternatif_mm' => ['required', 'numeric', 'min:0'],
+            'parameter.pakai_kriteria_hari_hujan' => ['required', 'boolean'],
+            'parameter.min_hari_hujan_dasarian' => ['required', 'integer', 'min:1', 'max:11'],
+            'is_active' => ['sometimes', 'boolean'],
         ];
     }
 
@@ -40,17 +43,26 @@ class StoreRuleRekomendasiRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'nama_rule.required'                          => 'Nama rule wajib diisi.',
-            'nama_rule.max'                               => 'Nama rule maksimal 255 karakter.',
-            'parameter.required'                          => 'Parameter wajib diisi.',
-            'parameter.array'                             => 'Parameter harus berupa objek JSON.',
+            'nama_rule.required' => 'Nama rule wajib diisi.',
+            'nama_rule.max' => 'Nama rule maksimal 255 karakter.',
+            'parameter.required' => 'Parameter wajib diisi.',
+            'parameter.array' => 'Parameter harus berupa objek JSON.',
             'parameter.min_curah_hujan_dasarian.required' => 'Parameter min_curah_hujan_dasarian wajib diisi.',
-            'parameter.min_curah_hujan_dasarian.numeric'  => 'min_curah_hujan_dasarian harus berupa angka.',
-            'parameter.min_curah_hujan_dasarian.min'      => 'min_curah_hujan_dasarian tidak boleh negatif.',
-            'parameter.min_dasarian_berturut.required'    => 'Parameter min_dasarian_berturut wajib diisi.',
-            'parameter.min_dasarian_berturut.integer'     => 'min_dasarian_berturut harus berupa bilangan bulat.',
-            'parameter.min_dasarian_berturut.min'         => 'min_dasarian_berturut minimal 1.',
-            'parameter.min_dasarian_berturut.max'         => 'min_dasarian_berturut maksimal 36.',
+            'parameter.min_curah_hujan_dasarian.numeric' => 'min_curah_hujan_dasarian harus berupa angka.',
+            'parameter.min_curah_hujan_dasarian.min' => 'min_curah_hujan_dasarian tidak boleh negatif.',
+            'parameter.min_dasarian_berturut.required' => 'Parameter min_dasarian_berturut wajib diisi.',
+            'parameter.min_dasarian_berturut.integer' => 'min_dasarian_berturut harus berupa bilangan bulat.',
+            'parameter.min_dasarian_berturut.min' => 'min_dasarian_berturut minimal 1.',
+            'parameter.min_dasarian_berturut.max' => 'min_dasarian_berturut maksimal 36.',
+            'parameter.total_alternatif_mm.required' => 'Parameter total_alternatif_mm wajib diisi.',
+            'parameter.total_alternatif_mm.numeric' => 'total_alternatif_mm harus berupa angka.',
+            'parameter.total_alternatif_mm.min' => 'total_alternatif_mm tidak boleh negatif.',
+            'parameter.pakai_kriteria_hari_hujan.required' => 'Parameter pakai_kriteria_hari_hujan wajib diisi.',
+            'parameter.pakai_kriteria_hari_hujan.boolean' => 'pakai_kriteria_hari_hujan harus berupa boolean.',
+            'parameter.min_hari_hujan_dasarian.required' => 'Parameter min_hari_hujan_dasarian wajib diisi.',
+            'parameter.min_hari_hujan_dasarian.integer' => 'min_hari_hujan_dasarian harus berupa bilangan bulat.',
+            'parameter.min_hari_hujan_dasarian.min' => 'min_hari_hujan_dasarian minimal 1.',
+            'parameter.min_hari_hujan_dasarian.max' => 'min_hari_hujan_dasarian maksimal 11.',
         ];
     }
 

@@ -9,6 +9,29 @@ Format tanggal: YYYY-MM-DD.
 
 ## [Unreleased]
 
+## [Tahap 23] - Kompatibilitas UI Rule Engine AMH Baru - 2026-07-17
+### Ditambahkan
+- Form terstruktur untuk lima parameter metodologi AMH: CH minimum, jendela dasarian, total CH alternatif, toggle kriteria HH, dan HH minimum.
+- Toggle aksesibel untuk `pakai_kriteria_hari_hujan` serta petunjuk dan satuan pada setiap parameter.
+- Aksi `Bandingkan HH` khusus super admin untuk membuat salinan rule baru dengan nilai toggle HH dibalik.
+
+### Diubah
+- Tipe TypeScript dan pembentukan payload rule memisahkan parameter numerik dari boolean agar toggle HH tidak dikonversi menjadi `NaN`/`null`.
+- Nilai default pembuatan rule diselaraskan dengan backend: 50 mm, 3 dasarian, total alternatif 150 mm, toggle HH aktif, dan minimum 3 HH.
+- Tabel rule menampilkan nama parameter dan satuan yang ramah admin, bukan key JSON mentah.
+- Modal rule dibuat scrollable agar lima parameter tetap dapat diakses pada layar pendek dan perangkat mobile.
+
+### File Terkait
+- `app/admin/rules/page.tsx`
+- `CHANGELOG.md`
+
+### Catatan
+- `min_hari_hujan_dasarian` tetap dikirim ke backend saat toggle HH nonaktif karena backend mewajibkan struktur parameter lengkap.
+- Aksi `Bandingkan HH` membuat record rule baru sehingga evaluasi dengan dan tanpa HH tersimpan pada `rule_id` berbeda dan tidak saling menimpa.
+- Halaman publik, agregasi, histori rekomendasi, dan ringkasan AI tidak memerlukan perubahan kontrak.
+- `npm run lint -- --max-warnings=10` selesai tanpa error dengan 4 warning lama di luar cakupan perubahan.
+- `npm run build` berhasil pada Next.js 16.2.10 tanpa error TypeScript maupun kompilasi.
+
 ## [Tahap 22] - Pembersihan UI Prakiraan Cuaca Backend - 2026-07-16
 ### Ditambahkan
 - Tidak ada fitur baru.
