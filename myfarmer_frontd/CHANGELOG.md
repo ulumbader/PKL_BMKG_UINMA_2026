@@ -9,6 +9,72 @@ Format tanggal: YYYY-MM-DD.
 
 ## [Unreleased]
 
+## [Tahap 26] - Normalisasi Delapan Arah Mata Angin - 2026-07-17
+### Ditambahkan
+- Delapan singkatan arah mata angin Indonesia pada kompas: `U`, `TL`, `T`, `TG`, `S`, `BD`, `B`, dan `BL`.
+- Alias normalisasi untuk kode antara 16 arah agar respons BMKG yang lebih rinci tetap dipetakan ke arah utama terdekat.
+
+### Diubah
+- Kode Inggris field `wd` dari API BMKG (`N`, `NE`, `E`, `SE`, `S`, `SW`, `W`, `NW`) ditampilkan sebagai nama dan singkatan Bahasa Indonesia.
+- Informasi bawah card `Wind Status` memakai format seperti `Timur Laut (TL)`.
+- Jarum kompas dinormalisasi ke salah satu dari delapan arah utama agar konsisten dengan label yang ditampilkan.
+
+### File Terkait
+- `components/MainContent.tsx`
+- `CHANGELOG.md`
+
+### Catatan
+- Nilai asli `wd` tetap berasal dari API publik BMKG; frontend hanya melakukan normalisasi untuk penyajian kepada pengguna.
+- Kondisi `CALM`, `VARIABLE`, dan nilai yang tidak dikenal tetap memiliki fallback tanpa singkatan arah.
+- `npx tsc --noEmit` dan `npm run build` berhasil tanpa error.
+- `npm run lint` selesai tanpa error dengan 4 warning lama di luar cakupan perubahan.
+- Tampilan delapan label kompas dan format arah lengkap diverifikasi melalui render browser.
+
+## [Tahap 25] - Penyelarasan Card Today's Highlights - 2026-07-17
+### Ditambahkan
+- Ilustrasi kompas dinamis pada card `Wind Status` yang berputar mengikuti 16 kode arah mata angin dari data BMKG.
+- Terjemahan arah mata angin ke Bahasa Indonesia, termasuk kondisi angin tenang, berubah-ubah, dan data tidak tersedia.
+
+### Diubah
+- Struktur nilai dan informasi bawah pada empat card highlight diseragamkan agar sejajar secara vertikal.
+- Indikator vertikal dekoratif pada card `Humidity` dihapus.
+- Penentuan prakiraan hujan memakai nilai numerik agar nilai seperti `0.0` tetap dibaca sebagai cerah.
+
+### File Terkait
+- `components/MainContent.tsx`
+- `CHANGELOG.md`
+
+### Catatan
+- Kompas memakai singkatan Bahasa Indonesia `U`, `T`, `S`, dan `B`, sedangkan arah lengkap ditampilkan di bawah nilai kecepatan angin.
+- `npx tsc --noEmit` dan `npm run build` berhasil tanpa error.
+- `npm run lint` selesai tanpa error dengan 4 warning lama di luar cakupan perubahan.
+- Tampilan landing page diverifikasi melalui render browser pada data BMKG aktual.
+
+## [Tahap 24] - Grafik Curah Hujan dan Rekomendasi Tanam - 2026-07-17
+### Ditambahkan
+- Komponen reusable `RainfallRecommendationChart` berbasis Recharts untuk menampilkan curah hujan per 10 hari, jumlah hari hujan, batas rule, dan status rekomendasi tanam.
+- Tooltip detail, ringkasan periode terbaru, legenda status, serta state loading, data kosong, error, dan aksi coba lagi pada grafik.
+- Grafik pada bagian pertama `Today's Highlights` di landing page dan di bawah `Aksi Cepat` pada Dashboard admin.
+- Dependency `recharts` versi 3.9.2 sebagai library visualisasi responsif.
+
+### Diubah
+- Card `Curah Hujan`, `Wind Status`, `Humidity`, dan `Visibility` disusun menjadi satu baris pada layar desktop setelah grafik.
+- Card contoh `Sunrise & Sunset` dan `Air Quality` dihapus dari `Today's Highlights` agar informasi yang tampil berasal dari data yang relevan.
+
+### File Terkait
+- `components/RainfallRecommendationChart.tsx`
+- `components/MainContent.tsx`
+- `app/admin/dashboard/page.tsx`
+- `package.json`
+- `package-lock.json`
+- `CHANGELOG.md`
+
+### Catatan
+- Grafik memakai endpoint publik `GET /publik/grafik-curah-hujan?jumlah_periode=12` melalui API client terpusat dan dapat digunakan tanpa autentikasi.
+- Warna batang merepresentasikan hasil rekomendasi backend; frontend tidak menghitung atau mengganti keputusan tanam.
+- `npx tsc --noEmit` dan `npm run build` berhasil tanpa error.
+- `npm run lint` selesai tanpa error dengan 4 warning lama di luar cakupan perubahan.
+
 ## [Tahap 23] - Kompatibilitas UI Rule Engine AMH Baru - 2026-07-17
 ### Ditambahkan
 - Form terstruktur untuk lima parameter metodologi AMH: CH minimum, jendela dasarian, total CH alternatif, toggle kriteria HH, dan HH minimum.

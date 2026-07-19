@@ -169,6 +169,7 @@ Route::middleware(['auth:sanctum', 'role:super_admin'])->group(function () {
 // PUBLIK — Landing Page Petani (TANPA auth, GET only — Golden Rule #7)
 // ============================================================================
 Route::prefix('publik')->group(function () {
+    Route::get('/grafik-curah-hujan', [PublicController::class, 'grafikCurahHujan']);
     Route::get('/cuaca-terkini', [PublicController::class, 'cuacaTerkini']);
     Route::get('/rekomendasi-terkini', [PublicController::class, 'rekomendasiTerkini']);
     Route::get('/ringkasan-terkini', [PublicController::class, 'ringkasanTerkini']);

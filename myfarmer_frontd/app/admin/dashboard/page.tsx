@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+import { RainfallRecommendationChart } from "@/components/RainfallRecommendationChart";
 import { Alert, Card, Skeleton } from "@/components/ui";
 import { ApiError, apiGet } from "@/lib/apiClient";
 
@@ -147,6 +148,8 @@ export default function Page() {
           ))}
         </div>
       </section>
+
+      <RainfallRecommendationChart />
     </div>
   );
 }

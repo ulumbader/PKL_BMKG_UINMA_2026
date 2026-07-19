@@ -1021,6 +1021,118 @@ Jejak aktivitas admin (otomatis dicatat oleh Observer).
 >
 > Prakiraan cuaca real-time tidak disediakan oleh backend. Landing page mengambil data tersebut langsung dari API publik BMKG.
 
+### GET `/api/publik/grafik-curah-hujan`
+
+Histori curah hujan per 10 hari dan rekomendasi tanam untuk grafik landing page. Data diurutkan dari periode terlama ke terbaru dan memakai stasiun default.
+
+Rule yang ditampilkan adalah rule aktif dengan ID paling awal yang sudah memiliki hasil evaluasi untuk stasiun default. Jika belum ada hasil evaluasi, endpoint memakai rule aktif dengan ID paling awal agar batas grafik tetap dibaca dari parameter JSON database.
+
+**Query Parameter:**
+
+| Parameter | Tipe | Wajib | Default | Keterangan |
+|---|---|---|---|---|
+| `jumlah_periode` | integer | Tidak | `12` | Jumlah periode terbaru yang ditampilkan, minimal 1 dan maksimal 36 |
+
+**Contoh Request:**
+
+```http
+GET /api/publik/grafik-curah-hujan?jumlah_periode=12
+```
+
+**Response Sukses (200):**
+
+```json
+{
+  "status": "success",
+  "message": "Data grafik curah hujan dan rekomendasi tanam berhasil diambil.",
+  "data": {
+    "stasiun": {
+      "nama": "Stasiun Klimatologi Jawa Timur",
+      "kode_wmo": "96943"
+    },
+    "rule": {
+      "nama": "Rule Awal Musim Tanam",
+      "batas_curah_hujan_mm": 50,
+      "jumlah_periode_berturut": 3,
+      "batas_total_alternatif_mm": 150,
+      "kriteria_hari_hujan_aktif": true,
+      "batas_hari_hujan": 3
+    },
+    "jumlah_periode": 2,
+    "periode": [
+      {
+        "periode": {
+          "tahun": 2026,
+          "bulan": 1,
+          "periode_ke": 2,
+          "label": "11–20 Januari 2026",
+          "tanggal_mulai": "2026-01-11",
+          "tanggal_selesai": "2026-01-20"
+        },
+        "curah_hujan": {
+          "total_mm": 55.5,
+          "jumlah_hari_hujan": 4,
+          "jumlah_hari_valid": 10,
+          "jumlah_hari_missing": 0
+        },
+        "rekomendasi": {
+          "status": "tunggu",
+          "label": "Belum waktunya, pantau terus cuaca",
+          "tanggal_evaluasi": "2026-01-21T08:00:00+07:00"
+        }
+      },
+      {
+        "periode": {
+          "tahun": 2026,
+          "bulan": 1,
+          "periode_ke": 3,
+          "label": "21–31 Januari 2026",
+          "tanggal_mulai": "2026-01-21",
+          "tanggal_selesai": "2026-01-31"
+        },
+        "curah_hujan": {
+          "total_mm": 72,
+          "jumlah_hari_hujan": 6,
+          "jumlah_hari_valid": 11,
+          "jumlah_hari_missing": 0
+        },
+        "rekomendasi": {
+          "status": "optimal_tanam",
+          "label": "Waktu yang baik untuk menanam padi",
+          "tanggal_evaluasi": "2026-02-01T08:00:00+07:00"
+        }
+      }
+    ]
+  }
+}
+```
+
+Jika suatu periode sudah diagregasi tetapi belum dievaluasi, `rekomendasi.status` dan `tanggal_evaluasi` bernilai `null`, sedangkan `rekomendasi.label` berisi `Belum dianalisis`.
+
+**Response — Belum ada data (200):**
+
+```json
+{
+  "status": "success",
+  "message": "Belum ada data curah hujan 10 harian.",
+  "data": null
+}
+```
+
+**Response Validasi (422):**
+
+```json
+{
+  "status": "error",
+  "message": "Terjadi kesalahan validasi.",
+  "errors": {
+    "jumlah_periode": ["Jumlah periode maksimal 36."]
+  }
+}
+```
+
+---
+
 ### GET `/api/publik/cuaca-terkini`
 
 Data curah hujan dasarian paling baru untuk stasiun default.
@@ -1164,9 +1276,10 @@ Daftar konten landing page yang aktif (`is_active = true`), diurutkan `urutan_ta
 | 31 | DELETE | `/api/admin/konten/{id}` | `auth:sanctum`, `role:admin` | Hapus konten |
 | 32 | GET | `/api/admin/log-import` | `auth:sanctum`, `role:admin` | Histori import |
 | 33 | GET | `/api/admin/audit-log` | `auth:sanctum`, `role:super_admin` | Audit log |
-| 34 | GET | `/api/publik/cuaca-terkini` | — | Cuaca terkini (dasarian) |
-| 35 | GET | `/api/publik/rekomendasi-terkini` | — | Rekomendasi terkini |
-| 36 | GET | `/api/publik/ringkasan-terkini` | — | Ringkasan AI terkini |
-| 37 | GET | `/api/publik/konten` | — | Konten landing page |
+| 34 | GET | `/api/publik/grafik-curah-hujan` | — | Grafik curah hujan 10 harian dan rekomendasi tanam |
+| 35 | GET | `/api/publik/cuaca-terkini` | — | Cuaca terkini (dasarian) |
+| 36 | GET | `/api/publik/rekomendasi-terkini` | — | Rekomendasi terkini |
+| 37 | GET | `/api/publik/ringkasan-terkini` | — | Ringkasan AI terkini |
+| 38 | GET | `/api/publik/konten` | — | Konten landing page |
 
-**Total: 37 endpoint**
+**Total: 38 endpoint**

@@ -8,6 +8,33 @@ Format tanggal: YYYY-MM-DD.
 
 ## [Unreleased]
 
+## [Tahap 25] - Endpoint Grafik Curah Hujan dan Rekomendasi Tanam - 2026-07-17
+### Ditambahkan
+- Endpoint publik `GET /api/publik/grafik-curah-hujan` untuk menyajikan histori curah hujan per 10 hari dan rekomendasi tanam dalam urutan kronologis tanpa autentikasi.
+- `GrafikCurahHujanRequest` untuk memvalidasi query `jumlah_periode` dengan default 12 dan rentang 1–36 periode serta response error standar.
+- `GrafikCurahHujanResource` untuk menghasilkan label periode ramah petani, nilai curah hujan numerik, kelengkapan data, dan status rekomendasi per periode.
+- Feature test endpoint grafik yang mencakup urutan data, parameter rule dari database, periode belum dianalisis, kondisi tanpa data, kondisi tanpa rule, dan validasi input.
+
+### Diubah
+- `PublicController` menggabungkan data dasarian dengan hasil rekomendasi dari rule aktif utama untuk kebutuhan grafik publik.
+- `routes/api.php` dan dokumentasi API diperbarui; total kontrak backend menjadi 38 endpoint.
+
+### File Terkait
+- `app/Http/Controllers/Api/PublicController.php`
+- `app/Http/Requests/Public/GrafikCurahHujanRequest.php`
+- `app/Http/Resources/GrafikCurahHujanResource.php`
+- `routes/api.php`
+- `tests/Feature/PublicGrafikCurahHujanTest.php`
+- `../API_DOCUMENTATION.md`
+- `CHANGELOG.md`
+
+### Catatan
+- Tidak ada perubahan skema database maupun migration; endpoint membaca `data_iklim_dasarian`, `hasil_rekomendasi`, `rule_rekomendasi`, dan `stasiun_iklim` yang sudah ada.
+- Batas curah hujan, jumlah periode berturut, total alternatif, dan kriteria hari hujan untuk grafik dibaca dari parameter JSON rule, bukan di-hardcode.
+- Periode yang sudah diagregasi tetapi belum dievaluasi dikembalikan dengan status `null` dan label `Belum dianalisis`, bukan dianggap tidak disarankan.
+- Rule publik dipilih secara deterministik dari rule aktif ber-ID paling awal yang sudah memiliki hasil pada stasiun default, dengan fallback ke rule aktif ber-ID paling awal.
+- Verifikasi berhasil: Laravel Pint lulus, `php artisan route:list --path=api --except-vendor` menampilkan 38 route, dan `php artisan test` lulus 51 test dengan 146 assertion.
+
 ## [Tahap 24] - Dokumentasi Akademis Rule Base - 2026-07-17
 ### Ditambahkan
 - `RULE_BASE.md` pada root proyek yang menjelaskan landasan akademis, alur data, parameter JSON, logika evaluasi, pseudocode, pemetaan status, contoh perhitungan, skenario pembanding HH, dan keterbatasan metodologis rule rekomendasi AMH.

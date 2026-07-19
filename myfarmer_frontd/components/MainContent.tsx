@@ -3,17 +3,94 @@ import React from 'react';
 import {
   MenuIcon,
   MiniCloud,
-  WindIcon,
-  SunriseIcon,
-  SunsetIcon,
 } from './Icons';
 import { BmkgWeatherData, WeatherSlot } from '@/lib/bmkgClient';
 import { BackendCards, useBackendCards } from './BackendCards';
 import { InfoSection } from './InfoSection';
 import { PublicFooter } from './PublicFooter';
+import { RainfallRecommendationChart } from './RainfallRecommendationChart';
 
 
 type Unit = 'C' | 'F';
+
+type WindDirection = {
+  abbreviation: string | null;
+  degrees: number | null;
+  label: string;
+};
+
+const windDirections: Record<string, WindDirection> = {
+  N: { abbreviation: 'U', degrees: 0, label: 'Utara' },
+  NE: { abbreviation: 'TL', degrees: 45, label: 'Timur Laut' },
+  E: { abbreviation: 'T', degrees: 90, label: 'Timur' },
+  SE: { abbreviation: 'TG', degrees: 135, label: 'Tenggara' },
+  S: { abbreviation: 'S', degrees: 180, label: 'Selatan' },
+  SW: { abbreviation: 'BD', degrees: 225, label: 'Barat Daya' },
+  W: { abbreviation: 'B', degrees: 270, label: 'Barat' },
+  NW: { abbreviation: 'BL', degrees: 315, label: 'Barat Laut' },
+};
+
+const windDirectionAliases: Record<string, keyof typeof windDirections> = {
+  NNE: 'NE',
+  ENE: 'E',
+  ESE: 'SE',
+  SSE: 'S',
+  SSW: 'SW',
+  WSW: 'W',
+  WNW: 'NW',
+  NNW: 'N',
+};
+
+function getWindDirection(value?: string): WindDirection {
+  const normalized = value?.trim().toUpperCase().replace(/\s+/g, '') ?? '';
+  const directionCode = windDirectionAliases[normalized] ?? normalized;
+
+  if (windDirections[directionCode]) return windDirections[directionCode];
+  if (['CALM', 'C'].includes(normalized)) {
+    return { abbreviation: null, degrees: null, label: 'Tenang' };
+  }
+  if (['VARIABLE', 'VAR', 'VRB'].includes(normalized)) {
+    return { abbreviation: null, degrees: null, label: 'Berubah-ubah' };
+  }
+
+  return { abbreviation: null, degrees: null, label: 'Tidak tersedia' };
+}
+
+function WindCompass({ direction }: { direction: WindDirection }) {
+  return (
+    <div
+      role="img"
+      aria-label={`Kompas arah angin ${direction.label}`}
+      className="relative size-[62px] shrink-0 rounded-full border border-[#e5e5e9] bg-[#fafafa]"
+    >
+      <span className="absolute left-1/2 top-0.5 -translate-x-1/2 text-[8px] font-semibold text-[#77777f]">U</span>
+      <span className="absolute right-[5px] top-[7px] text-[7px] font-semibold text-[#9999a1]">TL</span>
+      <span className="absolute right-1 top-1/2 -translate-y-1/2 text-[8px] font-semibold text-[#77777f]">T</span>
+      <span className="absolute bottom-[7px] right-[4px] text-[7px] font-semibold text-[#9999a1]">TG</span>
+      <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 text-[8px] font-semibold text-[#77777f]">S</span>
+      <span className="absolute bottom-[7px] left-[4px] text-[7px] font-semibold text-[#9999a1]">BD</span>
+      <span className="absolute left-1 top-1/2 -translate-y-1/2 text-[8px] font-semibold text-[#77777f]">B</span>
+      <span className="absolute left-[5px] top-[7px] text-[7px] font-semibold text-[#9999a1]">BL</span>
+
+      <div className="absolute inset-[11px] rounded-full border border-[#dadae0] bg-white">
+        {direction.degrees !== null ? (
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 36 36"
+            className="size-full transition-transform duration-500 ease-out"
+            style={{ transform: `rotate(${direction.degrees}deg)` }}
+          >
+            <path d="M18 3 23 17 18 14 13 17Z" fill="#4a4ff7" />
+            <path d="M18 14V31" stroke="#a9a9b0" strokeWidth="1.75" strokeLinecap="round" />
+          </svg>
+        ) : (
+          <span className="absolute inset-0 flex items-center justify-center text-[15px] font-semibold text-[#a9a9b0]">–</span>
+        )}
+        <span className="absolute left-1/2 top-1/2 size-2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-[#1c1c1e]" />
+      </div>
+    </div>
+  );
+}
 
 export const MainContent = ({
   onOpenSidebar,
@@ -78,6 +155,8 @@ export const MainContent = ({
 
   const dailyForecasts = getDailyForecasts(weatherData?.prakiraan);
   const currentSlot = weatherData?.prakiraan[0];
+  const windDirection = getWindDirection(currentSlot?.arah_angin);
+  const hasRain = Number.parseFloat(currentSlot?.curah_hujan_mm ?? '0') > 0;
 
   let day = '--';
   let timeStr = '--:--';
@@ -222,95 +301,59 @@ export const MainContent = ({
 
       <div className="text-[20px] font-semibold mb-5">Today&apos;s Highlights</div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 pb-8">
+      <RainfallRecommendationChart className="mb-5" />
+
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5 pb-8">
 
         {/* Curah Hujan (Rainfall - replacing UV Index) */}
         <div className="bg-white rounded-[22px] p-[22px_24px] min-h-[170px] flex flex-col shadow-sm">
           <div className="text-[14px] text-[#a9a9b0] mb-3.5">Curah Hujan</div>
-          <div className="relative flex-1 flex flex-col justify-end">
-            <div className="text-[34px] font-semibold leading-none">
-              {currentSlot?.curah_hujan_mm || '0'}<span className="text-[14px] font-medium text-[#a9a9b0] ml-[2px]">mm</span>
-            </div>
-            <div className="flex items-center gap-1.5 text-[14px] font-medium mt-3.5 text-blue-600">
-              Prakiraan {currentSlot?.curah_hujan_mm !== "0" ? 'Hujan' : 'Cerah'}
-            </div>
+          <div className="text-[34px] font-semibold leading-none mb-auto">
+            {currentSlot?.curah_hujan_mm || '0'}<span className="text-[14px] font-medium text-[#a9a9b0] ml-[2px]">mm</span>
+          </div>
+          <div className="flex items-center gap-1.5 text-[14px] font-medium mt-3.5 text-blue-600">
+            Prakiraan {hasRain ? 'Hujan' : 'Cerah'}
           </div>
         </div>
 
         {/* Wind Status */}
         <div className="bg-white rounded-[22px] p-[22px_24px] min-h-[170px] flex flex-col shadow-sm">
           <div className="text-[14px] text-[#a9a9b0] mb-3.5">Wind Status</div>
-          <div className="text-[34px] font-semibold mb-auto">
-            {currentSlot?.kecepatan_angin_kmjam || '--'}<span className="text-[14px] font-medium text-[#a9a9b0] ml-[2px]">km/h</span>
+          <div className="flex items-start justify-between gap-3 mb-auto">
+            <div className="text-[34px] font-semibold leading-none">
+              {currentSlot?.kecepatan_angin_kmjam || '--'}<span className="text-[14px] font-medium text-[#a9a9b0] ml-[2px]">km/h</span>
+            </div>
+            <WindCompass direction={windDirection} />
           </div>
-          <div className="flex items-center gap-2 text-[14px] font-medium mt-3.5">
-            <div className="w-6 h-6 rounded-full bg-white flex items-center justify-center shadow-[0_2px_6px_rgba(0,0,0,0.06)]">
-              <WindIcon className="w-3 h-3" />
-            </div>
-            {currentSlot?.arah_angin || '--'}
-          </div>
-        </div>
-
-        {/* Sunrise Sunset (Kept dummy for aesthetics) */}
-        <div className="bg-white rounded-[22px] p-[22px_24px] min-h-[170px] flex flex-col shadow-sm">
-          <div className="text-[14px] text-[#a9a9b0] mb-3.5">Sunrise & Sunset</div>
-          <div className="flex flex-col gap-4 mt-1">
-            <div className="flex items-center gap-3">
-              <div className="w-[34px] h-[34px] rounded-full flex items-center justify-center shrink-0 bg-gradient-to-br from-[#ffd45e] to-[#ffb100]">
-                <SunriseIcon className="w-4 h-4 stroke-white" />
-              </div>
-              <div>
-                <div className="text-[15px] font-semibold">6:35 AM</div>
-                <div className="text-[12px] text-[#b3b3ba]">- 1m 46s</div>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="w-[34px] h-[34px] rounded-full flex items-center justify-center shrink-0 bg-gradient-to-br from-[#ffd45e] to-[#ffb100] opacity-85">
-                <SunsetIcon className="w-4 h-4 stroke-white" />
-              </div>
-              <div>
-                <div className="text-[15px] font-semibold">5:42 PM</div>
-                <div className="text-[12px] text-[#b3b3ba]">+ 2m 22s</div>
-              </div>
-            </div>
+          <div className="flex items-center justify-between gap-2 text-[13px] mt-3.5">
+            <span className="text-[#a9a9b0]">Arah angin</span>
+            <span className="font-medium text-right">
+              {windDirection.label}
+              {windDirection.abbreviation ? ` (${windDirection.abbreviation})` : ''}
+            </span>
           </div>
         </div>
 
         {/* Humidity */}
         <div className="bg-white rounded-[22px] p-[22px_24px] min-h-[170px] flex flex-col shadow-sm">
           <div className="text-[14px] text-[#a9a9b0] mb-3.5">Humidity</div>
-          <div className="flex items-start justify-between">
-            <div className="text-[34px] font-semibold leading-none">
-              {currentSlot?.kelembapan_persen || '--'}<span className="text-[14px] font-medium text-[#a9a9b0] ml-[2px]">%</span>
-            </div>
-            <div className="track-vertical"><div className="dot" style={{ top: '38px' }}></div></div>
+          <div className="text-[34px] font-semibold leading-none mb-auto">
+            {currentSlot?.kelembapan_persen || '--'}<span className="text-[14px] font-medium text-[#a9a9b0] ml-[2px]">%</span>
           </div>
-          <div className="flex items-center gap-1.5 text-[14px] font-medium mt-auto pt-2.5">
-            Normal 👍
+          <div className="flex items-center gap-1.5 text-[14px] font-medium mt-3.5">
+            Normal
           </div>
         </div>
 
         {/* Visibility */}
         <div className="bg-white rounded-[22px] p-[22px_24px] min-h-[170px] flex flex-col shadow-sm">
           <div className="text-[14px] text-[#a9a9b0] mb-3.5">Visibility</div>
-          <div className="text-[34px] font-semibold">
+          <div className="text-[34px] font-semibold leading-none mb-auto">
             {currentSlot?.jarak_pandang ? currentSlot.jarak_pandang.replace(/km/i, '').trim() : '--'}
             <span className="text-[14px] font-medium text-[#a9a9b0] ml-[2px]">km</span>
           </div>
-          <div className="flex items-center gap-1.5 text-[14px] font-medium mt-auto pt-2.5">
-            Average 😕
-          </div>
-        </div>
-
-        {/* Air Quality (Kept dummy for aesthetics) */}
-        <div className="bg-white rounded-[22px] p-[22px_24px] min-h-[170px] flex flex-col shadow-sm">
-          <div className="text-[14px] text-[#a9a9b0] mb-3.5">Air Quality</div>
-          <div className="flex items-start justify-between">
-            <div className="text-[34px] font-semibold leading-none">105</div>
-            <div className="track-vertical"><div className="dot" style={{ top: '6px' }}></div></div>
-          </div>
-          <div className="flex items-center gap-1.5 text-[14px] font-medium mt-auto pt-2.5">
-            Unhealthy 👎
+          <div className="flex items-center gap-1.5 text-[14px] font-medium mt-3.5">
+            Average
           </div>
         </div>
 
