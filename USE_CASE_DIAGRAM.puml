@@ -1,0 +1,229 @@
+@startuml USE_CASE_DIAGRAM
+' ============================================================================
+' USE CASE DIAGRAM — Sistem Informasi MyFarmer
+' Sistem rekomendasi awal musim tanam padi berbasis data curah hujan
+' Kecamatan Karangploso, Kabupaten Malang
+'
+' Sumber kebenaran:
+'   - routes/api.php                   (38 endpoint)
+'   - API_DOCUMENTATION.md             (kontrak REST API)
+'   - RULE_BASE.md                     (metodologi & hak akses, §12)
+'   - myfarmer_frontd/app/             (12 halaman admin + landing page)
+'   - myfarmer_frontd/lib/bmkgClient.ts (integrasi API publik BMKG)
+' ============================================================================
+
+left to right direction
+
+skinparam actorStyle awesome
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam defaultFontName  "Arial"
+skinparam defaultFontSize  11
+
+skinparam usecase {
+  BackgroundColor<<publik>>     #E8F5E9
+  BorderColor<<publik>>         #388E3C
+  BackgroundColor<<admin>>      #E3F2FD
+  BorderColor<<admin>>          #1976D2
+  BackgroundColor<<superadmin>> #FFF8E1
+  BorderColor<<superadmin>>     #F9A825
+  BackgroundColor               #F5F5F5
+  BorderColor                   #757575
+  FontSize                      11
+}
+
+skinparam rectangle {
+  BackgroundColor #FAFAFA
+  BorderColor     #616161
+  RoundCorner     8
+}
+
+skinparam package {
+  BackgroundColor #FFFFFF
+  BorderColor     #BDBDBD
+  FontStyle       bold
+}
+
+' =============================================
+'  AKTOR
+' =============================================
+actor "Petani /\nPublik"      as petani     #A5D6A7
+actor "Admin"                 as admin      #90CAF9
+actor "Super Admin"           as superadmin #FFE082
+
+' Generalisasi: Super Admin mewarisi seluruh hak akses Admin
+superadmin --|> admin
+
+' Sistem Eksternal (secondary actors)
+actor "Groq AI\n(LLM)"       as groq <<Eksternal>>
+actor "API Publik\nBMKG"      as bmkg <<Eksternal>>
+
+
+' =============================================
+'  SYSTEM BOUNDARY
+' =============================================
+rectangle "Sistem Informasi MyFarmer" {
+
+  ' ─────────────────────────────────────────────
+  '  AUTENTIKASI
+  ' ─────────────────────────────────────────────
+  package "Autentikasi" {
+    usecase "Login\n(UC-01)"  as UC01
+    usecase "Logout\n(UC-02)" as UC02
+  }
+
+  ' ─────────────────────────────────────────────
+  '  AKSES PUBLIK — Landing Page Petani
+  ' ─────────────────────────────────────────────
+  package "Akses Publik\n(Landing Page Petani)" {
+    usecase "Lihat Grafik Curah Hujan\n& Rekomendasi Tanam\n(UC-03)"  as UC03 <<publik>>
+    usecase "Lihat Data Cuaca\nTerkini (Dasarian)\n(UC-04)"           as UC04 <<publik>>
+    usecase "Lihat Rekomendasi\nTanam Terkini\n(UC-05)"               as UC05 <<publik>>
+    usecase "Lihat Ringkasan\nAI Terkini\n(UC-06)"                    as UC06 <<publik>>
+    usecase "Lihat Konten\nLanding Page\n(UC-07)"                     as UC07 <<publik>>
+    usecase "Lihat Prakiraan\nCuaca BMKG\n(UC-08)"                    as UC08 <<publik>>
+  }
+
+  ' ─────────────────────────────────────────────
+  '  KELOLA DATA IKLIM
+  ' ─────────────────────────────────────────────
+  package "Kelola Data Iklim" {
+    usecase "Kelola Data\nIklim Harian\n(UC-09)"   as UC09 <<admin>>
+    usecase "Import CSV\nData BMKG\n(UC-10)"       as UC10 <<admin>>
+    usecase "Proses Agregasi\nDasarian\n(UC-11)"   as UC11 <<admin>>
+    usecase "Lihat Data\nDasarian\n(UC-12)"        as UC12 <<admin>>
+    usecase "Lihat Log\nImport Data\n(UC-13)"      as UC13 <<admin>>
+  }
+
+  ' ─────────────────────────────────────────────
+  '  RULE & REKOMENDASI TANAM
+  ' ─────────────────────────────────────────────
+  package "Rule & Rekomendasi Tanam" {
+    usecase "Kelola Parameter\n& Status Rule\n(UC-14)"         as UC14 <<admin>>
+    usecase "Evaluasi\nRule Engine\n(UC-15)"                   as UC15 <<admin>>
+    usecase "Lihat Histori\nHasil Rekomendasi\n(UC-16)"       as UC16 <<admin>>
+    usecase "Buat Rule\nRekomendasi Baru\n(UC-17)"            as UC17 <<superadmin>>
+    usecase "Hapus Rule\nRekomendasi\n(UC-18)"                as UC18 <<superadmin>>
+    usecase "Duplikasi Rule\nPembanding HH\n(UC-19)"          as UC19 <<superadmin>>
+  }
+
+  ' ─────────────────────────────────────────────
+  '  RINGKASAN AI
+  ' ─────────────────────────────────────────────
+  package "Ringkasan AI" {
+    usecase "Generate\nRingkasan AI\n(UC-20)"           as UC20 <<admin>>
+    usecase "Review & Publish\nRingkasan AI\n(UC-21)"   as UC21 <<admin>>
+    usecase "Hapus\nRingkasan AI\n(UC-22)"              as UC22 <<admin>>
+  }
+
+  ' ─────────────────────────────────────────────
+  '  KONTEN LANDING PAGE
+  ' ─────────────────────────────────────────────
+  usecase "Kelola Konten\nLanding Page\n(UC-23)" as UC23 <<admin>>
+
+  ' ─────────────────────────────────────────────
+  '  KELOLA USER & AUDIT (Super Admin Only)
+  ' ─────────────────────────────────────────────
+  package "Kelola User & Audit" {
+    usecase "Kelola\nAkun Admin\n(UC-24)"   as UC24 <<superadmin>>
+    usecase "Lihat\nAudit Log\n(UC-25)"     as UC25 <<superadmin>>
+  }
+}
+
+
+' =============================================
+'  ASOSIASI AKTOR — PETANI / PUBLIK
+' =============================================
+petani -- UC03
+petani -- UC04
+petani -- UC05
+petani -- UC06
+petani -- UC07
+petani -- UC08
+
+
+' =============================================
+'  ASOSIASI AKTOR — ADMIN
+' =============================================
+admin -- UC01
+admin -- UC02
+admin -- UC09
+admin -- UC10
+admin -- UC11
+admin -- UC12
+admin -- UC13
+admin -- UC14
+admin -- UC15
+admin -- UC16
+admin -- UC20
+admin -- UC21
+admin -- UC22
+admin -- UC23
+
+
+' =============================================
+'  ASOSIASI AKTOR — SUPER ADMIN (eksklusif)
+'  (Super Admin juga mewarisi semua asosiasi
+'   Admin melalui generalisasi di atas)
+' =============================================
+superadmin -- UC17
+superadmin -- UC18
+superadmin -- UC19
+superadmin -- UC24
+superadmin -- UC25
+
+
+' =============================================
+'  ASOSIASI SISTEM EKSTERNAL (Secondary Actors)
+' =============================================
+UC20 -- groq
+UC08 -- bmkg
+
+
+' =============================================
+'  RELASI <<extend>>
+' =============================================
+' Import CSV memperluas pengelolaan data iklim harian
+' (cara alternatif untuk menginput data secara massal)
+UC10 ..> UC09 : <<extend>>
+
+' Duplikasi Rule Pembanding HH memperluas pembuatan rule baru
+' (membuat salinan rule dengan toggle HH yang dibalik)
+UC19 ..> UC17 : <<extend>>
+
+
+' =============================================
+'  CATATAN (Notes)
+' =============================================
+note bottom of UC19
+  Membuat salinan rule dengan
+  toggle kriteria hari hujan
+  yang dibalik, untuk keperluan
+  perbandingan metodologi AMH
+  dengan & tanpa kriteria HH.
+end note
+
+note right of groq
+  Groq (LLM) hanya menyusun
+  ringkasan bahasa petani.
+  Keputusan rekomendasi dibuat
+  oleh rule engine deterministik,
+  bukan oleh AI.
+end note
+
+note right of bmkg
+  Frontend mengambil prakiraan
+  cuaca langsung dari API publik
+  BMKG (api.bmkg.go.id).
+  Backend tidak menyimpan
+  atau memproses data prakiraan.
+end note
+
+note bottom of UC15
+  Mengevaluasi seluruh rule aktif
+  terhadap satu dasarian berdasarkan
+  kriteria CH dan HH yang dikonfigurasi
+  dalam parameter JSON rule.
+end note
+
+@enduml
