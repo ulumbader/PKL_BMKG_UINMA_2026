@@ -1,7 +1,8 @@
 "use client";
 
-import { type FormEvent, type ReactNode, useEffect, useState } from "react";
+import { type FormEvent, useEffect, useState } from "react";
 
+import { EmptyState, Field, FilterPanel, PageHeader, Pagination, ToastNotice, controlClass } from "@/components/admin/AdminUI";
 import { Alert, Button, Card, Skeleton, Spinner } from "@/components/ui";
 import { ApiError, apiGet, apiPost } from "@/lib/apiClient";
 
@@ -28,6 +29,7 @@ type StasiunOption = {
 
 type AggregationPage = {
   current_page?: number;
+  last_page?: number;
   data?: AggregationRow[];
   total?: number;
   per_page?: number;
@@ -91,11 +93,8 @@ const monthNames = [
   "Desember",
 ];
 
-const inputClass =
-  "h-10 w-full rounded-control border border-border bg-surface px-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20";
-
-function buildQuery(filters: Filters) {
-  const params = new URLSearchParams({ per_page: filters.per_page });
+function buildQuery(filters: Filters, page: number) {
+  const params = new URLSearchParams({ per_page: filters.per_page, page: String(page) });
 
   for (const key of ["stasiun_id", "tahun", "bulan", "dasarian_ke"] as const) {
     if (filters[key]) params.set(key, filters[key]);
@@ -147,6 +146,8 @@ export default function Page() {
 
   const [rows, setRows] = useState<AggregationRow[]>([]);
   const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [tableError, setTableError] = useState("");
   const [notice, setNotice] = useState("");
@@ -215,17 +216,19 @@ export default function Page() {
 
       try {
         const response = await apiGet<AggregationPage>(
-          `/admin/agregasi?${buildQuery(appliedFilters)}`,
+          `/admin/agregasi?${buildQuery(appliedFilters, page)}`,
         );
 
         if (!active) return;
         const data = response.data.data ?? [];
         setRows(data);
         setTotal(response.data.total ?? data.length);
+        setTotalPages(response.data.last_page ?? Math.max(1, Math.ceil((response.data.total ?? data.length) / (response.data.per_page ?? Number(appliedFilters.per_page)))));
       } catch (caught) {
         if (!active) return;
         setRows([]);
         setTotal(0);
+        setTotalPages(1);
         setTableError(errorMessage(caught, "Data agregasi gagal dimuat."));
       } finally {
         if (active) setLoading(false);
@@ -237,11 +240,12 @@ export default function Page() {
     return () => {
       active = false;
     };
-  }, [appliedFilters, reloadKey]);
+  }, [appliedFilters, page, reloadKey]);
 
   function submitFilter(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setNotice("");
+    setPage(1);
     setAppliedFilters(filters);
   }
 
@@ -270,14 +274,9 @@ export default function Page() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold">Agregasi Dasarian</h1>
-        <p className="mt-1 text-sm text-muted">
-          Proses dan lihat ringkasan curah hujan per dasarian.
-        </p>
-      </div>
+      <PageHeader title="Agregasi Dasarian" description="Proses data harian dan tinjau ringkasan curah hujan setiap periode dasarian." />
 
-      {notice ? <Alert variant="success">{notice}</Alert> : null}
+      <ToastNotice message={notice} onDismiss={() => setNotice("")} />
       {optionsError ? <Alert variant="error">{optionsError}</Alert> : null}
       {tableError ? <Alert variant="error">{tableError}</Alert> : null}
 
@@ -293,7 +292,7 @@ export default function Page() {
             <Field label="Stasiun" error={processErrors.stasiun_id}>
               <select
                 required
-                className={inputClass}
+                className={controlClass}
                 disabled={optionsLoading}
                 value={processForm.stasiun_id}
                 onChange={(event) => setProcessForm({
@@ -314,7 +313,7 @@ export default function Page() {
             <Field label="Tahun" error={processErrors.tahun}>
               <select
                 required
-                className={inputClass}
+                className={controlClass}
                 disabled={optionsLoading || !processForm.stasiun_id}
                 value={processForm.tahun}
                 onChange={(event) => setProcessForm({
@@ -340,7 +339,7 @@ export default function Page() {
             <Field label="Bulan" error={processErrors.bulan}>
               <select
                 required
-                className={inputClass}
+                className={controlClass}
                 disabled={!processForm.tahun}
                 value={processForm.bulan}
                 onChange={(event) => setProcessForm({ ...processForm, bulan: event.target.value })}
@@ -355,7 +354,7 @@ export default function Page() {
             </Field>
             <Field label="Dasarian Ke" error={processErrors.dasarian_ke}>
               <select
-                className={inputClass}
+                className={controlClass}
                 value={processForm.dasarian_ke}
                 onChange={(event) => setProcessForm({ ...processForm, dasarian_ke: event.target.value })}
               >
@@ -373,11 +372,11 @@ export default function Page() {
         </form>
       </Card>
 
-      <Card>
+      <FilterPanel activeCount={Object.values(appliedFilters).filter(Boolean).length - 1}>
         <form onSubmit={submitFilter} className="grid gap-3 md:grid-cols-6">
           <Field label="Stasiun">
             <select
-              className={inputClass}
+              className={controlClass}
               disabled={optionsLoading}
               value={filters.stasiun_id}
               onChange={(event) => setFilters({ ...filters, stasiun_id: event.target.value })}
@@ -392,7 +391,7 @@ export default function Page() {
           </Field>
           <Field label="Tahun">
             <select
-              className={inputClass}
+              className={controlClass}
               disabled={optionsLoading}
               value={filters.tahun}
               onChange={(event) => setFilters({ ...filters, tahun: event.target.value })}
@@ -405,7 +404,7 @@ export default function Page() {
           </Field>
           <Field label="Bulan">
             <select
-              className={inputClass}
+              className={controlClass}
               value={filters.bulan}
               onChange={(event) => setFilters({ ...filters, bulan: event.target.value })}
             >
@@ -417,7 +416,7 @@ export default function Page() {
           </Field>
           <Field label="Dasarian Ke">
             <select
-              className={inputClass}
+              className={controlClass}
               value={filters.dasarian_ke}
               onChange={(event) => setFilters({ ...filters, dasarian_ke: event.target.value })}
             >
@@ -429,7 +428,7 @@ export default function Page() {
           </Field>
           <Field label="Per Halaman">
             <select
-              className={inputClass}
+              className={controlClass}
               value={filters.per_page}
               onChange={(event) => setFilters({ ...filters, per_page: event.target.value })}
             >
@@ -446,26 +445,27 @@ export default function Page() {
               onClick={() => {
                 setFilters(emptyFilters);
                 setAppliedFilters(emptyFilters);
+                setPage(1);
               }}
             >
               Reset
             </Button>
           </div>
         </form>
-      </Card>
+      </FilterPanel>
 
       <Card className="p-0">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[920px] border-collapse text-sm">
-            <thead className="border-b border-border bg-background text-left text-muted">
+            <thead className="sticky top-0 z-10 border-b border-border bg-background text-left text-muted">
               <tr>
-                <th className="px-4 py-3 font-medium">Periode</th>
-                <th className="px-4 py-3 font-medium">Stasiun</th>
-                <th className="px-4 py-3 font-medium">Total Hujan</th>
-                <th className="px-4 py-3 font-medium">Hari Hujan</th>
-                <th className="px-4 py-3 font-medium">Valid/Missing</th>
-                <th className="px-4 py-3 font-medium">Status Musim</th>
-                <th className="px-4 py-3 font-medium">Dihitung Pada</th>
+                <th scope="col" className="px-4 py-3 font-medium">Periode</th>
+                <th scope="col" className="px-4 py-3 font-medium">Stasiun</th>
+                <th scope="col" className="px-4 py-3 font-medium">Total Hujan</th>
+                <th scope="col" className="px-4 py-3 font-medium">Hari Hujan</th>
+                <th scope="col" className="px-4 py-3 font-medium">Valid/Missing</th>
+                <th scope="col" className="px-4 py-3 font-medium">Status Musim</th>
+                <th scope="col" className="px-4 py-3 font-medium">Dihitung Pada</th>
               </tr>
             </thead>
             <tbody>
@@ -481,7 +481,7 @@ export default function Page() {
                 ))
               ) : rows.length ? (
                 rows.map((row) => (
-                  <tr key={row.id} className="border-b border-border last:border-0">
+                  <tr key={row.id} className="border-b border-border transition-colors hover:bg-background/70 last:border-0">
                     <td className="whitespace-nowrap px-4 py-3">{periodLabel(row)}</td>
                     <td className="px-4 py-3">
                       <div className="font-medium">{row.stasiun?.nama_stasiun ?? `Stasiun ${row.stasiun_id}`}</div>
@@ -502,37 +502,15 @@ export default function Page() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center text-muted">
-                    Belum ada data agregasi sesuai filter.
-                  </td>
+                  <td colSpan={7}><EmptyState title="Agregasi tidak ditemukan" description="Ubah filter atau proses agregasi dari periode data yang tersedia." /></td>
                 </tr>
               )}
             </tbody>
           </table>
         </div>
-        <div className="border-t border-border px-4 py-3 text-sm text-muted">
-          Total {total} data ditampilkan
-        </div>
+        <Pagination page={page} totalPages={totalPages} total={total} loading={loading} onPageChange={setPage} />
       </Card>
     </div>
-  );
-}
-
-function Field({
-  label,
-  error,
-  children,
-}: {
-  label: string;
-  error?: string;
-  children: ReactNode;
-}) {
-  return (
-    <label className="block space-y-1 text-sm font-medium">
-      <span>{label}</span>
-      {children}
-      {error ? <span className="block text-xs font-normal text-danger">{error}</span> : null}
-    </label>
   );
 }
 

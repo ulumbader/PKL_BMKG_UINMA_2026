@@ -2,6 +2,7 @@
 
 import { type FormEvent, type ReactNode, useCallback, useEffect, useState } from "react";
 
+import { Field, FilterPanel, PageHeader, Pagination, controlClass } from "@/components/admin/AdminUI";
 import { Alert, Button, Card, Skeleton, Spinner } from "@/components/ui";
 import { useAuth } from "@/context/AuthContext";
 import { ApiError, apiGet } from "@/lib/apiClient";
@@ -14,6 +15,8 @@ type Paginated<T> = {
   data?: T[];
   total?: number;
   per_page?: number;
+  current_page?: number;
+  last_page?: number;
 };
 
 type ListResult<T> = T[] | Paginated<T>;
@@ -65,9 +68,6 @@ const emptyFilters: Filters = {
   per_page: "20",
 };
 
-const inputClass =
-  "h-10 w-full rounded-control border border-border bg-surface px-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20";
-
 /* ────────────────────────────────────────────
    Helpers
    ──────────────────────────────────────────── */
@@ -80,8 +80,8 @@ function listTotal<T>(result: ListResult<T>) {
   return Array.isArray(result) ? result.length : result.total ?? result.data?.length ?? 0;
 }
 
-function buildQuery(filters: Filters) {
-  const params = new URLSearchParams({ per_page: filters.per_page });
+function buildQuery(filters: Filters, page: number) {
+  const params = new URLSearchParams({ per_page: filters.per_page, page: String(page) });
   if (filters.user_id) params.set("user_id", filters.user_id);
   if (filters.tabel_terkait) params.set("tabel_terkait", filters.tabel_terkait);
   if (filters.aksi) params.set("aksi", filters.aksi);
@@ -141,6 +141,8 @@ function AuditLogContent() {
 
   const [rows, setRows] = useState<AuditRow[]>([]);
   const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -181,15 +183,17 @@ function AuditLogContent() {
       setError("");
       try {
         const response = await apiGet<ListResult<AuditRow>>(
-          `/admin/audit-log?${buildQuery(appliedFilters)}`,
+          `/admin/audit-log?${buildQuery(appliedFilters, page)}`,
         );
         if (!active) return;
         setRows(listItems(response.data));
         setTotal(listTotal(response.data));
+        setTotalPages(Array.isArray(response.data) ? 1 : response.data.last_page ?? Math.max(1, Math.ceil((response.data.total ?? 0) / (response.data.per_page ?? Number(appliedFilters.per_page)))));
       } catch (caught) {
         if (!active) return;
         setRows([]);
         setTotal(0);
+        setTotalPages(1);
         setError(errorMessage(caught, "Audit log gagal dimuat."));
       } finally {
         if (active) setLoading(false);
@@ -197,10 +201,11 @@ function AuditLogContent() {
     }
     load();
     return () => { active = false; };
-  }, [appliedFilters]);
+  }, [appliedFilters, page]);
 
   const submitFilter = useCallback((event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setPage(1);
     setAppliedFilters(filters);
   }, [filters]);
 
@@ -218,21 +223,16 @@ function AuditLogContent() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-semibold">Audit Log</h1>
-        <p className="mt-1 text-sm text-muted">
-          Jejak aktivitas admin yang dicatat otomatis oleh sistem (read-only). Khusus super admin.
-        </p>
-      </div>
+      <PageHeader title="Audit Log" description="Tinjau jejak aktivitas admin yang dicatat otomatis oleh sistem. Akses khusus Super Admin." />
 
       {error ? <Alert variant="error">{error}</Alert> : null}
 
       {/* ──────── Filters ──────── */}
-      <Card>
+      <FilterPanel activeCount={Object.values(appliedFilters).filter(Boolean).length - 1}>
         <form onSubmit={submitFilter} className="grid gap-3 md:grid-cols-4 lg:grid-cols-7">
           <Field label="User">
             <select
-              className={inputClass}
+              className={controlClass}
               disabled={usersLoading}
               value={filters.user_id}
               onChange={(e) => setFilters({ ...filters, user_id: e.target.value })}
@@ -247,7 +247,7 @@ function AuditLogContent() {
           </Field>
           <Field label="Tabel Terkait">
             <select
-              className={inputClass}
+              className={controlClass}
               value={filters.tabel_terkait}
               onChange={(e) => setFilters({ ...filters, tabel_terkait: e.target.value })}
             >
@@ -259,7 +259,7 @@ function AuditLogContent() {
           </Field>
           <Field label="Aksi">
             <select
-              className={inputClass}
+              className={controlClass}
               value={filters.aksi}
               onChange={(e) => setFilters({ ...filters, aksi: e.target.value })}
             >
@@ -271,7 +271,7 @@ function AuditLogContent() {
           </Field>
           <Field label="Dari Tanggal">
             <input
-              className={inputClass}
+              className={controlClass}
               type="date"
               value={filters.tanggal_mulai}
               onChange={(e) => setFilters({ ...filters, tanggal_mulai: e.target.value })}
@@ -279,7 +279,7 @@ function AuditLogContent() {
           </Field>
           <Field label="Sampai Tanggal">
             <input
-              className={inputClass}
+              className={controlClass}
               type="date"
               value={filters.tanggal_selesai}
               onChange={(e) => setFilters({ ...filters, tanggal_selesai: e.target.value })}
@@ -287,7 +287,7 @@ function AuditLogContent() {
           </Field>
           <Field label="Per Halaman">
             <select
-              className={inputClass}
+              className={controlClass}
               value={filters.per_page}
               onChange={(e) => setFilters({ ...filters, per_page: e.target.value })}
             >
@@ -304,28 +304,29 @@ function AuditLogContent() {
               onClick={() => {
                 setFilters(emptyFilters);
                 setAppliedFilters(emptyFilters);
+                setPage(1);
               }}
             >
               Reset
             </Button>
           </div>
         </form>
-      </Card>
+      </FilterPanel>
 
       {/* ──────── Table ──────── */}
       <Card className="p-0">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[900px] border-collapse text-sm">
-            <thead className="border-b border-border bg-background text-left text-muted">
+            <thead className="sticky top-0 z-10 border-b border-border bg-background text-left text-muted">
               <tr>
-                <th className="w-10 px-4 py-3 font-medium" />
-                <th className="px-4 py-3 font-medium">ID</th>
-                <th className="px-4 py-3 font-medium">User</th>
-                <th className="px-4 py-3 font-medium">Aksi</th>
-                <th className="px-4 py-3 font-medium">Tabel</th>
-                <th className="px-4 py-3 font-medium">ID Terkait</th>
-                <th className="px-4 py-3 font-medium">IP</th>
-                <th className="px-4 py-3 font-medium">Waktu</th>
+                <th scope="col" className="w-10 px-4 py-3 font-medium"><span className="sr-only">Detail</span></th>
+                <th scope="col" className="px-4 py-3 font-medium">ID</th>
+                <th scope="col" className="px-4 py-3 font-medium">User</th>
+                <th scope="col" className="px-4 py-3 font-medium">Aksi</th>
+                <th scope="col" className="px-4 py-3 font-medium">Tabel</th>
+                <th scope="col" className="px-4 py-3 font-medium">ID Terkait</th>
+                <th scope="col" className="px-4 py-3 font-medium">IP</th>
+                <th scope="col" className="px-4 py-3 font-medium">Waktu</th>
               </tr>
             </thead>
             <tbody>
@@ -349,21 +350,24 @@ function AuditLogContent() {
                       <tr
                         className={[
                           "border-b border-border",
-                          hasDetail ? "cursor-pointer hover:bg-background/60" : "",
+                          hasDetail ? "hover:bg-background/60" : "",
                           isExpanded ? "bg-background/40" : "",
                         ].join(" ")}
-                        onClick={() => hasDetail && toggleExpand(row.id)}
                       >
                         <td className="px-4 py-3 text-center">
                           {hasDetail ? (
-                            <span
+                            <button
+                              type="button"
+                              aria-expanded={isExpanded}
+                              aria-label={`${isExpanded ? "Tutup" : "Buka"} detail audit ${row.id}`}
+                              onClick={() => toggleExpand(row.id)}
                               className={[
-                                "inline-flex size-5 items-center justify-center rounded text-xs text-muted transition-transform",
+                                "inline-flex size-7 items-center justify-center rounded-control text-xs text-muted transition-transform hover:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30",
                                 isExpanded ? "rotate-90" : "",
                               ].join(" ")}
                             >
                               ▶
-                            </span>
+                            </button>
                           ) : null}
                         </td>
                         <td className="whitespace-nowrap px-4 py-3">{row.id}</td>
@@ -411,9 +415,7 @@ function AuditLogContent() {
             </tbody>
           </table>
         </div>
-        <div className="border-t border-border px-4 py-3 text-sm text-muted">
-          Total {total} log ditampilkan
-        </div>
+        <Pagination page={page} totalPages={totalPages} total={total} loading={loading} onPageChange={setPage} />
       </Card>
     </div>
   );
@@ -425,15 +427,6 @@ function AuditLogContent() {
 
 function RowGroup({ children }: { children: ReactNode }) {
   return <>{children}</>;
-}
-
-function Field({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <label className="block space-y-1 text-sm font-medium">
-      <span>{label}</span>
-      {children}
-    </label>
-  );
 }
 
 function AksiBadge({ aksi }: { aksi?: string }) {

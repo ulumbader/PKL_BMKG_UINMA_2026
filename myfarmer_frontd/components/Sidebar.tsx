@@ -1,4 +1,5 @@
 "use client";
+import Image from 'next/image';
 import React from 'react';
 import { MostlyCloudyIcon, RainCloudIcon, CloudBack, LocationCityScape, CloseIcon } from './Icons';
 import { BmkgWeatherData } from '@/lib/bmkgClient';
@@ -71,13 +72,13 @@ export const Sidebar = ({
 
         <div className="flex items-center gap-2.5 mt-4 lg:mt-0">
           {/* BMKG Logo */}
-          <svg className="w-9 h-9 shrink-0" viewBox="0 0 40 40" fill="none">
-            <circle cx="20" cy="20" r="19" fill="#1c1c1e"/>
-            <ellipse cx="20" cy="26" rx="13" ry="3.5" fill="#5B9BD5"/>
-            <ellipse cx="20" cy="21" rx="11" ry="3.5" fill="#70AD47"/>
-            <ellipse cx="20" cy="16" rx="9" ry="3.5" fill="#FFC000"/>
-            <circle cx="20" cy="11" r="4" fill="#FF6B35"/>
-          </svg>
+          <Image
+            src="/logo_bmkg.png"
+            alt="Logo BMKG"
+            width={36}
+            height={36}
+            className="h-9 w-9 shrink-0"
+          />
           <span className="text-[17px] font-semibold text-[#1c1c1e] tracking-tight">MyFarmer</span>
         </div>
 

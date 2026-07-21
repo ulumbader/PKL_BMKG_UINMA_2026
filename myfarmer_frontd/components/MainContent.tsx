@@ -108,7 +108,7 @@ export const MainContent = ({
   setUnit: (u: Unit) => void;
 }) => {
 
-  const backendCards = useBackendCards();
+  const { infoCards, contentCards } = useBackendCards();
 
   // Convert temp based on unit
   const temp = (c: number) => unit === 'C' ? Math.round(c) : Math.round((c * 9 / 5) + 32);
@@ -293,11 +293,11 @@ export const MainContent = ({
 
         {/* Backend Integration Cards Slider */}
         <div className="w-full xl:w-[420px] shrink-0 h-[220px]">
-          <BackendCards cards={backendCards} />
+          <BackendCards cards={contentCards} />
         </div>
       </div>
 
-      <InfoSection cards={backendCards} />
+      <InfoSection cards={infoCards} />
 
       <div className="text-[20px] font-semibold mb-5">Today&apos;s Highlights</div>
 

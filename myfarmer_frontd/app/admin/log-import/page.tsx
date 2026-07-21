@@ -1,7 +1,8 @@
 "use client";
 
-import { type FormEvent, type ReactNode, useCallback, useEffect, useState } from "react";
+import { type FormEvent, useCallback, useEffect, useState } from "react";
 
+import { Field, FilterPanel, PageHeader, Pagination, controlClass } from "@/components/admin/AdminUI";
 import { Alert, Button, Card, Skeleton } from "@/components/ui";
 import { ApiError, apiGet } from "@/lib/apiClient";
 
@@ -13,6 +14,8 @@ type Paginated<T> = {
   data?: T[];
   total?: number;
   per_page?: number;
+  current_page?: number;
+  last_page?: number;
 };
 
 type ListResult<T> = T[] | Paginated<T>;
@@ -49,9 +52,6 @@ const emptyFilters: Filters = {
   per_page: "15",
 };
 
-const inputClass =
-  "h-10 w-full rounded-control border border-border bg-surface px-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20";
-
 /* ────────────────────────────────────────────
    Helpers
    ──────────────────────────────────────────── */
@@ -64,8 +64,8 @@ function listTotal<T>(result: ListResult<T>) {
   return Array.isArray(result) ? result.length : result.total ?? result.data?.length ?? 0;
 }
 
-function buildQuery(filters: Filters) {
-  const params = new URLSearchParams({ per_page: filters.per_page });
+function buildQuery(filters: Filters, page: number) {
+  const params = new URLSearchParams({ per_page: filters.per_page, page: String(page) });
   if (filters.status) params.set("status", filters.status);
   if (filters.sumber) params.set("sumber", filters.sumber);
   if (filters.tanggal_mulai) params.set("tanggal_mulai", filters.tanggal_mulai);
@@ -94,6 +94,8 @@ export default function Page() {
 
   const [rows, setRows] = useState<LogRow[]>([]);
   const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -106,15 +108,17 @@ export default function Page() {
       setError("");
       try {
         const response = await apiGet<ListResult<LogRow>>(
-          `/admin/log-import?${buildQuery(appliedFilters)}`,
+          `/admin/log-import?${buildQuery(appliedFilters, page)}`,
         );
         if (!active) return;
         setRows(listItems(response.data));
         setTotal(listTotal(response.data));
+        setTotalPages(Array.isArray(response.data) ? 1 : response.data.last_page ?? Math.max(1, Math.ceil((response.data.total ?? 0) / (response.data.per_page ?? Number(appliedFilters.per_page)))));
       } catch (caught) {
         if (!active) return;
         setRows([]);
         setTotal(0);
+        setTotalPages(1);
         setError(errorMessage(caught, "Log import gagal dimuat."));
       } finally {
         if (active) setLoading(false);
@@ -122,10 +126,11 @@ export default function Page() {
     }
     load();
     return () => { active = false; };
-  }, [appliedFilters]);
+  }, [appliedFilters, page]);
 
   const submitFilter = useCallback((event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setPage(1);
     setAppliedFilters(filters);
   }, [filters]);
 
@@ -134,19 +139,16 @@ export default function Page() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-semibold">Log Import</h1>
-        <p className="mt-1 text-sm text-muted">Histori import data dari BMKG (read-only).</p>
-      </div>
+      <PageHeader title="Log Import" description="Tinjau histori proses import data BMKG beserta status dan hasilnya." />
 
       {error ? <Alert variant="error">{error}</Alert> : null}
 
       {/* ──────── Filters ──────── */}
-      <Card>
+      <FilterPanel activeCount={Object.values(appliedFilters).filter(Boolean).length - 1}>
         <form onSubmit={submitFilter} className="grid gap-3 md:grid-cols-6">
           <Field label="Status">
             <select
-              className={inputClass}
+              className={controlClass}
               value={filters.status}
               onChange={(e) => setFilters({ ...filters, status: e.target.value })}
             >
@@ -157,7 +159,7 @@ export default function Page() {
           </Field>
           <Field label="Sumber">
             <input
-              className={inputClass}
+              className={controlClass}
               value={filters.sumber}
               onChange={(e) => setFilters({ ...filters, sumber: e.target.value })}
               placeholder="import_csv"
@@ -165,7 +167,7 @@ export default function Page() {
           </Field>
           <Field label="Dari Tanggal">
             <input
-              className={inputClass}
+              className={controlClass}
               type="date"
               value={filters.tanggal_mulai}
               onChange={(e) => setFilters({ ...filters, tanggal_mulai: e.target.value })}
@@ -173,7 +175,7 @@ export default function Page() {
           </Field>
           <Field label="Sampai Tanggal">
             <input
-              className={inputClass}
+              className={controlClass}
               type="date"
               value={filters.tanggal_selesai}
               onChange={(e) => setFilters({ ...filters, tanggal_selesai: e.target.value })}
@@ -181,7 +183,7 @@ export default function Page() {
           </Field>
           <Field label="Per Halaman">
             <select
-              className={inputClass}
+              className={controlClass}
               value={filters.per_page}
               onChange={(e) => setFilters({ ...filters, per_page: e.target.value })}
             >
@@ -198,28 +200,29 @@ export default function Page() {
               onClick={() => {
                 setFilters(emptyFilters);
                 setAppliedFilters(emptyFilters);
+                setPage(1);
               }}
             >
               Reset
             </Button>
           </div>
         </form>
-      </Card>
+      </FilterPanel>
 
       {/* ──────── Table ──────── */}
       <Card className="p-0">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[900px] border-collapse text-sm">
-            <thead className="border-b border-border bg-background text-left text-muted">
+            <thead className="sticky top-0 z-10 border-b border-border bg-background text-left text-muted">
               <tr>
-                <th className="px-4 py-3 font-medium">ID</th>
-                <th className="px-4 py-3 font-medium">Sumber</th>
-                <th className="px-4 py-3 font-medium">Status</th>
-                <th className="px-4 py-3 font-medium">Data Masuk</th>
-                <th className="px-4 py-3 font-medium">Pesan Error</th>
-                <th className="px-4 py-3 font-medium">Mulai</th>
-                <th className="px-4 py-3 font-medium">Selesai</th>
-                <th className="px-4 py-3 font-medium">Oleh</th>
+                <th scope="col" className="px-4 py-3 font-medium">ID</th>
+                <th scope="col" className="px-4 py-3 font-medium">Sumber</th>
+                <th scope="col" className="px-4 py-3 font-medium">Status</th>
+                <th scope="col" className="px-4 py-3 font-medium">Data Masuk</th>
+                <th scope="col" className="px-4 py-3 font-medium">Pesan Error</th>
+                <th scope="col" className="px-4 py-3 font-medium">Mulai</th>
+                <th scope="col" className="px-4 py-3 font-medium">Selesai</th>
+                <th scope="col" className="px-4 py-3 font-medium">Oleh</th>
               </tr>
             </thead>
             <tbody>
@@ -235,7 +238,7 @@ export default function Page() {
                 ))
               ) : rows.length ? (
                 rows.map((row) => (
-                  <tr key={row.id} className="border-b border-border last:border-0">
+                  <tr key={row.id} className="border-b border-border transition-colors hover:bg-background/70 last:border-0">
                     <td className="whitespace-nowrap px-4 py-3">{row.id}</td>
                     <td className="whitespace-nowrap px-4 py-3">
                       <code className="rounded bg-background px-1.5 py-0.5 text-xs">{row.sumber}</code>
@@ -264,9 +267,7 @@ export default function Page() {
             </tbody>
           </table>
         </div>
-        <div className="border-t border-border px-4 py-3 text-sm text-muted">
-          Total {total} log ditampilkan
-        </div>
+        <Pagination page={page} totalPages={totalPages} total={total} loading={loading} onPageChange={setPage} />
       </Card>
     </div>
   );
@@ -275,15 +276,6 @@ export default function Page() {
 /* ────────────────────────────────────────────
    Sub-components
    ──────────────────────────────────────────── */
-
-function Field({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <label className="block space-y-1 text-sm font-medium">
-      <span>{label}</span>
-      {children}
-    </label>
-  );
-}
 
 function StatusBadge({ status }: { status?: string }) {
   const colors: Record<string, string> = {

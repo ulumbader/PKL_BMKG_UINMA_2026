@@ -9,6 +9,119 @@ Format tanggal: YYYY-MM-DD.
 
 ## [Unreleased]
 
+## [Tahap 31] - Verifikasi End-to-End Panel Admin - 2026-07-20
+### Ditambahkan
+- Tidak ada komponen atau perubahan kode aplikasi baru.
+
+### Diubah
+- Tidak ada endpoint, payload, tampilan, atau logika bisnis yang diubah pada tahap verifikasi ini.
+
+### File Terkait
+- `CHANGELOG.md`
+
+### Catatan
+- Seluruh 38 route API diverifikasi melalui server runtime menggunakan akun super admin: 47 pemeriksaan berhasil tanpa kegagalan, termasuk CRUD, filter, pagination, import CSV, agregasi, evaluasi rule, integrasi Groq, publish ringkasan, audit, dan logout.
+- Suite backend berhasil dengan 51 test dan 146 assertion.
+- Smoke test browser berhasil pada seluruh 10 halaman admin tanpa error respons API atau overflow; modal, form, dialog konfirmasi non-destruktif, drawer mobile 390 piksel, dan logout turut diverifikasi.
+- Semua user, data iklim, agregasi, rule, rekomendasi, ringkasan, konten, log, audit, dan token sementara hasil pengujian telah dibersihkan.
+
+## [Tahap 30] - Penyelarasan UI Panel Admin - 2026-07-20
+### Ditambahkan
+- Komponen UI admin reusable untuk header halaman, field form, panel filter, badge status, empty state, pagination, modal aksesibel, dialog konfirmasi, toast, dan ikon konsisten.
+- Pagination pada seluruh halaman admin yang memakai endpoint berpaginasi.
+
+### Diubah
+- Shell admin disusun ulang menjadi navigasi berkelompok dengan identitas BMKG/MyFarmer, breadcrumb desktop, profil peran yang lebih ramah, dan drawer mobile.
+- Halaman login, dashboard, serta seluruh halaman `/admin/*` diselaraskan ke sistem visual yang lebih profesional, datar, responsif, dan konsisten.
+- Tabel memakai header sticky, label kolom aksesibel, hover state, empty state, serta area scroll horizontal terlokalisasi pada layar sempit.
+- Modal data iklim dan rules memakai dialog aksesibel; konfirmasi native untuk penghapusan/nonaktif pengguna diganti dengan dialog aplikasi tanpa mengubah alur API.
+- Font fallback global diperbaiki ke system font yang tersedia dan focus state tombol distandarkan.
+
+### File Terkait
+- `app/globals.css`
+- `app/admin/login/page.tsx`
+- `app/admin/dashboard/page.tsx`
+- `app/admin/agregasi/page.tsx`
+- `app/admin/audit-log/page.tsx`
+- `app/admin/data-iklim/page.tsx`
+- `app/admin/konten/page.tsx`
+- `app/admin/log-import/page.tsx`
+- `app/admin/rekomendasi/page.tsx`
+- `app/admin/ringkasan-ai/page.tsx`
+- `app/admin/rules/page.tsx`
+- `app/admin/users/page.tsx`
+- `components/admin/AdminShell.tsx`
+- `components/admin/AdminUI.tsx`
+- `components/ui.tsx`
+- `CHANGELOG.md`
+
+### Catatan
+- Endpoint, payload, autentikasi, pemeriksaan peran, dan logika bisnis tidak diubah.
+- `npx tsc --noEmit`, `npm run lint`, dan `npm run build` berhasil; lint menyisakan 3 warning lama di luar cakupan perubahan.
+- Render runtime terautentikasi diverifikasi pada lebar 1440, 1024, dan 390 piksel tanpa overflow halaman; drawer mobile serta tampilan login juga diperiksa.
+
+## [Tahap 29] - Transisi Carousel Info Simultan - 2026-07-20
+### Ditambahkan
+- Tidak ada komponen atau dependency baru.
+
+### Diubah
+- Seluruh posisi card pada section Info memakai anchor `left` agar browser dapat menginterpolasi perpindahan tanpa loncatan.
+- Card aktif bergerak ke kiri dan menyempit dari 62% menjadi 38% bersamaan dengan card berikutnya yang masuk dari kanan.
+- Class `hidden`, pergantian anchor `left`/`right`, dan efek skala card kecil dihapus agar tidak menimbulkan jeda visual.
+- Durasi transisi diubah menjadi 1 detik dengan easing `ease-in-out` untuk pergerakan yang lebih lembut.
+
+### File Terkait
+- `components/InfoSection.tsx`
+- `CHANGELOG.md`
+
+### Catatan
+- Interval pergantian otomatis tetap 4,5 detik; perubahan hanya memengaruhi animasi perpindahan antar-card.
+- Pada layar mobile, card lama keluar ke kiri bersamaan dengan card baru yang masuk dari kanan.
+- Render browser memverifikasi card kecil dan card utama menempati lebar 38% + 62% tanpa celah di antara keduanya.
+- `npx tsc --noEmit` dan `npm run build` berhasil tanpa error.
+- `npm run lint` selesai tanpa error dengan 4 warning lama di luar cakupan perubahan.
+
+## [Tahap 28] - Pemisahan Konten Carousel dan Perbaikan Card Tunggal - 2026-07-20
+### Ditambahkan
+- Penanganan card tunggal agar satu pengumuman atau tips tetap terlihat pada carousel pertama.
+
+### Diubah
+- Carousel di samping prakiraan mingguan hanya menampilkan pengumuman dan tips.
+- Section Info hanya menampilkan rekomendasi tanam, ringkasan iklim AI, dan info curah hujan.
+- Animasi keluar carousel hanya diterapkan ketika tersedia lebih dari satu card.
+
+### File Terkait
+- `components/BackendCards.tsx`
+- `components/MainContent.tsx`
+- `CHANGELOG.md`
+
+### Catatan
+- Endpoint publik terverifikasi mengembalikan satu pengumuman aktif; sebelumnya card tunggal tersembunyi karena kondisi animasi.
+- Interval carousel dan kontrak API tidak berubah.
+- Render browser dengan data backend aktual berhasil menampilkan `Peringatan Sistem` pada carousel pertama dan tidak menampilkannya di section Info.
+- `npx tsc --noEmit` dan `npm run build` berhasil tanpa error.
+- `npm run lint` selesai tanpa error dengan 4 warning lama di luar cakupan perubahan.
+
+## [Tahap 27] - Penggantian Logo Landing Page - 2026-07-20
+### Ditambahkan
+- Aset logo resmi BMKG berformat PNG dengan latar transparan untuk branding landing page.
+
+### Diubah
+- Logo ilustrasi pada side panel MyFarmer diganti dengan aset logo BMKG.
+- Placeholder `SK` pada identitas Stasiun Klimatologi Jawa Timur di footer diganti dengan aset logo BMKG yang sama.
+
+### File Terkait
+- `public/logo_bmkg.png`
+- `components/Sidebar.tsx`
+- `components/PublicFooter.tsx`
+- `CHANGELOG.md`
+
+### Catatan
+- Teks branding dan susunan layout dipertahankan; hanya simbol logo yang diganti.
+- Logo dirender melalui komponen `next/image` dengan ukuran tetap 36 px pada side panel dan 56 px pada footer.
+- `npx tsc --noEmit` dan `npm run build` berhasil tanpa error.
+- `npm run lint` selesai tanpa error dengan 4 warning lama di luar cakupan perubahan.
+
 ## [Tahap 26] - Normalisasi Delapan Arah Mata Angin - 2026-07-17
 ### Ditambahkan
 - Delapan singkatan arah mata angin Indonesia pada kompas: `U`, `TL`, `T`, `TG`, `S`, `BD`, `B`, dan `BL`.

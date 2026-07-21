@@ -1,7 +1,8 @@
 "use client";
 
-import { type FormEvent, type ReactNode, useCallback, useEffect, useState } from "react";
+import { type FormEvent, useEffect, useState } from "react";
 
+import { ConfirmDialog, EmptyState, Field, PageHeader, StatusBadge, ToastNotice, controlClass } from "@/components/admin/AdminUI";
 import { Alert, Button, Card, Skeleton, Spinner } from "@/components/ui";
 import { useAuth } from "@/context/AuthContext";
 import { ApiError, apiDelete, apiGet, apiPost, apiPut } from "@/lib/apiClient";
@@ -42,9 +43,6 @@ const emptyForm: UserForm = {
   role_id: "1",
   is_active: true,
 };
-
-const inputClass =
-  "h-10 w-full rounded-control border border-border bg-surface px-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20";
 
 /* ────────────────────────────────────────────
    Helpers
@@ -123,6 +121,7 @@ function UsersContent({ currentUserId }: { currentUserId: number | null }) {
 
   /* ── Delete state ── */
   const [actionId, setActionId] = useState<number | null>(null);
+  const [pendingAction, setPendingAction] = useState<{ row: UserRow; type: "deactivate" | "delete" } | null>(null);
 
   /* ──────────────── Data Fetching ──────────────── */
 
@@ -232,6 +231,7 @@ function UsersContent({ currentUserId }: { currentUserId: number | null }) {
     try {
       const response = await apiDelete<null>(`/admin/users/${id}`);
       setNotice(response.message);
+      setPendingAction(null);
       setReloadKey((v) => v + 1);
     } catch (caught) {
       setError(errorMessage(caught, "Gagal menonaktifkan user."));
@@ -247,6 +247,7 @@ function UsersContent({ currentUserId }: { currentUserId: number | null }) {
     try {
       const response = await apiDelete<null>(`/admin/users/${id}?force=true`);
       setNotice(response.message);
+      setPendingAction(null);
       setReloadKey((v) => v + 1);
     } catch (caught) {
       setError(errorMessage(caught, "Gagal menghapus user."));
@@ -260,18 +261,10 @@ function UsersContent({ currentUserId }: { currentUserId: number | null }) {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold">Kelola User</h1>
-          <p className="mt-1 text-sm text-muted">
-            Buat, edit, nonaktifkan, atau hapus akun admin. Khusus super admin.
-          </p>
-        </div>
-        <Button onClick={openCreate}>+ Tambah User</Button>
-      </div>
+      <PageHeader title="Kelola User" description="Buat, edit, nonaktifkan, atau hapus akun admin. Akses khusus Super Admin." action={<Button onClick={openCreate}>Tambah User</Button>} />
 
       {/* Alerts */}
-      {notice ? <Alert variant="success">{notice}</Alert> : null}
+      <ToastNotice message={notice} onDismiss={() => setNotice("")} />
       {error && !showForm ? <Alert variant="error">{error}</Alert> : null}
 
       {/* ──────── Create / Edit Form ──────── */}
@@ -287,7 +280,7 @@ function UsersContent({ currentUserId }: { currentUserId: number | null }) {
             <div className="grid gap-4 md:grid-cols-2">
               <Field label="Nama Lengkap" error={formErrors.nama_lengkap}>
                 <input
-                  className={inputClass}
+                  className={controlClass}
                   required
                   value={form.nama_lengkap}
                   onChange={(e) => setForm({ ...form, nama_lengkap: e.target.value })}
@@ -297,7 +290,7 @@ function UsersContent({ currentUserId }: { currentUserId: number | null }) {
 
               <Field label="Email" error={formErrors.email}>
                 <input
-                  className={inputClass}
+                  className={controlClass}
                   required={!editingId}
                   type="email"
                   disabled={!!editingId}
@@ -312,7 +305,7 @@ function UsersContent({ currentUserId }: { currentUserId: number | null }) {
                 error={formErrors.password}
               >
                 <input
-                  className={inputClass}
+                  className={controlClass}
                   type="password"
                   required={!editingId}
                   minLength={6}
@@ -325,7 +318,7 @@ function UsersContent({ currentUserId }: { currentUserId: number | null }) {
               {!editingId ? (
                 <Field label="Role" error={formErrors.role_id}>
                   <select
-                    className={inputClass}
+                    className={controlClass}
                     required
                     value={form.role_id}
                     onChange={(e) => setForm({ ...form, role_id: e.target.value })}
@@ -379,16 +372,16 @@ function UsersContent({ currentUserId }: { currentUserId: number | null }) {
       <Card className="p-0">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[800px] border-collapse text-sm">
-            <thead className="border-b border-border bg-background text-left text-muted">
+            <thead className="sticky top-0 z-10 border-b border-border bg-background text-left text-muted">
               <tr>
-                <th className="px-4 py-3 font-medium">ID</th>
-                <th className="px-4 py-3 font-medium">Nama</th>
-                <th className="px-4 py-3 font-medium">Email</th>
-                <th className="px-4 py-3 font-medium">Role</th>
-                <th className="px-4 py-3 font-medium">Aktif</th>
-                <th className="px-4 py-3 font-medium">Login Terakhir</th>
-                <th className="px-4 py-3 font-medium">Dibuat</th>
-                <th className="px-4 py-3 font-medium">Aksi</th>
+                <th scope="col" className="px-4 py-3 font-medium">ID</th>
+                <th scope="col" className="px-4 py-3 font-medium">Nama</th>
+                <th scope="col" className="px-4 py-3 font-medium">Email</th>
+                <th scope="col" className="px-4 py-3 font-medium">Role</th>
+                <th scope="col" className="px-4 py-3 font-medium">Aktif</th>
+                <th scope="col" className="px-4 py-3 font-medium">Login Terakhir</th>
+                <th scope="col" className="px-4 py-3 font-medium">Dibuat</th>
+                <th scope="col" className="px-4 py-3 font-medium">Aksi</th>
               </tr>
             </thead>
             <tbody>
@@ -406,7 +399,7 @@ function UsersContent({ currentUserId }: { currentUserId: number | null }) {
                 rows.map((row) => {
                   const isSelf = row.id === currentUserId;
                   return (
-                    <tr key={row.id} className="border-b border-border last:border-0">
+                    <tr key={row.id} className="border-b border-border transition-colors hover:bg-background/70 last:border-0">
                       <td className="whitespace-nowrap px-4 py-3">{row.id}</td>
                       <td className="whitespace-nowrap px-4 py-3 font-medium">{row.nama_lengkap}</td>
                       <td className="whitespace-nowrap px-4 py-3">{row.email}</td>
@@ -419,9 +412,7 @@ function UsersContent({ currentUserId }: { currentUserId: number | null }) {
                             Aktif
                           </span>
                         ) : (
-                          <span className="inline-flex rounded-control border border-border bg-background px-2 py-0.5 text-xs font-medium text-muted">
-                            Nonaktif
-                          </span>
+                          <StatusBadge>Nonaktif</StatusBadge>
                         )}
                       </td>
                       <td className="whitespace-nowrap px-4 py-3">{formatDateTime(row.last_login)}</td>
@@ -437,11 +428,7 @@ function UsersContent({ currentUserId }: { currentUserId: number | null }) {
                                 size="sm"
                                 variant="ghost"
                                 disabled={actionId === row.id}
-                                onClick={() => {
-                                  if (window.confirm(`Nonaktifkan user "${row.nama_lengkap}"?`)) {
-                                    deactivateUser(row.id);
-                                  }
-                                }}
+                                onClick={() => setPendingAction({ row, type: "deactivate" })}
                               >
                                 {actionId === row.id ? (
                                   <Spinner className="mr-1 size-3" />
@@ -452,15 +439,7 @@ function UsersContent({ currentUserId }: { currentUserId: number | null }) {
                                 size="sm"
                                 variant="danger"
                                 disabled={actionId === row.id}
-                                onClick={() => {
-                                  if (
-                                    window.confirm(
-                                      `HAPUS PERMANEN user "${row.nama_lengkap}"? Tindakan ini tidak bisa dibatalkan.`,
-                                    )
-                                  ) {
-                                    deletePermanent(row.id);
-                                  }
-                                }}
+                                onClick={() => setPendingAction({ row, type: "delete" })}
                               >
                                 Hapus Permanen
                               </Button>
@@ -477,15 +456,14 @@ function UsersContent({ currentUserId }: { currentUserId: number | null }) {
                 })
               ) : (
                 <tr>
-                  <td colSpan={8} className="px-4 py-8 text-center text-muted">
-                    Belum ada user terdaftar.
-                  </td>
+                  <td colSpan={8}><EmptyState title="Belum ada user" description="Tambahkan akun admin untuk mulai mengelola akses panel." /></td>
                 </tr>
               )}
             </tbody>
           </table>
         </div>
       </Card>
+      <ConfirmDialog open={Boolean(pendingAction)} title={pendingAction?.type === "delete" ? "Hapus user permanen?" : "Nonaktifkan user?"} description={pendingAction ? pendingAction.type === "delete" ? `Akun “${pendingAction.row.nama_lengkap}” akan dihapus permanen dan tidak dapat dipulihkan.` : `Akun “${pendingAction.row.nama_lengkap}” tidak akan dapat masuk sampai diaktifkan kembali.` : ""} confirmLabel={pendingAction?.type === "delete" ? "Hapus permanen" : "Nonaktifkan"} busy={actionId !== null} onCancel={() => setPendingAction(null)} onConfirm={() => pendingAction ? pendingAction.type === "delete" ? deletePermanent(pendingAction.row.id) : deactivateUser(pendingAction.row.id) : undefined} />
     </div>
   );
 }
@@ -493,16 +471,6 @@ function UsersContent({ currentUserId }: { currentUserId: number | null }) {
 /* ────────────────────────────────────────────
    Sub-components
    ──────────────────────────────────────────── */
-
-function Field({ label, error, children }: { label: string; error?: string; children: ReactNode }) {
-  return (
-    <label className="block space-y-1 text-sm font-medium">
-      <span>{label}</span>
-      {children}
-      {error ? <span className="block text-xs font-normal text-danger">{error}</span> : null}
-    </label>
-  );
-}
 
 function RoleBadge({ role }: { role?: string }) {
   const colors: Record<string, string> = {

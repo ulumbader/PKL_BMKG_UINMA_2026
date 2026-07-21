@@ -1,7 +1,8 @@
 "use client";
 
-import { type FormEvent, type ReactNode, useEffect, useState } from "react";
+import { type FormEvent, useEffect, useState } from "react";
 
+import { EmptyState, Field, FilterPanel, PageHeader, Pagination, ToastNotice, controlClass } from "@/components/admin/AdminUI";
 import { Alert, Button, Card, Skeleton, Spinner } from "@/components/ui";
 import { ApiError, apiGet, apiGetAllPages, apiPost } from "@/lib/apiClient";
 
@@ -9,6 +10,8 @@ type Paginated<T> = {
   data?: T[];
   total?: number;
   per_page?: number;
+  current_page?: number;
+  last_page?: number;
 };
 
 type ListResult<T> = T[] | Paginated<T>;
@@ -69,9 +72,6 @@ const monthNames = [
   "Desember",
 ];
 
-const inputClass =
-  "h-10 w-full rounded-control border border-border bg-surface px-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20";
-
 function listItems<T>(result: ListResult<T>) {
   return Array.isArray(result) ? result : result.data ?? [];
 }
@@ -80,8 +80,8 @@ function listTotal<T>(result: ListResult<T>) {
   return Array.isArray(result) ? result.length : result.total ?? result.data?.length ?? 0;
 }
 
-function buildQuery(filters: Filters) {
-  const params = new URLSearchParams({ per_page: filters.per_page });
+function buildQuery(filters: Filters, page: number) {
+  const params = new URLSearchParams({ per_page: filters.per_page, page: String(page) });
 
   for (const key of ["dasarian_id", "rule_id", "status_rekomendasi"] as const) {
     if (filters[key]) params.set(key, filters[key]);
@@ -130,6 +130,8 @@ export default function Page() {
 
   const [rows, setRows] = useState<RecommendationRow[]>([]);
   const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [dasarianOptions, setDasarianOptions] = useState<AggregationOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [optionsLoading, setOptionsLoading] = useState(true);
@@ -198,15 +200,17 @@ export default function Page() {
 
       try {
         const response = await apiGet<ListResult<RecommendationRow>>(
-          `/admin/rekomendasi?${buildQuery(appliedFilters)}`,
+          `/admin/rekomendasi?${buildQuery(appliedFilters, page)}`,
         );
         if (!active) return;
         setRows(listItems(response.data));
         setTotal(listTotal(response.data));
+        setTotalPages(Array.isArray(response.data) ? 1 : response.data.last_page ?? Math.max(1, Math.ceil((response.data.total ?? 0) / (response.data.per_page ?? Number(appliedFilters.per_page)))));
       } catch (caught) {
         if (!active) return;
         setRows([]);
         setTotal(0);
+        setTotalPages(1);
         setError(errorMessage(caught, "Histori rekomendasi gagal dimuat."));
       } finally {
         if (active) setLoading(false);
@@ -218,10 +222,11 @@ export default function Page() {
     return () => {
       active = false;
     };
-  }, [appliedFilters, reloadKey]);
+  }, [appliedFilters, page, reloadKey]);
 
   function submitFilter(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setPage(1);
     setNotice("");
     setAppliedFilters(filters);
   }
@@ -255,12 +260,9 @@ export default function Page() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold">Rekomendasi</h1>
-        <p className="mt-1 text-sm text-muted">Evaluasi rule engine dan lihat histori hasil rekomendasi.</p>
-      </div>
+      <PageHeader title="Rekomendasi" description="Jalankan evaluasi rule engine dan tinjau histori hasil rekomendasi tanam." />
 
-      {notice ? <Alert variant="success">{notice}</Alert> : null}
+      <ToastNotice message={notice} onDismiss={() => setNotice("")} />
       {error ? <Alert variant="error">{error}</Alert> : null}
 
       <Card>
@@ -273,7 +275,7 @@ export default function Page() {
             <Field label="Dasarian" error={evaluationErrors.dasarian_id}>
               <select
                 required
-                className={inputClass}
+                className={controlClass}
                 disabled={optionsLoading}
                 value={evaluationDasarianId}
                 onChange={(event) => setEvaluationDasarianId(event.target.value)}
@@ -292,11 +294,11 @@ export default function Page() {
         </form>
       </Card>
 
-      <Card>
+      <FilterPanel activeCount={Object.values(appliedFilters).filter(Boolean).length - 1}>
         <form onSubmit={submitFilter} className="grid gap-3 md:grid-cols-5">
           <Field label="Dasarian">
             <select
-              className={inputClass}
+              className={controlClass}
               value={filters.dasarian_id}
               onChange={(event) => setFilters({ ...filters, dasarian_id: event.target.value })}
             >
@@ -308,7 +310,7 @@ export default function Page() {
           </Field>
           <Field label="Rule">
             <select
-              className={inputClass}
+              className={controlClass}
               disabled={rulesLoading}
               value={filters.rule_id}
               onChange={(event) => setFilters({ ...filters, rule_id: event.target.value })}
@@ -321,7 +323,7 @@ export default function Page() {
           </Field>
           <Field label="Status Rekomendasi">
             <select
-              className={inputClass}
+              className={controlClass}
               value={filters.status_rekomendasi}
               onChange={(event) => setFilters({ ...filters, status_rekomendasi: event.target.value })}
             >
@@ -333,7 +335,7 @@ export default function Page() {
           </Field>
           <Field label="Per Halaman">
             <select
-              className={inputClass}
+              className={controlClass}
               value={filters.per_page}
               onChange={(event) => setFilters({ ...filters, per_page: event.target.value })}
             >
@@ -350,25 +352,26 @@ export default function Page() {
               onClick={() => {
                 setFilters(emptyFilters);
                 setAppliedFilters(emptyFilters);
+                setPage(1);
               }}
             >
               Reset
             </Button>
           </div>
         </form>
-      </Card>
+      </FilterPanel>
 
       <Card className="p-0">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[980px] border-collapse text-sm">
-            <thead className="border-b border-border bg-background text-left text-muted">
+            <thead className="sticky top-0 z-10 border-b border-border bg-background text-left text-muted">
               <tr>
-                <th className="px-4 py-3 font-medium">ID</th>
-                <th className="px-4 py-3 font-medium">Dasarian</th>
-                <th className="px-4 py-3 font-medium">Rule</th>
-                <th className="px-4 py-3 font-medium">Status</th>
-                <th className="px-4 py-3 font-medium">Catatan Teknis</th>
-                <th className="px-4 py-3 font-medium">Generated</th>
+                <th scope="col" className="px-4 py-3 font-medium">ID</th>
+                <th scope="col" className="px-4 py-3 font-medium">Dasarian</th>
+                <th scope="col" className="px-4 py-3 font-medium">Rule</th>
+                <th scope="col" className="px-4 py-3 font-medium">Status</th>
+                <th scope="col" className="px-4 py-3 font-medium">Catatan Teknis</th>
+                <th scope="col" className="px-4 py-3 font-medium">Generated</th>
               </tr>
             </thead>
             <tbody>
@@ -382,7 +385,7 @@ export default function Page() {
                 ))
               ) : rows.length ? (
                 rows.map((row) => (
-                  <tr key={row.id} className="border-b border-border last:border-0">
+                  <tr key={row.id} className="border-b border-border transition-colors hover:bg-background/70 last:border-0">
                     <td className="whitespace-nowrap px-4 py-3">{row.id}</td>
                     <td className="px-4 py-3">
                       {row.dasarian ? dasarianLabel(row.dasarian) : `Dasarian ID ${row.dasarian_id}`}
@@ -395,29 +398,15 @@ export default function Page() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-muted">
-                    Belum ada histori rekomendasi sesuai filter.
-                  </td>
+                  <td colSpan={6}><EmptyState title="Rekomendasi tidak ditemukan" description="Ubah filter atau jalankan evaluasi pada periode dasarian." /></td>
                 </tr>
               )}
             </tbody>
           </table>
         </div>
-        <div className="border-t border-border px-4 py-3 text-sm text-muted">
-          Total {total} data ditampilkan
-        </div>
+        <Pagination page={page} totalPages={totalPages} total={total} loading={loading} onPageChange={setPage} />
       </Card>
     </div>
-  );
-}
-
-function Field({ label, error, children }: { label: string; error?: string; children: ReactNode }) {
-  return (
-    <label className="block space-y-1 text-sm font-medium">
-      <span>{label}</span>
-      {children}
-      {error ? <span className="block text-xs font-normal text-danger">{error}</span> : null}
-    </label>
   );
 }
 

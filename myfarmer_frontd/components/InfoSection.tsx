@@ -10,18 +10,18 @@ function frameClass(index: number, activeIndex: number, total: number) {
   const offset = (index - activeIndex + total) % total;
 
   if (offset === 0) {
-    return "left-0 w-full translate-x-0 scale-100 opacity-100 z-20 sm:left-auto sm:right-0 sm:w-[62%]";
+    return "left-0 w-full opacity-100 z-20 sm:left-[38%] sm:w-[62%]";
   }
 
   if (offset === total - 1) {
-    return "left-0 hidden w-[38%] translate-x-0 scale-95 opacity-100 z-10 sm:block";
+    return "-left-full w-full opacity-0 z-10 sm:left-0 sm:w-[38%] sm:opacity-100";
   }
 
   if (offset === 1) {
-    return "right-0 w-full translate-x-[110%] scale-100 opacity-0 z-0 sm:w-[62%]";
+    return "left-full w-full opacity-0 z-0 sm:w-[62%]";
   }
 
-  return "left-0 w-[38%] -translate-x-[110%] scale-95 opacity-0 z-0";
+  return "left-full w-full opacity-0 z-0 sm:w-[62%]";
 }
 
 export function InfoSection({ cards }: { cards: BackendInfoCard[] }) {
@@ -68,7 +68,7 @@ export function InfoSection({ cards }: { cards: BackendInfoCard[] }) {
               key={card.id}
               onClick={() => handleOpenModal(index)}
               className={[
-                "absolute top-0 h-full text-left transition-all duration-700 ease-[cubic-bezier(0.25,1,0.5,1)]",
+                "absolute top-0 h-full text-left transition-[left,width,opacity] duration-1000 ease-in-out",
                 BACKEND_CARD_SURFACE_CLASS,
                 frameClass(index, safeActiveIndex, cards.length),
               ].join(" ")}

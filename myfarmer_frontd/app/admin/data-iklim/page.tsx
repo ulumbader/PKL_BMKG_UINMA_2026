@@ -1,7 +1,8 @@
 "use client";
 
-import { type FormEvent, type ReactNode, useEffect, useState } from "react";
+import { type FormEvent, useEffect, useState } from "react";
 
+import { ConfirmDialog, EmptyState, Field, FilterPanel, Modal, PageHeader, Pagination, StatusBadge, ToastNotice, controlClass } from "@/components/admin/AdminUI";
 import { Alert, Button, Card, Skeleton, Spinner } from "@/components/ui";
 import { ApiError, apiDelete, apiGet, apiPost, apiPut } from "@/lib/apiClient";
 
@@ -70,9 +71,6 @@ const emptyForm: ClimateForm = {
 };
 
 const maxImportSize = 5 * 1024 * 1024;
-
-const inputClass =
-  "h-10 w-full rounded-control border border-border bg-surface px-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20";
 
 function todayValue() {
   const date = new Date();
@@ -152,6 +150,7 @@ export default function Page() {
   const [formMessage, setFormMessage] = useState("");
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<ClimateRow | null>(null);
 
   const [importStationId, setImportStationId] = useState("");
   const [importFile, setImportFile] = useState<File | null>(null);
@@ -281,14 +280,13 @@ export default function Page() {
   }
 
   async function deleteRow(row: ClimateRow) {
-    if (!window.confirm(`Hapus data iklim tanggal ${row.tanggal}?`)) return;
-
     setDeletingId(row.id);
     setNotice("");
 
     try {
       const response = await apiDelete<null>(`/admin/data-iklim/${row.id}`);
       setNotice(response.message);
+      setPendingDelete(null);
       refreshRows();
     } catch (caught) {
       setTableError(errorMessage(caught, "Data iklim gagal dihapus."));
@@ -334,22 +332,16 @@ export default function Page() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">Data Iklim Harian</h1>
-          <p className="mt-1 text-sm text-muted">Kelola data hujan harian dan import CSV BMKG.</p>
-        </div>
-        <Button type="button" onClick={openCreateForm}>Input Data Manual</Button>
-      </div>
+      <PageHeader title="Data Iklim Harian" description="Kelola observasi curah hujan harian dan import data CSV BMKG." action={<Button type="button" onClick={openCreateForm}>Input Data Manual</Button>} />
 
-      {notice ? <Alert variant="success">{notice}</Alert> : null}
+      <ToastNotice message={notice} onDismiss={() => setNotice("")} />
       {tableError ? <Alert variant="error">{tableError}</Alert> : null}
 
-      <Card>
+      <FilterPanel activeCount={Object.values(appliedFilters).filter(Boolean).length - 1}>
         <form onSubmit={submitFilter} className="grid gap-3 md:grid-cols-6">
           <Field label="Stasiun">
             <select
-              className={inputClass}
+              className={controlClass}
               disabled={optionsLoading}
               value={filters.stasiun_id}
               onChange={(event) => setFilters({ ...filters, stasiun_id: event.target.value })}
@@ -364,7 +356,7 @@ export default function Page() {
           </Field>
           <Field label="Tanggal">
             <input
-              className={inputClass}
+              className={controlClass}
               name="tanggal"
               type="date"
               value={filters.tanggal}
@@ -373,7 +365,7 @@ export default function Page() {
           </Field>
           <Field label="Tanggal Mulai">
             <input
-              className={inputClass}
+              className={controlClass}
               name="tanggal_mulai"
               type="date"
               value={filters.tanggal_mulai}
@@ -382,7 +374,7 @@ export default function Page() {
           </Field>
           <Field label="Tanggal Selesai">
             <input
-              className={inputClass}
+              className={controlClass}
               name="tanggal_selesai"
               type="date"
               value={filters.tanggal_selesai}
@@ -391,7 +383,7 @@ export default function Page() {
           </Field>
           <Field label="Per Halaman">
             <select
-              className={inputClass}
+              className={controlClass}
               value={filters.per_page}
               onChange={(event) => setFilters({ ...filters, per_page: event.target.value })}
             >
@@ -415,20 +407,20 @@ export default function Page() {
             </Button>
           </div>
         </form>
-      </Card>
+      </FilterPanel>
 
       <Card className="p-0">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[920px] border-collapse text-sm">
-            <thead className="border-b border-border bg-background text-left text-muted">
+            <thead className="sticky top-0 z-10 border-b border-border bg-background text-left text-muted">
               <tr>
-                <th className="px-4 py-3 font-medium">Tanggal</th>
-                <th className="px-4 py-3 font-medium">Stasiun</th>
-                <th className="px-4 py-3 font-medium">Curah Hujan</th>
-                <th className="px-4 py-3 font-medium">Status</th>
-                <th className="px-4 py-3 font-medium">Sumber</th>
-                <th className="px-4 py-3 font-medium">Dibuat Oleh</th>
-                <th className="px-4 py-3 text-right font-medium">Aksi</th>
+                <th scope="col" className="px-4 py-3 font-medium">Tanggal</th>
+                <th scope="col" className="px-4 py-3 font-medium">Stasiun</th>
+                <th scope="col" className="px-4 py-3 font-medium">Curah Hujan</th>
+                <th scope="col" className="px-4 py-3 font-medium">Status</th>
+                <th scope="col" className="px-4 py-3 font-medium">Sumber</th>
+                <th scope="col" className="px-4 py-3 font-medium">Dibuat Oleh</th>
+                <th scope="col" className="px-4 py-3 text-right font-medium">Aksi</th>
               </tr>
             </thead>
             <tbody>
@@ -444,7 +436,7 @@ export default function Page() {
                 ))
               ) : rows.length ? (
                 rows.map((row) => (
-                  <tr key={row.id} className="border-b border-border last:border-0">
+                  <tr key={row.id} className="border-b border-border transition-colors hover:bg-background/70 last:border-0">
                     <td className="whitespace-nowrap px-4 py-3">{formatDate(row.tanggal)}</td>
                     <td className="px-4 py-3">
                       <div className="font-medium">{row.stasiun?.nama_stasiun ?? `Stasiun ${row.stasiun_id}`}</div>
@@ -453,7 +445,7 @@ export default function Page() {
                     <td className="whitespace-nowrap px-4 py-3">
                       {row.curah_hujan_mm == null ? "-" : `${row.curah_hujan_mm} mm`}
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3">{statusLabel(row.kode_status)}</td>
+                    <td className="whitespace-nowrap px-4 py-3"><StatusBadge tone={row.kode_status === "normal" ? "success" : "warning"}>{statusLabel(row.kode_status)}</StatusBadge></td>
                     <td className="whitespace-nowrap px-4 py-3">{row.sumber_data ?? "-"}</td>
                     <td className="whitespace-nowrap px-4 py-3">{typeof row.dibuat_oleh === "object" && row.dibuat_oleh !== null ? row.dibuat_oleh.nama_lengkap ?? "-" : "-"}</td>
                     <td className="px-4 py-3">
@@ -466,7 +458,7 @@ export default function Page() {
                           size="sm"
                           variant="danger"
                           disabled={deletingId === row.id}
-                          onClick={() => deleteRow(row)}
+                          onClick={() => setPendingDelete(row)}
                         >
                           {deletingId === row.id ? "Menghapus" : "Hapus"}
                         </Button>
@@ -476,38 +468,13 @@ export default function Page() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center text-muted">
-                    Tidak ada data iklim sesuai filter.
-                  </td>
+                  <td colSpan={7}><EmptyState title="Data iklim tidak ditemukan" description="Ubah filter atau tambahkan data iklim harian baru." /></td>
                 </tr>
               )}
             </tbody>
           </table>
         </div>
-        <div className="flex flex-col gap-3 border-t border-border px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm text-muted">Total {meta.total} data</p>
-          <div className="flex items-center gap-2">
-            <Button
-              type="button"
-              size="sm"
-              variant="secondary"
-              disabled={page <= 1 || loading}
-              onClick={() => setPage((value) => Math.max(1, value - 1))}
-            >
-              Sebelumnya
-            </Button>
-            <span className="text-sm text-muted">Halaman {meta.current_page} / {totalPages}</span>
-            <Button
-              type="button"
-              size="sm"
-              variant="secondary"
-              disabled={page >= totalPages || loading}
-              onClick={() => setPage((value) => value + 1)}
-            >
-              Berikutnya
-            </Button>
-          </div>
-        </div>
+        <Pagination page={meta.current_page} totalPages={totalPages} total={meta.total} loading={loading} onPageChange={setPage} />
       </Card>
 
       <Card>
@@ -529,7 +496,7 @@ export default function Page() {
           <div className="grid gap-3 md:grid-cols-[1fr_2fr_auto] md:items-start">
             <Field label="Stasiun" error={importErrors.stasiun_id}>
               <select
-                className={inputClass}
+                className={controlClass}
                 disabled={optionsLoading}
                 value={importStationId}
                 onChange={(event) => setImportStationId(event.target.value)}
@@ -559,27 +526,15 @@ export default function Page() {
         </form>
       </Card>
 
-      {formOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/30 p-4">
-          <Card className="w-full max-w-xl" role="dialog" aria-modal="true">
+      <Modal open={formOpen} onClose={() => setFormOpen(false)} title={editing ? "Edit Data Iklim" : "Input Data Manual"} description="Lengkapi stasiun, tanggal, curah hujan, dan status observasi.">
             <form onSubmit={submitClimate} className="space-y-4">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <h2 className="text-lg font-semibold">{editing ? "Edit Data Iklim" : "Input Data Manual"}</h2>
-                  <p className="mt-1 text-sm text-muted">Stasiun ID dan tanggal wajib diisi.</p>
-                </div>
-                <Button type="button" variant="ghost" size="sm" onClick={() => setFormOpen(false)}>
-                  Tutup
-                </Button>
-              </div>
-
               {formMessage ? <Alert variant="error">{formMessage}</Alert> : null}
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <Field label="Stasiun" error={formErrors.stasiun_id}>
                   <select
                     required
-                    className={inputClass}
+                    className={controlClass}
                     disabled={optionsLoading}
                     value={form.stasiun_id}
                     onChange={(event) => setForm({ ...form, stasiun_id: event.target.value })}
@@ -595,7 +550,7 @@ export default function Page() {
                 <Field label="Tanggal" error={formErrors.tanggal}>
                   <input
                     required
-                    className={inputClass}
+                    className={controlClass}
                     max={maxDate}
                     type="date"
                     value={form.tanggal}
@@ -604,7 +559,7 @@ export default function Page() {
                 </Field>
                 <Field label="Curah Hujan (mm)" error={formErrors.curah_hujan_mm}>
                   <input
-                    className={inputClass}
+                    className={controlClass}
                     min="0"
                     step="0.1"
                     type="number"
@@ -614,7 +569,7 @@ export default function Page() {
                 </Field>
                 <Field label="Kode Status" error={formErrors.kode_status}>
                   <select
-                    className={inputClass}
+                    className={controlClass}
                     value={form.kode_status}
                     onChange={(event) => setForm({ ...form, kode_status: event.target.value })}
                   >
@@ -635,28 +590,9 @@ export default function Page() {
                 </Button>
               </div>
             </form>
-          </Card>
-        </div>
-      ) : null}
+      </Modal>
+      <ConfirmDialog open={Boolean(pendingDelete)} title="Hapus data iklim?" description={pendingDelete ? `Data tanggal ${formatDate(pendingDelete.tanggal)} akan dihapus permanen.` : ""} confirmLabel="Hapus data" busy={deletingId !== null} onCancel={() => setPendingDelete(null)} onConfirm={() => pendingDelete ? deleteRow(pendingDelete) : undefined} />
     </div>
-  );
-}
-
-function Field({
-  label,
-  error,
-  children,
-}: {
-  label: string;
-  error?: string;
-  children: ReactNode;
-}) {
-  return (
-    <label className="block space-y-1 text-sm font-medium">
-      <span>{label}</span>
-      {children}
-      {error ? <span className="block text-xs font-normal text-danger">{error}</span> : null}
-    </label>
   );
 }
 
@@ -668,5 +604,3 @@ function ImportSummary({ label, value }: { label: string; value: number }) {
     </div>
   );
 }
-
-

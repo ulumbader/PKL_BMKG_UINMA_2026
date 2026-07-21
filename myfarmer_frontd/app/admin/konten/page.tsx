@@ -1,7 +1,8 @@
 "use client";
 
-import { type FormEvent, type ReactNode, useCallback, useEffect, useState } from "react";
+import { type FormEvent, useCallback, useEffect, useState } from "react";
 
+import { ConfirmDialog, EmptyState, Field, FilterPanel, PageHeader, Pagination, StatusBadge, ToastNotice, controlClass, textareaClass } from "@/components/admin/AdminUI";
 import { Alert, Button, Card, Skeleton, Spinner } from "@/components/ui";
 import { ApiError, apiDelete, apiGet, apiPost, apiPut } from "@/lib/apiClient";
 
@@ -13,6 +14,8 @@ type Paginated<T> = {
   data?: T[];
   total?: number;
   per_page?: number;
+  current_page?: number;
+  last_page?: number;
 };
 
 type ListResult<T> = T[] | Paginated<T>;
@@ -59,12 +62,6 @@ const emptyForm: FormData = {
   urutan_tampil: "0",
 };
 
-const inputClass =
-  "h-10 w-full rounded-control border border-border bg-surface px-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20";
-
-const textareaClass =
-  "w-full rounded-control border border-border bg-surface px-3 py-2 text-sm leading-relaxed outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 resize-y";
-
 /* ────────────────────────────────────────────
    Helpers
    ──────────────────────────────────────────── */
@@ -77,8 +74,8 @@ function listTotal<T>(result: ListResult<T>) {
   return Array.isArray(result) ? result.length : result.total ?? result.data?.length ?? 0;
 }
 
-function buildQuery(filters: Filters) {
-  const params = new URLSearchParams({ per_page: filters.per_page });
+function buildQuery(filters: Filters, page: number) {
+  const params = new URLSearchParams({ per_page: filters.per_page, page: String(page) });
   if (filters.tipe) params.set("tipe", filters.tipe);
   if (filters.is_active) params.set("is_active", filters.is_active);
   return params.toString();
@@ -119,6 +116,8 @@ export default function Page() {
   /* ── Table state ── */
   const [rows, setRows] = useState<KontenRow[]>([]);
   const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
 
   /* ── Alerts ── */
@@ -134,6 +133,7 @@ export default function Page() {
 
   /* ── Delete state ── */
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<KontenRow | null>(null);
 
   /* ──────────────── Data Fetching ──────────────── */
 
@@ -144,15 +144,17 @@ export default function Page() {
       setError("");
       try {
         const response = await apiGet<ListResult<KontenRow>>(
-          `/admin/konten?${buildQuery(appliedFilters)}`,
+          `/admin/konten?${buildQuery(appliedFilters, page)}`,
         );
         if (!active) return;
         setRows(listItems(response.data));
         setTotal(listTotal(response.data));
+        setTotalPages(Array.isArray(response.data) ? 1 : response.data.last_page ?? Math.max(1, Math.ceil((response.data.total ?? 0) / (response.data.per_page ?? Number(appliedFilters.per_page)))));
       } catch (caught) {
         if (!active) return;
         setRows([]);
         setTotal(0);
+        setTotalPages(1);
         setError(errorMessage(caught, "Data konten gagal dimuat."));
       } finally {
         if (active) setLoading(false);
@@ -160,13 +162,14 @@ export default function Page() {
     }
     loadRows();
     return () => { active = false; };
-  }, [appliedFilters, reloadKey]);
+  }, [appliedFilters, page, reloadKey]);
 
   /* ──────────────── Filter ──────────────── */
 
   const submitFilter = useCallback((event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setNotice("");
+    setPage(1);
     setAppliedFilters(filters);
   }, [filters]);
 
@@ -250,6 +253,7 @@ export default function Page() {
     try {
       const response = await apiDelete<null>(`/admin/konten/${id}`);
       setNotice(response.message);
+      setPendingDelete(null);
       setReloadKey((v) => v + 1);
     } catch (caught) {
       setError(errorMessage(caught, "Gagal menghapus konten."));
@@ -263,18 +267,10 @@ export default function Page() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold">Konten Landing Page</h1>
-          <p className="mt-1 text-sm text-muted">
-            Kelola pengumuman dan tips yang ditampilkan di halaman publik.
-          </p>
-        </div>
-        <Button onClick={openCreate}>+ Buat Konten Baru</Button>
-      </div>
+      <PageHeader title="Konten Landing Page" description="Kelola pengumuman dan tips yang ditampilkan pada halaman publik." action={<Button onClick={openCreate}>Buat Konten Baru</Button>} />
 
       {/* Alerts */}
-      {notice ? <Alert variant="success">{notice}</Alert> : null}
+      <ToastNotice message={notice} onDismiss={() => setNotice("")} />
       {error && !showForm ? <Alert variant="error">{error}</Alert> : null}
 
       {/* ──────── Create / Edit Form ──────── */}
@@ -289,7 +285,7 @@ export default function Page() {
 
             <Field label="Judul" error={formErrors.judul}>
               <input
-                className={inputClass}
+                className={controlClass}
                 required
                 maxLength={255}
                 value={form.judul}
@@ -313,7 +309,7 @@ export default function Page() {
             <div className="grid gap-4 md:grid-cols-3">
               <Field label="Tipe" error={formErrors.tipe}>
                 <select
-                  className={inputClass}
+                  className={controlClass}
                   required
                   value={form.tipe}
                   onChange={(e) => setForm({ ...form, tipe: e.target.value })}
@@ -325,7 +321,7 @@ export default function Page() {
 
               <Field label="Urutan Tampil" error={formErrors.urutan_tampil}>
                 <input
-                  className={inputClass}
+                  className={controlClass}
                   type="number"
                   min="0"
                   value={form.urutan_tampil}
@@ -373,11 +369,11 @@ export default function Page() {
       ) : null}
 
       {/* ──────── Filters ──────── */}
-      <Card>
+      <FilterPanel activeCount={Number(Boolean(appliedFilters.tipe)) + Number(Boolean(appliedFilters.is_active))}>
         <form onSubmit={submitFilter} className="grid gap-3 md:grid-cols-4">
           <Field label="Tipe">
             <select
-              className={inputClass}
+              className={controlClass}
               value={filters.tipe}
               onChange={(e) => setFilters({ ...filters, tipe: e.target.value })}
             >
@@ -388,7 +384,7 @@ export default function Page() {
           </Field>
           <Field label="Status Aktif">
             <select
-              className={inputClass}
+              className={controlClass}
               value={filters.is_active}
               onChange={(e) => setFilters({ ...filters, is_active: e.target.value })}
             >
@@ -399,7 +395,7 @@ export default function Page() {
           </Field>
           <Field label="Per Halaman">
             <select
-              className={inputClass}
+              className={controlClass}
               value={filters.per_page}
               onChange={(e) => setFilters({ ...filters, per_page: e.target.value })}
             >
@@ -416,27 +412,28 @@ export default function Page() {
               onClick={() => {
                 setFilters(emptyFilters);
                 setAppliedFilters(emptyFilters);
+                setPage(1);
               }}
             >
               Reset
             </Button>
           </div>
         </form>
-      </Card>
+      </FilterPanel>
 
       {/* ──────── Table ──────── */}
       <Card className="p-0">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[860px] border-collapse text-sm">
-            <thead className="border-b border-border bg-background text-left text-muted">
+            <thead className="sticky top-0 z-10 border-b border-border bg-background text-left text-muted">
               <tr>
-                <th className="px-4 py-3 font-medium">ID</th>
-                <th className="px-4 py-3 font-medium">Judul</th>
-                <th className="px-4 py-3 font-medium">Tipe</th>
-                <th className="px-4 py-3 font-medium">Aktif</th>
-                <th className="px-4 py-3 font-medium">Urutan</th>
-                <th className="px-4 py-3 font-medium">Dibuat</th>
-                <th className="px-4 py-3 font-medium">Aksi</th>
+                <th scope="col" className="px-4 py-3 font-medium">ID</th>
+                <th scope="col" className="px-4 py-3 font-medium">Judul</th>
+                <th scope="col" className="px-4 py-3 font-medium">Tipe</th>
+                <th scope="col" className="px-4 py-3 font-medium">Aktif</th>
+                <th scope="col" className="px-4 py-3 font-medium">Urutan</th>
+                <th scope="col" className="px-4 py-3 font-medium">Dibuat</th>
+                <th scope="col" className="px-4 py-3 font-medium">Aksi</th>
               </tr>
             </thead>
             <tbody>
@@ -452,7 +449,7 @@ export default function Page() {
                 ))
               ) : rows.length ? (
                 rows.map((row) => (
-                  <tr key={row.id} className="border-b border-border last:border-0">
+                  <tr key={row.id} className="border-b border-border transition-colors hover:bg-background/70 last:border-0">
                     <td className="whitespace-nowrap px-4 py-3">{row.id}</td>
                     <td className="max-w-xs px-4 py-3">
                       <p className="font-medium">{row.judul}</p>
@@ -467,9 +464,7 @@ export default function Page() {
                           Aktif
                         </span>
                       ) : (
-                        <span className="inline-flex rounded-control border border-border bg-background px-2 py-0.5 text-xs font-medium text-muted">
-                          Nonaktif
-                        </span>
+                        <StatusBadge>Nonaktif</StatusBadge>
                       )}
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-center">{row.urutan_tampil}</td>
@@ -483,11 +478,7 @@ export default function Page() {
                           size="sm"
                           variant="danger"
                           disabled={deletingId === row.id}
-                          onClick={() => {
-                            if (window.confirm(`Hapus konten "${row.judul}"?`)) {
-                              confirmDelete(row.id);
-                            }
-                          }}
+                          onClick={() => setPendingDelete(row)}
                         >
                           {deletingId === row.id ? (
                             <Spinner className="mr-1 size-3" label="Menghapus" />
@@ -500,18 +491,15 @@ export default function Page() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center text-muted">
-                    Belum ada konten sesuai filter.
-                  </td>
+                  <td colSpan={7}><EmptyState title="Konten tidak ditemukan" description="Ubah filter atau buat konten publik baru." /></td>
                 </tr>
               )}
             </tbody>
           </table>
         </div>
-        <div className="border-t border-border px-4 py-3 text-sm text-muted">
-          Total {total} konten ditampilkan
-        </div>
+        <Pagination page={page} totalPages={totalPages} total={total} loading={loading} onPageChange={setPage} />
       </Card>
+      <ConfirmDialog open={Boolean(pendingDelete)} title="Hapus konten?" description={pendingDelete ? `Konten “${pendingDelete.judul}” akan dihapus permanen.` : ""} confirmLabel="Hapus konten" busy={deletingId !== null} onCancel={() => setPendingDelete(null)} onConfirm={() => pendingDelete ? confirmDelete(pendingDelete.id) : undefined} />
     </div>
   );
 }
@@ -519,16 +507,6 @@ export default function Page() {
 /* ────────────────────────────────────────────
    Sub-components
    ──────────────────────────────────────────── */
-
-function Field({ label, error, children }: { label: string; error?: string; children: ReactNode }) {
-  return (
-    <label className="block space-y-1 text-sm font-medium">
-      <span>{label}</span>
-      {children}
-      {error ? <span className="block text-xs font-normal text-danger">{error}</span> : null}
-    </label>
-  );
-}
 
 function TipeBadge({ tipe }: { tipe?: string }) {
   const colors: Record<string, string> = {

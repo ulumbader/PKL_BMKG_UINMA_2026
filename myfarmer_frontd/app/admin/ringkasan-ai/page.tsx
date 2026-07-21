@@ -1,7 +1,8 @@
 "use client";
 
-import { type FormEvent, type ReactNode, useCallback, useEffect, useState } from "react";
+import { type FormEvent, useCallback, useEffect, useState } from "react";
 
+import { Field, FilterPanel, PageHeader, Pagination, ToastNotice, controlClass, textareaClass } from "@/components/admin/AdminUI";
 import { Alert, Button, Card, Skeleton, Spinner } from "@/components/ui";
 import { ApiError, apiDelete, apiGet, apiGetAllPages, apiPost, apiPut } from "@/lib/apiClient";
 
@@ -13,6 +14,8 @@ type Paginated<T> = {
   data?: T[];
   total?: number;
   per_page?: number;
+  current_page?: number;
+  last_page?: number;
 };
 
 type ListResult<T> = T[] | Paginated<T>;
@@ -64,12 +67,6 @@ const monthNames = [
   "Juli", "Agustus", "September", "Oktober", "November", "Desember",
 ];
 
-const inputClass =
-  "h-10 w-full rounded-control border border-border bg-surface px-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20";
-
-const textareaClass =
-  "w-full rounded-control border border-border bg-surface px-3 py-2 text-sm leading-relaxed outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 resize-y";
-
 /* ────────────────────────────────────────────
    Helpers
    ──────────────────────────────────────────── */
@@ -82,8 +79,8 @@ function listTotal<T>(result: ListResult<T>) {
   return Array.isArray(result) ? result.length : result.total ?? result.data?.length ?? 0;
 }
 
-function buildQuery(filters: Filters) {
-  const params = new URLSearchParams({ per_page: filters.per_page });
+function buildQuery(filters: Filters, page: number) {
+  const params = new URLSearchParams({ per_page: filters.per_page, page: String(page) });
   if (filters.status) params.set("status", filters.status);
   return params.toString();
 }
@@ -137,6 +134,8 @@ export default function Page() {
   /* ── Table state ── */
   const [rows, setRows] = useState<RingkasanRow[]>([]);
   const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
 
   /* ── Options for generate form ── */
@@ -191,15 +190,17 @@ export default function Page() {
       setError("");
       try {
         const response = await apiGet<ListResult<RingkasanRow>>(
-          `/admin/ringkasan?${buildQuery(appliedFilters)}`,
+          `/admin/ringkasan?${buildQuery(appliedFilters, page)}`,
         );
         if (!active) return;
         setRows(listItems(response.data));
         setTotal(listTotal(response.data));
+        setTotalPages(Array.isArray(response.data) ? 1 : response.data.last_page ?? Math.max(1, Math.ceil((response.data.total ?? 0) / (response.data.per_page ?? Number(appliedFilters.per_page)))));
       } catch (caught) {
         if (!active) return;
         setRows([]);
         setTotal(0);
+        setTotalPages(1);
         setError(errorMessage(caught, "Data ringkasan AI gagal dimuat."));
       } finally {
         if (active) setLoading(false);
@@ -207,12 +208,13 @@ export default function Page() {
     }
     loadRows();
     return () => { active = false; };
-  }, [appliedFilters, reloadKey]);
+  }, [appliedFilters, page, reloadKey]);
 
   /* ──────────────── Filter Submit ──────────────── */
 
   const submitFilter = useCallback((event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setPage(1);
     setNotice("");
     setAppliedFilters(filters);
   }, [filters]);
@@ -336,15 +338,10 @@ export default function Page() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-semibold">Ringkasan AI</h1>
-        <p className="mt-1 text-sm text-muted">
-          Generate, review, edit, dan publish ringkasan AI dari backend Groq berdasarkan hasil rekomendasi.
-        </p>
-      </div>
+      <PageHeader title="Ringkasan AI" description="Generate, review, edit, dan publish ringkasan dari backend Groq berdasarkan hasil rekomendasi." />
 
       {/* Alerts */}
-      {notice ? <Alert variant="success">{notice}</Alert> : null}
+      <ToastNotice message={notice} onDismiss={() => setNotice("")} />
       {error ? <Alert variant="error">{error}</Alert> : null}
 
       {/* ──────── Generate Form ──────── */}
@@ -361,7 +358,7 @@ export default function Page() {
             <Field label="Hasil Rekomendasi" error={generateErrors.hasil_rekomendasi_id}>
               <select
                 required
-                className={inputClass}
+                className={controlClass}
                 disabled={optionsLoading}
                 value={generateRekomId}
                 onChange={(e) => setGenerateRekomId(e.target.value)}
@@ -389,11 +386,11 @@ export default function Page() {
       </Card>
 
       {/* ──────── Filters ──────── */}
-      <Card>
+      <FilterPanel activeCount={appliedFilters.status ? 1 : 0}>
         <form onSubmit={submitFilter} className="grid gap-3 md:grid-cols-4">
           <Field label="Status">
             <select
-              className={inputClass}
+              className={controlClass}
               value={filters.status}
               onChange={(e) => setFilters({ ...filters, status: e.target.value })}
             >
@@ -404,7 +401,7 @@ export default function Page() {
           </Field>
           <Field label="Per Halaman">
             <select
-              className={inputClass}
+              className={controlClass}
               value={filters.per_page}
               onChange={(e) => setFilters({ ...filters, per_page: e.target.value })}
             >
@@ -421,28 +418,29 @@ export default function Page() {
               onClick={() => {
                 setFilters(emptyFilters);
                 setAppliedFilters(emptyFilters);
+                setPage(1);
               }}
             >
               Reset
             </Button>
           </div>
         </form>
-      </Card>
+      </FilterPanel>
 
       {/* ──────── Table ──────── */}
       <Card className="p-0">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[900px] border-collapse text-sm">
-            <thead className="border-b border-border bg-background text-left text-muted">
+            <thead className="sticky top-0 z-10 border-b border-border bg-background text-left text-muted">
               <tr>
-                <th className="px-4 py-3 font-medium">ID</th>
-                <th className="px-4 py-3 font-medium">Rekom ID</th>
-                <th className="px-4 py-3 font-medium">Status</th>
-                <th className="px-4 py-3 font-medium">Ringkasan</th>
-                <th className="px-4 py-3 font-medium">Diedit Manual</th>
-                <th className="px-4 py-3 font-medium">Generated</th>
-                <th className="px-4 py-3 font-medium">Published</th>
-                <th className="px-4 py-3 font-medium">Aksi</th>
+                <th scope="col" className="px-4 py-3 font-medium">ID</th>
+                <th scope="col" className="px-4 py-3 font-medium">Rekom ID</th>
+                <th scope="col" className="px-4 py-3 font-medium">Status</th>
+                <th scope="col" className="px-4 py-3 font-medium">Ringkasan</th>
+                <th scope="col" className="px-4 py-3 font-medium">Diedit Manual</th>
+                <th scope="col" className="px-4 py-3 font-medium">Generated</th>
+                <th scope="col" className="px-4 py-3 font-medium">Published</th>
+                <th scope="col" className="px-4 py-3 font-medium">Aksi</th>
               </tr>
             </thead>
             <tbody>
@@ -458,7 +456,7 @@ export default function Page() {
                 ))
               ) : rows.length ? (
                 rows.map((row) => (
-                  <tr key={row.id} className="border-b border-border last:border-0">
+                  <tr key={row.id} className="border-b border-border transition-colors hover:bg-background/70 last:border-0">
                     {editingId === row.id ? (
                       /* ── Inline Edit Mode ── */
                       <td colSpan={8} className="px-4 py-4">
@@ -485,7 +483,7 @@ export default function Page() {
 
                           <Field label="Aksi yang dilakukan">
                             <select
-                              className={inputClass}
+                              className={controlClass}
                               value={editAction}
                               onChange={(e) =>
                                 setEditAction(
@@ -619,9 +617,7 @@ export default function Page() {
             </tbody>
           </table>
         </div>
-        <div className="border-t border-border px-4 py-3 text-sm text-muted">
-          Total {total} ringkasan ditampilkan
-        </div>
+        <Pagination page={page} totalPages={totalPages} total={total} loading={loading} onPageChange={setPage} />
       </Card>
     </div>
   );
@@ -630,16 +626,6 @@ export default function Page() {
 /* ────────────────────────────────────────────
    Sub-components
    ──────────────────────────────────────────── */
-
-function Field({ label, error, children }: { label: string; error?: string; children: ReactNode }) {
-  return (
-    <label className="block space-y-1 text-sm font-medium">
-      <span>{label}</span>
-      {children}
-      {error ? <span className="block text-xs font-normal text-danger">{error}</span> : null}
-    </label>
-  );
-}
 
 function StatusBadge({ status }: { status?: string }) {
   const colors: Record<string, string> = {

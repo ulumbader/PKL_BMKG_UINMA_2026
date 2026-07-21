@@ -103,7 +103,7 @@ function statusClass(status: string) {
   return "text-gray-600 bg-gray-50 border-gray-200";
 }
 
-export function useBackendCards(): BackendInfoCard[] {
+export function useBackendCards() {
   const recommendation = usePublicData<RecommendationData>("/publik/rekomendasi-terkini");
   const summary = usePublicData<SummaryData>("/publik/ringkasan-terkini");
   const rain = usePublicData<RainData>("/publik/cuaca-terkini");
@@ -221,7 +221,7 @@ export function useBackendCards(): BackendInfoCard[] {
     });
   }
 
-  return [...baseCards, ...contentCards];
+  return { infoCards: baseCards, contentCards };
 }
 
 export const BackendCards = ({ cards }: { cards: BackendInfoCard[] }) => {
@@ -254,7 +254,7 @@ export const BackendCards = ({ cards }: { cards: BackendInfoCard[] }) => {
             let opacity = offset > 2 ? 0 : 1 - (offset * 0.15);
             let filter = `blur(${offset * 1.5}px)`;
 
-            if (offset === total - 1) {
+            if (total > 1 && offset === total - 1) {
               // It's the one fading out to the front (sliding down and fading)
               scale = 1.05;
               translateY = 30;

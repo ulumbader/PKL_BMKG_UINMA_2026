@@ -1,7 +1,8 @@
 ﻿"use client";
 
-import { type FormEvent, type ReactNode, useEffect, useState } from "react";
+import { type FormEvent, useEffect, useState } from "react";
 
+import { ConfirmDialog, EmptyState, Field, FilterPanel, Modal, PageHeader, StatusBadge, ToastNotice, controlClass } from "@/components/admin/AdminUI";
 import { Alert, Button, Card, Skeleton, Spinner } from "@/components/ui";
 import { useAuth } from "@/context/AuthContext";
 import { ApiError, apiDelete, apiGet, apiPost, apiPut } from "@/lib/apiClient";
@@ -54,9 +55,6 @@ const emptyForm: RuleForm = {
   parameter: defaultParameter,
   is_active: true,
 };
-
-const inputClass =
-  "h-10 w-full rounded-control border border-border bg-surface px-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 disabled:bg-background disabled:text-muted";
 
 function fieldErrors(errors: unknown): FieldErrors {
   if (!errors || typeof errors !== "object" || Array.isArray(errors)) return {};
@@ -164,6 +162,7 @@ export default function Page() {
   const [formMessage, setFormMessage] = useState("");
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<Rule | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -261,8 +260,6 @@ export default function Page() {
   }
 
   async function deleteRule(rule: Rule) {
-    if (!window.confirm(`Hapus rule ${rule.nama_rule}?`)) return;
-
     setDeletingId(rule.id);
     setNotice("");
     setError("");
@@ -270,6 +267,7 @@ export default function Page() {
     try {
       const response = await apiDelete<null>(`/admin/rules/${rule.id}`);
       setNotice(response.message);
+      setPendingDelete(null);
       setReloadKey((value) => value + 1);
     } catch (caught) {
       setError(errorMessage(caught, "Rule gagal dihapus."));
@@ -280,22 +278,16 @@ export default function Page() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">Rule Rekomendasi</h1>
-          <p className="mt-1 text-sm text-muted">Kelola parameter rule evaluasi rekomendasi tanam.</p>
-        </div>
-        {isSuperAdmin ? <Button type="button" onClick={openCreateForm}>Buat Rule Baru</Button> : null}
-      </div>
+      <PageHeader title="Rule Rekomendasi" description="Kelola parameter metodologi evaluasi rekomendasi tanam." action={isSuperAdmin ? <Button type="button" onClick={openCreateForm}>Buat Rule Baru</Button> : undefined} />
 
-      {notice ? <Alert variant="success">{notice}</Alert> : null}
+      <ToastNotice message={notice} onDismiss={() => setNotice("")} />
       {error ? <Alert variant="error">{error}</Alert> : null}
 
-      <Card>
+      <FilterPanel activeCount={appliedFilter ? 1 : 0}>
         <form onSubmit={submitFilter} className="flex flex-col gap-3 sm:flex-row sm:items-end">
           <Field label="Status Aktif">
             <select
-              className={inputClass}
+              className={controlClass}
               value={activeFilter}
               onChange={(event) => setActiveFilter(event.target.value)}
             >
@@ -316,18 +308,18 @@ export default function Page() {
             Reset
           </Button>
         </form>
-      </Card>
+      </FilterPanel>
 
       <Card className="p-0">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[1050px] border-collapse text-sm">
-            <thead className="border-b border-border bg-background text-left text-muted">
+            <thead className="sticky top-0 z-10 border-b border-border bg-background text-left text-muted">
               <tr>
-                <th className="px-4 py-3 font-medium">Rule</th>
-                <th className="px-4 py-3 font-medium">Parameter</th>
-                <th className="px-4 py-3 font-medium">Status</th>
-                <th className="px-4 py-3 font-medium">Update</th>
-                <th className="px-4 py-3 text-right font-medium">Aksi</th>
+                <th scope="col" className="px-4 py-3 font-medium">Rule</th>
+                <th scope="col" className="px-4 py-3 font-medium">Parameter</th>
+                <th scope="col" className="px-4 py-3 font-medium">Status</th>
+                <th scope="col" className="px-4 py-3 font-medium">Update</th>
+                <th scope="col" className="px-4 py-3 text-right font-medium">Aksi</th>
               </tr>
             </thead>
             <tbody>
@@ -341,7 +333,7 @@ export default function Page() {
                 ))
               ) : rules.length ? (
                 rules.map((rule) => (
-                  <tr key={rule.id} className="border-b border-border last:border-0">
+                  <tr key={rule.id} className="border-b border-border transition-colors hover:bg-background/70 last:border-0">
                     <td className="px-4 py-3">
                       <div className="font-medium">{rule.nama_rule}</div>
                       <div className="mt-1 max-w-md text-xs text-muted">{rule.deskripsi || "-"}</div>
@@ -381,7 +373,7 @@ export default function Page() {
                             size="sm"
                             variant="danger"
                             disabled={deletingId === rule.id}
-                            onClick={() => deleteRule(rule)}
+                            onClick={() => setPendingDelete(rule)}
                           >
                             {deletingId === rule.id ? "Menghapus" : "Hapus"}
                           </Button>
@@ -392,7 +384,7 @@ export default function Page() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-muted">Belum ada rule sesuai filter.</td>
+                  <td colSpan={5}><EmptyState title="Rule tidak ditemukan" description="Ubah filter atau buat rule rekomendasi baru." /></td>
                 </tr>
               )}
             </tbody>
@@ -400,29 +392,15 @@ export default function Page() {
         </div>
       </Card>
 
-      {formOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/30 p-4">
-          <Card
-            className="max-h-[calc(100vh-2rem)] w-full max-w-2xl overflow-y-auto"
-            role="dialog"
-            aria-modal="true"
-          >
+      <Modal open={formOpen} onClose={() => setFormOpen(false)} title={editing ? "Edit Rule" : "Buat Rule Baru"} description="Parameter ditata per field agar aman ditinjau sebelum disimpan." size="lg">
             <form onSubmit={submitRule} className="space-y-4">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <h2 className="text-lg font-semibold">{editing ? "Edit Rule" : "Buat Rule Baru"}</h2>
-                  <p className="mt-1 text-sm text-muted">Parameter diedit lewat field terpisah, bukan JSON mentah.</p>
-                </div>
-                <Button type="button" variant="ghost" size="sm" onClick={() => setFormOpen(false)}>Tutup</Button>
-              </div>
-
               {formMessage ? <Alert variant="error">{formMessage}</Alert> : null}
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <Field label="Nama Rule" error={formErrors.nama_rule}>
                   <input
                     required
-                    className={inputClass}
+                    className={controlClass}
                     disabled={!isSuperAdmin}
                     value={form.nama_rule}
                     onChange={(event) => setForm({ ...form, nama_rule: event.target.value })}
@@ -467,7 +445,7 @@ export default function Page() {
                     <div className="relative">
                       <input
                         required
-                        className={`${inputClass} pr-28`}
+                        className={`${controlClass} pr-28`}
                         min="0"
                         step="0.1"
                         type="number"
@@ -494,7 +472,7 @@ export default function Page() {
                     <div className="relative">
                       <input
                         required
-                        className={`${inputClass} pr-24`}
+                        className={`${controlClass} pr-24`}
                         min="1"
                         max="36"
                         step="1"
@@ -522,7 +500,7 @@ export default function Page() {
                     <div className="relative">
                       <input
                         required
-                        className={`${inputClass} pr-12`}
+                        className={`${controlClass} pr-12`}
                         min="0"
                         step="0.1"
                         type="number"
@@ -549,7 +527,7 @@ export default function Page() {
                     <div className="relative">
                       <input
                         required
-                        className={`${inputClass} pr-28`}
+                        className={`${controlClass} pr-28`}
                         disabled={!form.parameter.pakai_kriteria_hari_hujan}
                         min="1"
                         max="11"
@@ -626,42 +604,12 @@ export default function Page() {
                 </Button>
               </div>
             </form>
-          </Card>
-        </div>
-      ) : null}
+      </Modal>
+      <ConfirmDialog open={Boolean(pendingDelete)} title="Hapus rule rekomendasi?" description={pendingDelete ? `Rule “${pendingDelete.nama_rule}” akan dihapus. Rule yang sudah digunakan mungkin ditolak oleh backend.` : ""} confirmLabel="Hapus rule" busy={deletingId !== null} onCancel={() => setPendingDelete(null)} onConfirm={() => pendingDelete ? deleteRule(pendingDelete) : undefined} />
     </div>
   );
 }
 
-function Field({
-  label,
-  hint,
-  error,
-  children,
-}: {
-  label: string;
-  hint?: string;
-  error?: string;
-  children: ReactNode;
-}) {
-  return (
-    <label className="block space-y-1 text-sm font-medium">
-      <span>{label}</span>
-      {hint ? <span className="block text-xs font-normal text-muted">{hint}</span> : null}
-      {children}
-      {error ? <span className="block text-xs font-normal text-danger">{error}</span> : null}
-    </label>
-  );
-}
-
 function RuleStatus({ active }: { active: boolean }) {
-  return (
-    <span className={[
-      "inline-flex rounded-control border px-2 py-1 text-xs font-medium",
-      active ? "border-primary/30 bg-success-subtle text-primary" : "border-border bg-background text-muted",
-    ].join(" ")}
-    >
-      {active ? "Aktif" : "Nonaktif"}
-    </span>
-  );
+  return <StatusBadge tone={active ? "success" : "neutral"}>{active ? "Aktif" : "Nonaktif"}</StatusBadge>;
 }

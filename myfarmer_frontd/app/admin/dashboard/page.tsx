@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { RainfallRecommendationChart } from "@/components/RainfallRecommendationChart";
+import { AdminIcon, PageHeader, StatusBadge } from "@/components/admin/AdminUI";
 import { Alert, Card, Skeleton } from "@/components/ui";
 import { ApiError, apiGet } from "@/lib/apiClient";
 
@@ -37,9 +38,9 @@ type DashboardStats = {
 };
 
 const quickActions = [
-  { label: "Input Data Iklim", href: "/admin/data-iklim" },
-  { label: "Proses Agregasi", href: "/admin/agregasi" },
-  { label: 'Generate Ringkasan AI (Groq)', href: "/admin/ringkasan-ai" },
+  { label: "Input Data Iklim", description: "Tambah observasi harian atau import CSV.", href: "/admin/data-iklim", icon: "climate" as const },
+  { label: "Proses Agregasi", description: "Olah data harian menjadi periode dasarian.", href: "/admin/agregasi", icon: "process" as const },
+  { label: "Buat Ringkasan AI", description: "Generate draft ringkasan melalui backend Groq.", href: "/admin/ringkasan-ai", icon: "ai" as const },
 ];
 
 function listItems<T>(result: ListResult<T>) {
@@ -58,6 +59,7 @@ function displayStatus(value?: string) {
 export default function Page() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let active = true;
@@ -89,7 +91,10 @@ export default function Page() {
         setError("");
       } catch (caught) {
         if (!active) return;
+        setStats(null);
         setError(caught instanceof ApiError ? caught.message : "Dashboard gagal dimuat.");
+      } finally {
+        if (active) setLoading(false);
       }
     }
 
@@ -102,28 +107,25 @@ export default function Page() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold">Dashboard</h1>
-        <p className="mt-1 text-sm text-muted">
-          Ringkasan cepat kondisi data dan proses admin MyFarmer.
-        </p>
-      </div>
+      <PageHeader title="Dashboard" description="Pantau kesiapan data, proses analisis, dan publikasi MyFarmer dalam satu ringkasan." />
 
       {error ? <Alert variant="error">{error}</Alert> : null}
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {stats ? (
           <>
-            <StatCard label="Data Iklim Harian" value={stats.climateTotal} />
-            <StatCard label="Rule Aktif" value={stats.activeRules} />
-            <StatCard label="Ringkasan AI Backend" value={stats.summaryStatus} />
+            <StatCard icon="database" label="Data Iklim Harian" value={stats.climateTotal} accent="success" />
+            <StatCard icon="rules" label="Rule Aktif" value={stats.activeRules} accent="warning" />
+            <StatCard icon="ai" label="Ringkasan AI" value={stats.summaryStatus} accent="info" />
             <StatCard
+              icon="import"
               label="Import Terakhir"
               value={stats.importStatus}
               description={stats.importDetail}
+              accent={stats.importStatus === "gagal" ? "danger" : "success"}
             />
           </>
-        ) : (
+        ) : loading ? (
           Array.from({ length: 4 }).map((_, index) => (
             <Card key={index} className="space-y-4">
               <Skeleton className="h-4 w-28" />
@@ -131,19 +133,27 @@ export default function Page() {
               <Skeleton className="h-4 w-full" />
             </Card>
           ))
-        )}
+        ) : null}
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-lg font-semibold">Aksi Cepat</h2>
-        <div className="flex flex-wrap gap-3">
+        <div>
+          <h2 className="text-lg font-semibold">Aksi Cepat</h2>
+          <p className="mt-1 text-sm text-muted">Jalur singkat ke pekerjaan admin yang paling sering digunakan.</p>
+        </div>
+        <div className="grid gap-3 md:grid-cols-3">
           {quickActions.map((action) => (
             <Link
               key={action.href}
               href={action.href}
-              className="inline-flex h-10 items-center justify-center rounded-control border border-transparent bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="group flex min-h-24 items-center gap-4 rounded-card border border-border bg-surface p-4 transition-colors hover:border-primary/35 hover:bg-success-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
             >
-              {action.label}
+              <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-control bg-success-subtle text-primary group-hover:bg-surface"><AdminIcon name={action.icon} /></span>
+              <span className="min-w-0">
+                <span className="block text-sm font-semibold text-foreground">{action.label}</span>
+                <span className="mt-1 block text-xs leading-5 text-muted">{action.description}</span>
+              </span>
+              <AdminIcon name="arrow" className="ml-auto size-4 shrink-0 text-muted" />
             </Link>
           ))}
         </div>
@@ -155,18 +165,25 @@ export default function Page() {
 }
 
 function StatCard({
+  icon,
   label,
   value,
   description,
+  accent,
 }: {
+  icon: "database" | "rules" | "ai" | "import";
   label: string;
   value: number | string;
   description?: string;
+  accent: "success" | "warning" | "danger" | "info";
 }) {
   return (
-    <Card className="min-h-32">
-      <p className="text-sm font-medium text-muted">{label}</p>
-      <p className="mt-3 break-words text-3xl font-semibold capitalize">{value}</p>
+    <Card className="min-h-36 border-l-[3px] border-l-primary">
+      <div className="flex items-start justify-between gap-3">
+        <p className="text-sm font-medium text-muted">{label}</p>
+        <span className="inline-flex size-9 items-center justify-center rounded-control bg-background text-primary"><AdminIcon name={icon} className="size-[18px]" /></span>
+      </div>
+      <div className="mt-3"><StatusBadge tone={accent}>{value}</StatusBadge></div>
       {description ? <p className="mt-2 text-sm text-muted">{description}</p> : null}
     </Card>
   );

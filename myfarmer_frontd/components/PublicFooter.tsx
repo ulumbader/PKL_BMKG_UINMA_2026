@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 
 const footerColumns = [
   {
@@ -278,9 +279,13 @@ export function PublicFooter() {
         <div className="mx-auto grid max-w-6xl gap-9 px-6 py-10 sm:px-8 md:grid-cols-2 xl:grid-cols-[1.25fr_1fr_1fr_1.15fr] xl:py-14">
           <div>
             <div className="flex items-center gap-4">
-              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-white/20 bg-white/10 text-lg font-bold">
-                SK
-              </div>
+              <Image
+                src="/logo_bmkg.png"
+                alt="Logo BMKG"
+                width={56}
+                height={56}
+                className="h-14 w-14 shrink-0"
+              />
               <div>
                 <div className="text-lg font-semibold leading-tight">Stasiun Klimatologi</div>
                 <div className="text-sm font-medium text-white/70">Jawa Timur</div>
