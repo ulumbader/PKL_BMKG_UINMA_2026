@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <defs>
+    <linearGradient id="sunGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FFD93D"/>
+      <stop offset="100%" stop-color="#F5A623"/>
+    </linearGradient>
+    <linearGradient id="hazeGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#E8DFC8" stop-opacity="0.7"/>
+      <stop offset="100%" stop-color="#D4C9A8" stop-opacity="0.85"/>
+    </linearGradient>
+  </defs>
+  <!-- Sun behind haze -->
+  <circle cx="256" cy="200" r="85" fill="url(#sunGrad)" opacity="0.7"/>
+  <!-- Haze lines -->
+  <rect x="80" y="310" width="352" height="18" rx="9" fill="url(#hazeGrad)"/>
+  <rect x="60" y="348" width="392" height="18" rx="9" fill="url(#hazeGrad)"/>
+  <rect x="100" y="386" width="312" height="18" rx="9" fill="url(#hazeGrad)"/>
+  <rect x="120" y="424" width="272" height="18" rx="9" fill="url(#hazeGrad)"/>
+</svg>

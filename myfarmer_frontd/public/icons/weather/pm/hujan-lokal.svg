@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <defs>
+    <linearGradient id="moonGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#F5E6A3"/>
+      <stop offset="100%" stop-color="#E8C84A"/>
+    </linearGradient>
+    <linearGradient id="starGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#F5E6A3"/>
+      <stop offset="100%" stop-color="#E8C84A"/>
+    </linearGradient>
+    <linearGradient id="cloudGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#A8BDDA"/>
+      <stop offset="100%" stop-color="#7E9BC0"/>
+    </linearGradient>
+    <linearGradient id="rainGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#5A90C2"/>
+      <stop offset="100%" stop-color="#3E74AA"/>
+    </linearGradient>
+    <mask id="crescentMask">
+      <circle cx="120" cy="120" r="60" fill="white"/>
+      <circle cx="155" cy="85" r="50" fill="black"/>
+    </mask>
+  </defs>
+  <!-- Crescent moon peeking from left -->
+  <circle cx="120" cy="120" r="60" fill="url(#moonGrad)" mask="url(#crescentMask)"/>
+  <!-- Stars -->
+  <circle cx="60" cy="80" r="5" fill="url(#starGrad)"/>
+  <circle cx="90" cy="200" r="4" fill="url(#starGrad)"/>
+  <!-- Rain cloud on right side -->
+  <path d="M420 280H200c-35.35 0-64-28.65-64-64 0-30.93 22.02-56.72 51.26-62.59C190 120.88 217.2 98 250 98c12.12 0 23.38 3.58 32.83 9.73C295 84.6 321.8 70 352 70c44.18 0 80.72 32.14 87.68 74.42C465 150.8 486 176.16 486 206c0 40.87-30.65 74-66 74z" fill="url(#cloudGrad)"/>
+  <!-- Localized rain -->
+  <line x1="270" y1="305" x2="258" y2="365" stroke="url(#rainGrad)" stroke-width="10" stroke-linecap="round"/>
+  <line x1="320" y1="310" x2="308" y2="370" stroke="url(#rainGrad)" stroke-width="10" stroke-linecap="round"/>
+  <line x1="370" y1="305" x2="358" y2="365" stroke="url(#rainGrad)" stroke-width="10" stroke-linecap="round"/>
+  <line x1="295" y1="385" x2="283" y2="445" stroke="url(#rainGrad)" stroke-width="10" stroke-linecap="round"/>
+  <line x1="345" y1="380" x2="333" y2="440" stroke="url(#rainGrad)" stroke-width="10" stroke-linecap="round"/>
+</svg>

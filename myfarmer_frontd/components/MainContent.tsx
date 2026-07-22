@@ -2,8 +2,8 @@
 import React from 'react';
 import {
   MenuIcon,
-  MiniCloud,
 } from './Icons';
+import { WeatherIcon } from './WeatherIcon';
 import { BmkgWeatherData, WeatherSlot } from '@/lib/bmkgClient';
 import { BackendCards, useBackendCards } from './BackendCards';
 import { InfoSection } from './InfoSection';
@@ -117,17 +117,17 @@ export const MainContent = ({
   const getDailyForecasts = (slots: WeatherSlot[] | undefined) => {
     if (!slots || slots.length === 0) return [];
 
-    const grouped = new Map<string, { max: number; min: number; condition: string }>();
+    const grouped = new Map<string, { max: number; min: number; condition: string; waktu: string }>();
 
     slots.forEach(slot => {
       const date = new Date(slot.waktu_prakiraan.replace(" ", "T"));
       if (isNaN(date.getTime())) return;
 
-      const dayStr = new Intl.DateTimeFormat('en-US', { weekday: 'short' }).format(date);
+      const dayStr = new Intl.DateTimeFormat('id-ID', { weekday: 'short' }).format(date);
       const tempVal = parseFloat(slot.suhu_celsius);
 
       if (!grouped.has(dayStr)) {
-        grouped.set(dayStr, { max: tempVal, min: tempVal, condition: slot.kondisi_cuaca });
+        grouped.set(dayStr, { max: tempVal, min: tempVal, condition: slot.kondisi_cuaca, waktu: slot.waktu_prakiraan });
       } else {
         const data = grouped.get(dayStr)!;
         if (tempVal > data.max) data.max = tempVal;
@@ -139,19 +139,12 @@ export const MainContent = ({
       day,
       max: data.max,
       min: data.min,
-      condition: data.condition
+      condition: data.condition,
+      waktu: data.waktu,
     })).slice(0, 7);
   };
 
-  const getWeatherIcon = (condition: string) => {
-    const norm = condition.toLowerCase();
-    if (norm.includes('hujan')) {
-      return <><div className="mini-sun"></div><MiniCloud className="mini-cloud" /><div className="mini-rain short"><span></span><span></span><span></span></div></>;
-    } else if (norm.includes('berawan') || norm.includes('mendung')) {
-      return <><div className="mini-sun"></div><MiniCloud className="mini-cloud" style={{ width: 36, top: -4 }} fill="#e0e0e2" /></>;
-    }
-    return <div className="mini-sun"></div>;
-  };
+
 
   const dailyForecasts = getDailyForecasts(weatherData?.prakiraan);
   const currentSlot = weatherData?.prakiraan[0];
@@ -163,7 +156,7 @@ export const MainContent = ({
   if (currentSlot) {
     const date = new Date(currentSlot.waktu_prakiraan.replace(" ", "T"));
     if (!isNaN(date.getTime())) {
-      day = new Intl.DateTimeFormat('en-US', { weekday: 'long' }).format(date);
+      day = new Intl.DateTimeFormat('id-ID', { weekday: 'long' }).format(date);
       timeStr = new Intl.DateTimeFormat('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }).format(date);
     }
   }
@@ -184,7 +177,7 @@ export const MainContent = ({
     : `${String(now.getMonth()+1).padStart(2,'0')}/${String(now.getDate()).padStart(2,'0')}/${now.getFullYear()} - ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')} WIB`;
 
   const h = now.getHours();
-  const greeting = h < 12 ? 'Good Morning...' : h < 17 ? 'Good Afternoon...' : 'Good Evening...';
+  const greeting = h < 12 ? 'Selamat Pagi...' : h < 17 ? 'Selamat Siang...' : 'Selamat Malam...';
 
   return (
     <main className="flex-1 py-10 px-6 lg:px-11 min-w-0 bg-[#fafafa] overflow-y-auto h-screen">
@@ -253,9 +246,14 @@ export const MainContent = ({
           )}
         </div>
         <div className="flex items-center justify-center gap-3 mt-4 text-[#1c1c1e] text-[18px] font-semibold capitalize">
-          <div className="relative w-8 h-8 flex items-center justify-center scale-110 mr-2">
-            {getWeatherIcon(condition)}
-          </div>
+          {currentSlot && (
+            <WeatherIcon
+              condition={currentSlot.kondisi_cuaca}
+              dateTime={currentSlot.waktu_prakiraan}
+              size={36}
+              className="mr-1"
+            />
+          )}
           {condition}
         </div>
         <div className="mt-3 text-[15px] text-[#1c1c1e] font-medium">
@@ -280,8 +278,12 @@ export const MainContent = ({
             ) : dailyForecasts.map((d, i) => (
               <div key={i} className="flex-1 bg-white rounded-[24px] p-6 text-center hover:shadow-lg hover:-translate-y-1 transition-all cursor-pointer h-full flex flex-col justify-between items-center shadow-[0_4px_20px_rgb(0,0,0,0.02)]">
                 <div className="text-[16px] font-medium text-[#9a9aa2]">{d.day}</div>
-                <div className="flex-1 flex items-center justify-center relative scale-[1.3] my-4">
-                  {getWeatherIcon(d.condition)}
+                <div className="flex-1 flex items-center justify-center my-4">
+                  <WeatherIcon
+                    condition={d.condition}
+                    dateTime={d.waktu}
+                    size={48}
+                  />
                 </div>
                 <div className="text-[18px] font-semibold text-[#1c1c1e]">
                   {temp(d.max)}°<span className="text-[#c6c6cc] font-medium ml-1.5">{temp(d.min)}°</span>
@@ -299,7 +301,7 @@ export const MainContent = ({
 
       <InfoSection cards={infoCards} />
 
-      <div className="text-[20px] font-semibold mb-5">Today&apos;s Highlights</div>
+      <div className="text-[20px] font-semibold mb-5">Sorotan Hari Ini</div>
 
       <RainfallRecommendationChart className="mb-5" />
 
@@ -318,10 +320,10 @@ export const MainContent = ({
 
         {/* Wind Status */}
         <div className="bg-white rounded-[22px] p-[22px_24px] min-h-[170px] flex flex-col shadow-sm">
-          <div className="text-[14px] text-[#a9a9b0] mb-3.5">Wind Status</div>
+          <div className="text-[14px] text-[#a9a9b0] mb-3.5">Kondisi Angin</div>
           <div className="flex items-start justify-between gap-3 mb-auto">
             <div className="text-[34px] font-semibold leading-none">
-              {currentSlot?.kecepatan_angin_kmjam || '--'}<span className="text-[14px] font-medium text-[#a9a9b0] ml-[2px]">km/h</span>
+              {currentSlot?.kecepatan_angin_kmjam || '--'}<span className="text-[14px] font-medium text-[#a9a9b0] ml-[2px]">km/jam</span>
             </div>
             <WindCompass direction={windDirection} />
           </div>
@@ -336,7 +338,7 @@ export const MainContent = ({
 
         {/* Humidity */}
         <div className="bg-white rounded-[22px] p-[22px_24px] min-h-[170px] flex flex-col shadow-sm">
-          <div className="text-[14px] text-[#a9a9b0] mb-3.5">Humidity</div>
+          <div className="text-[14px] text-[#a9a9b0] mb-3.5">Kelembapan</div>
           <div className="text-[34px] font-semibold leading-none mb-auto">
             {currentSlot?.kelembapan_persen || '--'}<span className="text-[14px] font-medium text-[#a9a9b0] ml-[2px]">%</span>
           </div>
@@ -347,13 +349,13 @@ export const MainContent = ({
 
         {/* Visibility */}
         <div className="bg-white rounded-[22px] p-[22px_24px] min-h-[170px] flex flex-col shadow-sm">
-          <div className="text-[14px] text-[#a9a9b0] mb-3.5">Visibility</div>
+          <div className="text-[14px] text-[#a9a9b0] mb-3.5">Jarak Pandang</div>
           <div className="text-[34px] font-semibold leading-none mb-auto">
             {currentSlot?.jarak_pandang ? currentSlot.jarak_pandang.replace(/km/i, '').trim() : '--'}
             <span className="text-[14px] font-medium text-[#a9a9b0] ml-[2px]">km</span>
           </div>
           <div className="flex items-center gap-1.5 text-[14px] font-medium mt-3.5">
-            Average
+            Rata-rata
           </div>
         </div>
 

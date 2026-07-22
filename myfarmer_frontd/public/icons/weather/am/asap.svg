@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <defs>
+    <linearGradient id="smokeGrad1" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0%" stop-color="#B0A898" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#8C8278" stop-opacity="0.75"/>
+    </linearGradient>
+    <linearGradient id="smokeGrad2" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0%" stop-color="#C8BEB2" stop-opacity="0.45"/>
+      <stop offset="100%" stop-color="#A89E92" stop-opacity="0.7"/>
+    </linearGradient>
+  </defs>
+  <!-- Smoke wisps - wavy rising shapes -->
+  <path d="M160 460 Q140 400 170 360 Q200 320 175 270 Q150 220 180 170 Q195 140 190 110" stroke="url(#smokeGrad1)" stroke-width="28" stroke-linecap="round" fill="none"/>
+  <path d="M256 470 Q236 410 266 370 Q296 330 271 280 Q246 230 276 180 Q291 150 286 120" stroke="url(#smokeGrad2)" stroke-width="32" stroke-linecap="round" fill="none"/>
+  <path d="M352 460 Q332 400 362 360 Q392 320 367 270 Q342 220 372 170 Q387 140 382 110" stroke="url(#smokeGrad1)" stroke-width="26" stroke-linecap="round" fill="none"/>
+  <!-- Smoke haze at bottom -->
+  <rect x="80" y="430" width="352" height="18" rx="9" fill="#B0A898" opacity="0.3"/>
+  <rect x="100" y="460" width="312" height="18" rx="9" fill="#B0A898" opacity="0.25"/>
+</svg>

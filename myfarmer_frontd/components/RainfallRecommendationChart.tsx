@@ -15,7 +15,6 @@ import {
   type TooltipContentProps,
 } from "recharts";
 
-import { RainCloudIcon } from "@/components/Icons";
 import { Skeleton } from "@/components/ui";
 import { ApiError, apiGet } from "@/lib/apiClient";
 
@@ -264,7 +263,7 @@ export function RainfallRecommendationChart({
         className={`rounded-[22px] border border-black/[0.04] bg-white p-6 text-center shadow-sm ${className}`}
       >
         <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-[#f0f0ff]">
-          <RainCloudIcon className="size-6" />
+                    <svg className="size-6" viewBox="0 0 24 24" fill="none" stroke="#4a4ff7" strokeWidth="2" strokeLinecap="round"><path d="M12 2v6M8 4v8M16 4v6" /></svg>
         </div>
         <p className="mt-4 text-[16px] font-semibold text-[#1c1c1e]">
           Data curah hujan belum tersedia
@@ -298,7 +297,7 @@ export function RainfallRecommendationChart({
       <div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-start">
         <div className="flex min-w-0 items-start gap-3">
           <div className="flex size-11 shrink-0 items-center justify-center rounded-[13px] bg-[#f0f0ff]">
-            <RainCloudIcon className="size-6" />
+                      <svg className="size-6" viewBox="0 0 24 24" fill="none" stroke="#4a4ff7" strokeWidth="2" strokeLinecap="round"><path d="M12 2v6M8 4v8M16 4v6" /></svg>
           </div>
           <div className="min-w-0">
             <h2 className="text-[18px] font-semibold leading-7">

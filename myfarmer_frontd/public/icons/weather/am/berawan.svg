@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <defs>
+    <linearGradient id="sunGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FFD93D"/>
+      <stop offset="100%" stop-color="#F5A623"/>
+    </linearGradient>
+    <linearGradient id="cloudGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#D6EAFF"/>
+      <stop offset="100%" stop-color="#A8D4FF"/>
+    </linearGradient>
+  </defs>
+  <!-- Small sun peeking -->
+  <circle cx="370" cy="160" r="60" fill="url(#sunGrad)"/>
+  <!-- Main cloud -->
+  <path d="M420 400H100c-44.18 0-80-35.82-80-80 0-38.66 27.53-70.9 64.07-78.24C87.6 203.4 120.6 175 160 175c15.14 0 29.26 4.48 41.1 12.18C217.3 158.42 250.4 140 288 140c55.23 0 100.9 40.2 109.6 93.02C428.6 240.5 452 269.1 452 304c0 53.02-28.65 96-62 96H420z" fill="url(#cloudGrad)"/>
+</svg>

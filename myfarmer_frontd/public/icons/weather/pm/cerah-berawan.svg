@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <defs>
+    <linearGradient id="moonGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#F5E6A3"/>
+      <stop offset="100%" stop-color="#E8C84A"/>
+    </linearGradient>
+    <linearGradient id="starGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#F5E6A3"/>
+      <stop offset="100%" stop-color="#E8C84A"/>
+    </linearGradient>
+    <linearGradient id="cloudGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#C2D6EC"/>
+      <stop offset="100%" stop-color="#95B4D4"/>
+    </linearGradient>
+    <mask id="crescentMask">
+      <circle cx="305" cy="175" r="95" fill="white"/>
+      <circle cx="355" cy="130" r="80" fill="black"/>
+    </mask>
+  </defs>
+  <!-- Stars -->
+  <circle cx="130" cy="100" r="6" fill="url(#starGrad)"/>
+  <circle cx="420" cy="80" r="7" fill="url(#starGrad)"/>
+  <circle cx="460" cy="180" r="5" fill="url(#starGrad)"/>
+  <!-- Crescent moon -->
+  <circle cx="305" cy="175" r="95" fill="url(#moonGrad)" mask="url(#crescentMask)"/>
+  <!-- Cloud -->
+  <path d="M410 420H120c-44.18 0-80-35.82-80-80 0-38.66 27.53-70.9 64.07-78.24C107.6 223.4 140.6 195 180 195c15.14 0 29.26 4.48 41.1 12.18C237.3 178.42 270.4 160 308 160c55.23 0 100.9 40.2 109.6 93.02C448.6 260.5 472 289.1 472 324c0 53.02-28.65 96-62 96z" fill="url(#cloudGrad)"/>
+</svg>

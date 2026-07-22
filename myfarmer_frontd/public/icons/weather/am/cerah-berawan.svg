@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <defs>
+    <linearGradient id="sunGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FFD93D"/>
+      <stop offset="100%" stop-color="#F5A623"/>
+    </linearGradient>
+    <linearGradient id="rayGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FFD93D"/>
+      <stop offset="100%" stop-color="#F5A623"/>
+    </linearGradient>
+    <linearGradient id="cloudGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#D6EAFF"/>
+      <stop offset="100%" stop-color="#A8D4FF"/>
+    </linearGradient>
+  </defs>
+  <!-- Sun rays -->
+  <rect x="294" y="42" width="22" height="56" rx="11" fill="url(#rayGrad)" transform="rotate(0 305 195)"/>
+  <rect x="294" y="42" width="22" height="56" rx="11" fill="url(#rayGrad)" transform="rotate(45 305 195)"/>
+  <rect x="294" y="42" width="22" height="56" rx="11" fill="url(#rayGrad)" transform="rotate(90 305 195)"/>
+  <rect x="294" y="42" width="22" height="56" rx="11" fill="url(#rayGrad)" transform="rotate(135 305 195)"/>
+  <rect x="294" y="42" width="22" height="56" rx="11" fill="url(#rayGrad)" transform="rotate(180 305 195)"/>
+  <rect x="294" y="42" width="22" height="56" rx="11" fill="url(#rayGrad)" transform="rotate(225 305 195)"/>
+  <rect x="294" y="42" width="22" height="56" rx="11" fill="url(#rayGrad)" transform="rotate(270 305 195)"/>
+  <rect x="294" y="42" width="22" height="56" rx="11" fill="url(#rayGrad)" transform="rotate(315 305 195)"/>
+  <!-- Sun circle -->
+  <circle cx="305" cy="195" r="95" fill="url(#sunGrad)"/>
+  <!-- Cloud -->
+  <path d="M410 420H120c-44.18 0-80-35.82-80-80 0-38.66 27.53-70.9 64.07-78.24C107.6 223.4 140.6 195 180 195c15.14 0 29.26 4.48 41.1 12.18C237.3 178.42 270.4 160 308 160c55.23 0 100.9 40.2 109.6 93.02C448.6 260.5 472 289.1 472 324c0 53.02-28.65 96-62 96z" fill="url(#cloudGrad)"/>
+</svg>

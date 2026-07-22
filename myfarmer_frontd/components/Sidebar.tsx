@@ -1,7 +1,8 @@
 "use client";
 import Image from 'next/image';
 import React from 'react';
-import { MostlyCloudyIcon, RainCloudIcon, CloudBack, LocationCityScape, CloseIcon } from './Icons';
+import { CloseIcon } from './Icons';
+import { WeatherIcon } from './WeatherIcon';
 import { BmkgWeatherData } from '@/lib/bmkgClient';
 
 export const Sidebar = ({
@@ -36,13 +37,13 @@ export const Sidebar = ({
   if (currentSlot) {
     const date = new Date(currentSlot.waktu_prakiraan.replace(" ", "T"));
     if (!isNaN(date.getTime())) {
-      day = new Intl.DateTimeFormat('en-US', { weekday: 'long' }).format(date);
+      day = new Intl.DateTimeFormat('id-ID', { weekday: 'long' }).format(date);
       timeStr = new Intl.DateTimeFormat('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }).format(date);
     }
   }
 
   const condition = currentSlot?.kondisi_cuaca || '--';
-  const rainInfo = currentSlot ? `Rain - ${currentSlot.curah_hujan_mm} mm` : '--';
+  const rainInfo = currentSlot ? `Curah hujan - ${currentSlot.curah_hujan_mm} mm` : '--';
 
   return (
     <>
@@ -82,12 +83,16 @@ export const Sidebar = ({
           <span className="text-[17px] font-semibold text-[#1c1c1e] tracking-tight">MyFarmer</span>
         </div>
 
-        <div className="weather-hero">
-          <CloudBack className="cloud-back" />
-          <div className="sun"></div>
-          <div className="rain-lines">
-            <span></span><span></span><span></span>
-          </div>
+        <div className="flex justify-center items-center my-6">
+          {currentSlot ? (
+            <WeatherIcon
+              condition={currentSlot.kondisi_cuaca}
+              dateTime={currentSlot.waktu_prakiraan}
+              size={160}
+            />
+          ) : (
+            <div className="w-[160px] h-[160px] rounded-full bg-[#f0f0f2] animate-pulse" />
+          )}
         </div>
 
         <div className="text-[64px] font-semibold leading-none tracking-tight mt-1.5 flex items-start">
@@ -106,11 +111,22 @@ export const Sidebar = ({
         <div className="h-px bg-[#ececee] my-5"></div>
 
         <div className="flex items-center gap-3 text-sm text-[#1c1c1e] mb-4 capitalize">
-          <MostlyCloudyIcon className="w-5 h-5 shrink-0" />
+          {currentSlot ? (
+            <WeatherIcon
+              condition={currentSlot.kondisi_cuaca}
+              dateTime={currentSlot.waktu_prakiraan}
+              size={20}
+              className="shrink-0"
+            />
+          ) : (
+            <div className="w-5 h-5 rounded-full bg-[#f0f0f2] shrink-0" />
+          )}
           {condition}
         </div>
         <div className="flex items-center gap-3 text-sm text-[#1c1c1e] mb-4">
-          <RainCloudIcon className="w-5 h-5 shrink-0" />
+          <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="#4a4ff7" strokeWidth="2" strokeLinecap="round">
+            <path d="M12 2v6M8 4v8M16 4v6" />
+          </svg>
           {rainInfo}
         </div>
 

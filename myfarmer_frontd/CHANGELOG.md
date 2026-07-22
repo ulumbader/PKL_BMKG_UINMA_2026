@@ -9,6 +9,54 @@ Format tanggal: YYYY-MM-DD.
 
 ## [Unreleased]
 
+## [Tahap 33] - Integrasi Ikon SVG Cuaca AM/PM ke Landing Page - 2026-07-22
+### Ditambahkan
+- `lib/weatherIcons.ts` — utilitas terpusat mapping `kondisi_cuaca` BMKG → path file SVG dengan logika AM/PM (06:00–17:59 = siang, 18:00–05:59 = malam).
+- `components/WeatherIcon.tsx` — komponen reusable untuk menampilkan ikon cuaca SVG berdasarkan kondisi dan waktu prakiraan.
+- 24 file ikon SVG cuaca di `public/icons/weather/am/` dan `public/icons/weather/pm/` (12 kondisi × 2 periode), dengan style flat modern: gradient lembut, bentuk rounded, tanpa outline.
+
+### Diubah
+- `components/Sidebar.tsx` — ikon cuaca hero (160px) dan ikon detail kondisi (20px) sekarang dinamis berdasarkan `kondisi_cuaca` dan `waktu_prakiraan` dari BMKG, menggantikan ikon CSS statis yang selalu sama.
+- `components/MainContent.tsx` — ikon cuaca di hero mobile dan kartu prakiraan mingguan sekarang menggunakan `WeatherIcon` dengan dukungan AM/PM; fungsi `getWeatherIcon()` lama dihapus; `getDailyForecasts` sekarang meneruskan `waktu_prakiraan` untuk logika periode.
+- `components/RainfallRecommendationChart.tsx` — `RainCloudIcon` diganti inline SVG karena komponen lama dihapus.
+- `app/globals.css` — dihapus ~120 baris CSS cuaca lama (`.weather-hero`, `.sun`, `.cloud-back`, `.rain-lines`, `.mini-sun`, `.mini-cloud`, `.mini-rain`, `.mini-drizzle`) yang sudah tidak dipakai.
+- `components/Icons.tsx` — dihapus 9 komponen ikon cuaca yang tidak terpakai (`MostlyCloudyIcon`, `RainCloudIcon`, `CloudBack`, `MiniCloud`, `SnowIcon`, `WindIcon`, `SunriseIcon`, `SunsetIcon`, `UVGauge`); tersisa `MenuIcon`, `CloseIcon`, `LocationCityScape`, `SearchIcon`, `LocateIcon`.
+
+### File Terkait
+- lib/weatherIcons.ts
+- components/WeatherIcon.tsx
+- components/Sidebar.tsx
+- components/MainContent.tsx
+- components/RainfallRecommendationChart.tsx
+- components/Icons.tsx
+- app/globals.css
+- public/icons/weather/am/*.svg (12 file)
+- public/icons/weather/pm/*.svg (12 file)
+
+### Catatan
+- Mapping 12 kondisi cuaca BMKG: Cerah, Cerah Berawan, Berawan, Berawan Tebal, Udara Kabur, Kabut, Asap, Hujan Ringan, Hujan Sedang, Hujan Lebat, Hujan Lokal, Hujan Petir.
+- Fallback ke `berawan.svg` jika kondisi tidak dikenali.
+- Ikon AM menggunakan palet matahari (kuning-oranye `#FFD93D`→`#F5A623`) dan awan biru muda (`#D6EAFF`→`#A8D4FF`).
+- Ikon PM menggunakan bulan sabit (gold `#F5E6A3`→`#E8C84A` dengan SVG mask) dan awan biru-slate lebih gelap (`#C2D6EC`→`#95B4D4`).
+
+## [Tahap 32] - Lokalisasi Teks Landing Page - 2026-07-21
+### Ditambahkan
+- Tidak ada komponen atau dependency baru.
+
+### Diubah
+- Teks antarmuka berbahasa Inggris pada prakiraan cuaca, sapaan, sorotan, dan ringkasan kondisi cuaca disesuaikan ke Bahasa Indonesia.
+- Nama hari pendek dan panjang pada card cuaca serta sidebar menggunakan locale Indonesia.
+- Satuan kecepatan angin pada tampilan disesuaikan dari `km/h` menjadi `km/jam`.
+
+### File Terkait
+- `components/MainContent.tsx`
+- `components/Sidebar.tsx`
+- `CHANGELOG.md`
+
+### Catatan
+- Perubahan hanya mencakup bahasa pada lapisan presentasi; logika pengambilan, filter, pengelompokan, perhitungan, dan interval data tidak diubah.
+- Format tanggal navbar, pembagian waktu sapaan, label aksesibilitas footer, istilah BMKG/WMO/AI/MyFarmer, serta kondisi cuaca dari BMKG dipertahankan.
+
 ## [Tahap 31] - Verifikasi End-to-End Panel Admin - 2026-07-20
 ### Ditambahkan
 - Tidak ada komponen atau perubahan kode aplikasi baru.

@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <defs>
+    <linearGradient id="moonGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#F5E6A3"/>
+      <stop offset="100%" stop-color="#E8C84A"/>
+    </linearGradient>
+    <linearGradient id="hazeGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#B0B8C8" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="#8E96A8" stop-opacity="0.8"/>
+    </linearGradient>
+    <mask id="crescentMask">
+      <circle cx="256" cy="200" r="80" fill="white"/>
+      <circle cx="300" cy="160" r="65" fill="black"/>
+    </mask>
+  </defs>
+  <!-- Crescent moon behind haze -->
+  <circle cx="256" cy="200" r="80" fill="url(#moonGrad)" opacity="0.6" mask="url(#crescentMask)"/>
+  <!-- Haze lines -->
+  <rect x="80" y="310" width="352" height="18" rx="9" fill="url(#hazeGrad)"/>
+  <rect x="60" y="348" width="392" height="18" rx="9" fill="url(#hazeGrad)"/>
+  <rect x="100" y="386" width="312" height="18" rx="9" fill="url(#hazeGrad)"/>
+  <rect x="120" y="424" width="272" height="18" rx="9" fill="url(#hazeGrad)"/>
+</svg>

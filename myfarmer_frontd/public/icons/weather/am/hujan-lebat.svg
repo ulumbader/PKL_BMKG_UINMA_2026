@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <defs>
+    <linearGradient id="cloudGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#A8BAD0"/>
+      <stop offset="100%" stop-color="#7E96B5"/>
+    </linearGradient>
+    <linearGradient id="rainGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#5A9ACE"/>
+      <stop offset="100%" stop-color="#3878B5"/>
+    </linearGradient>
+  </defs>
+  <!-- Dark cloud -->
+  <path d="M410 240H110c-44.18 0-80-35.82-80-80 0-38.66 27.53-70.9 64.07-78.24C97.6 43.4 130.6 15 170 15c15.14 0 29.26 4.48 41.1 12.18C227.3 0 260.4-18 298-18c55.23 0 100.9 40.2 109.6 93.02C438.6 82.5 462 111.1 462 146c0 53.02-28.65 94-62 94h10z" fill="url(#cloudGrad)"/>
+  <!-- Heavy rain - many dense drops -->
+  <line x1="130" y1="270" x2="110" y2="350" stroke="url(#rainGrad)" stroke-width="12" stroke-linecap="round"/>
+  <line x1="185" y1="275" x2="165" y2="355" stroke="url(#rainGrad)" stroke-width="12" stroke-linecap="round"/>
+  <line x1="240" y1="270" x2="220" y2="350" stroke="url(#rainGrad)" stroke-width="12" stroke-linecap="round"/>
+  <line x1="295" y1="275" x2="275" y2="355" stroke="url(#rainGrad)" stroke-width="12" stroke-linecap="round"/>
+  <line x1="350" y1="270" x2="330" y2="350" stroke="url(#rainGrad)" stroke-width="12" stroke-linecap="round"/>
+  <line x1="405" y1="275" x2="385" y2="355" stroke="url(#rainGrad)" stroke-width="12" stroke-linecap="round"/>
+  <line x1="155" y1="370" x2="135" y2="450" stroke="url(#rainGrad)" stroke-width="12" stroke-linecap="round"/>
+  <line x1="210" y1="375" x2="190" y2="455" stroke="url(#rainGrad)" stroke-width="12" stroke-linecap="round"/>
+  <line x1="265" y1="370" x2="245" y2="450" stroke="url(#rainGrad)" stroke-width="12" stroke-linecap="round"/>
+  <line x1="320" y1="375" x2="300" y2="455" stroke="url(#rainGrad)" stroke-width="12" stroke-linecap="round"/>
+  <line x1="375" y1="370" x2="355" y2="450" stroke="url(#rainGrad)" stroke-width="12" stroke-linecap="round"/>
+</svg>

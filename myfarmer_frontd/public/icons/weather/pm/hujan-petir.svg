@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <defs>
+    <linearGradient id="cloudGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#7088A5"/>
+      <stop offset="100%" stop-color="#506882"/>
+    </linearGradient>
+    <linearGradient id="rainGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#4A86BC"/>
+      <stop offset="100%" stop-color="#2E6AA0"/>
+    </linearGradient>
+    <linearGradient id="boltGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#F5E6A3"/>
+      <stop offset="100%" stop-color="#E8C84A"/>
+    </linearGradient>
+  </defs>
+  <!-- Dark storm cloud -->
+  <path d="M410 230H110c-44.18 0-80-35.82-80-80 0-38.66 27.53-70.9 64.07-78.24C97.6 33.4 130.6 5 170 5c15.14 0 29.26 4.48 41.1 12.18C227.3-11.58 260.4-30 298-30c55.23 0 100.9 40.2 109.6 93.02C438.6 70.5 462 99.1 462 134c0 53.02-28.65 96-62 96h10z" fill="url(#cloudGrad)"/>
+  <!-- Lightning bolt -->
+  <polygon points="280,245 240,330 275,330 235,430 310,310 270,310 305,245" fill="url(#boltGrad)"/>
+  <!-- Rain drops -->
+  <line x1="140" y1="265" x2="125" y2="335" stroke="url(#rainGrad)" stroke-width="11" stroke-linecap="round"/>
+  <line x1="190" y1="270" x2="175" y2="340" stroke="url(#rainGrad)" stroke-width="11" stroke-linecap="round"/>
+  <line x1="360" y1="265" x2="345" y2="335" stroke="url(#rainGrad)" stroke-width="11" stroke-linecap="round"/>
+  <line x1="410" y1="270" x2="395" y2="340" stroke="url(#rainGrad)" stroke-width="11" stroke-linecap="round"/>
+  <line x1="160" y1="355" x2="145" y2="425" stroke="url(#rainGrad)" stroke-width="11" stroke-linecap="round"/>
+  <line x1="380" y1="355" x2="365" y2="425" stroke="url(#rainGrad)" stroke-width="11" stroke-linecap="round"/>
+  <line x1="130" y1="430" x2="118" y2="485" stroke="url(#rainGrad)" stroke-width="11" stroke-linecap="round"/>
+  <line x1="400" y1="430" x2="388" y2="485" stroke="url(#rainGrad)" stroke-width="11" stroke-linecap="round"/>
+</svg>

@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <defs>
+    <linearGradient id="cloudGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#C2D6EC"/>
+      <stop offset="100%" stop-color="#95B4D4"/>
+    </linearGradient>
+    <linearGradient id="rainGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#6A9EC8"/>
+      <stop offset="100%" stop-color="#4C82B4"/>
+    </linearGradient>
+  </defs>
+  <!-- Cloud -->
+  <path d="M410 280H110c-44.18 0-80-35.82-80-80 0-38.66 27.53-70.9 64.07-78.24C97.6 83.4 130.6 55 170 55c15.14 0 29.26 4.48 41.1 12.18C227.3 38.42 260.4 20 298 20c55.23 0 100.9 40.2 109.6 93.02C438.6 120.5 462 149.1 462 184c0 53.02-28.65 96-62 96h10z" fill="url(#cloudGrad)"/>
+  <!-- Light rain drops - few small drops -->
+  <line x1="180" y1="310" x2="170" y2="360" stroke="url(#rainGrad)" stroke-width="10" stroke-linecap="round"/>
+  <line x1="260" y1="320" x2="250" y2="370" stroke="url(#rainGrad)" stroke-width="10" stroke-linecap="round"/>
+  <line x1="340" y1="310" x2="330" y2="360" stroke="url(#rainGrad)" stroke-width="10" stroke-linecap="round"/>
+  <line x1="220" y1="380" x2="210" y2="430" stroke="url(#rainGrad)" stroke-width="10" stroke-linecap="round"/>
+  <line x1="300" y1="385" x2="290" y2="435" stroke="url(#rainGrad)" stroke-width="10" stroke-linecap="round"/>
+</svg>

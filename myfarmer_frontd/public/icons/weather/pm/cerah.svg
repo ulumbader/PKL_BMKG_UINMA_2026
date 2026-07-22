@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <defs>
+    <linearGradient id="moonGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#F5E6A3"/>
+      <stop offset="100%" stop-color="#E8C84A"/>
+    </linearGradient>
+    <linearGradient id="starGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#F5E6A3"/>
+      <stop offset="100%" stop-color="#E8C84A"/>
+    </linearGradient>
+    <mask id="crescentMask">
+      <circle cx="256" cy="240" r="120" fill="white"/>
+      <circle cx="310" cy="190" r="100" fill="black"/>
+    </mask>
+  </defs>
+  <!-- Crescent moon -->
+  <circle cx="256" cy="240" r="120" fill="url(#moonGrad)" mask="url(#crescentMask)"/>
+  <!-- Stars -->
+  <circle cx="130" cy="140" r="8" fill="url(#starGrad)"/>
+  <circle cx="128" cy="138" r="3" fill="#FFFDE8"/>
+  <circle cx="400" cy="120" r="10" fill="url(#starGrad)"/>
+  <circle cx="398" cy="118" r="4" fill="#FFFDE8"/>
+  <circle cx="170" cy="350" r="7" fill="url(#starGrad)"/>
+  <circle cx="168" cy="348" r="2.5" fill="#FFFDE8"/>
+  <circle cx="420" cy="300" r="6" fill="url(#starGrad)"/>
+  <circle cx="418" cy="298" r="2" fill="#FFFDE8"/>
+  <circle cx="100" cy="260" r="5" fill="url(#starGrad)"/>
+  <circle cx="380" cy="380" r="7" fill="url(#starGrad)"/>
+  <circle cx="450" cy="200" r="5" fill="url(#starGrad)"/>
+</svg>
