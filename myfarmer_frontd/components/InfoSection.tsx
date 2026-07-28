@@ -28,7 +28,7 @@ export function InfoSection({ cards }: { cards: BackendInfoCard[] }) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  
+
   const safeActiveIndex = cards.length === 0 ? 0 : activeIndex % cards.length;
   const selectedCard = cards.length > 0 ? cards[selectedIndex % cards.length] : null;
 
@@ -84,7 +84,7 @@ export function InfoSection({ cards }: { cards: BackendInfoCard[] }) {
           type="button"
           aria-label="Info sebelumnya"
           onClick={() => goTo(activeIndex - 1)}
-          className="h-6 w-6 text-[16px] font-semibold text-[#1c1c1e]"
+          className="h-6 w-6 text-[18px] font-bold text-[#16a34a]"
         >
           &lt;
         </button>
@@ -94,14 +94,14 @@ export function InfoSection({ cards }: { cards: BackendInfoCard[] }) {
             key={card.id}
             aria-label={`Buka info ${index + 1}`}
             onClick={() => goTo(index)}
-            className={`h-2 rounded-full transition-all duration-300 ${safeActiveIndex === index ? "w-6 bg-[#1c1c1e]" : "w-2 bg-[#e0e0e0]"}`}
+            className={`h-2 rounded-full transition-all duration-300 ${safeActiveIndex === index ? "w-6 bg-[#16a34a] shadow-[0_2px_6px_rgba(22,163,74,0.35)]" : "w-2 bg-green-100"}`}
           />
         ))}
         <button
           type="button"
           aria-label="Info berikutnya"
           onClick={() => goTo(activeIndex + 1)}
-          className="h-6 w-6 text-[16px] font-semibold text-[#1c1c1e]"
+          className="h-6 w-6 text-[18px] font-bold text-[#16a34a]"
         >
           &gt;
         </button>
@@ -128,7 +128,7 @@ export function InfoSection({ cards }: { cards: BackendInfoCard[] }) {
             type="button"
             aria-label="Tutup info"
             onClick={handleCloseModal}
-            className="absolute left-3 top-3 z-30 h-9 w-9 rounded-full bg-[#f4f4f6] text-[14px] font-bold text-[#1c1c1e] hover:bg-[#ececee]"
+            className="absolute left-3 top-3 z-30 h-9 w-9 rounded-full bg-green-50 text-[14px] font-bold text-green-800 hover:bg-green-100"
           >
             X
           </button>

@@ -168,19 +168,19 @@ export const MainContent = ({
   const now = new Date();
   const navDateText = currentSlot
     ? (() => {
-        const d = new Date(currentSlot.waktu_prakiraan.replace(' ', 'T'));
-        if (isNaN(d.getTime())) return '--';
-        const mm = String(d.getMonth() + 1).padStart(2, '0');
-        const dd = String(d.getDate()).padStart(2, '0');
-        return `${mm}/${dd}/${d.getFullYear()} - ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')} WIB`;
-      })()
-    : `${String(now.getMonth()+1).padStart(2,'0')}/${String(now.getDate()).padStart(2,'0')}/${now.getFullYear()} - ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')} WIB`;
+      const d = new Date(currentSlot.waktu_prakiraan.replace(' ', 'T'));
+      if (isNaN(d.getTime())) return '--';
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      return `${mm}/${dd}/${d.getFullYear()} - ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')} WIB`;
+    })()
+    : `${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getDate()).padStart(2, '0')}/${now.getFullYear()} - ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')} WIB`;
 
   const h = now.getHours();
   const greeting = h < 12 ? 'Selamat Pagi...' : h < 17 ? 'Selamat Siang...' : 'Selamat Malam...';
 
   return (
-    <main className="flex-1 py-10 px-6 lg:px-11 min-w-0 bg-[#fafafa] overflow-y-auto h-screen">
+    <main className="flex-1 py-10 px-6 lg:px-11 min-w-0 bg-[#f0f4f1] overflow-y-auto h-screen">
 
       {/* Top Nav */}
       <div className="flex items-center justify-between mb-8">
@@ -208,13 +208,13 @@ export const MainContent = ({
           <div className="flex items-center gap-2.5">
             <button
               onClick={() => setUnit('C')}
-              className={`w-9 h-9 rounded-full flex items-center justify-center text-[13px] font-semibold transition-colors cursor-pointer ${unit === 'C' ? 'bg-[#1c1c1e] text-white' : 'text-[#1c1c1e] bg-white hover:bg-gray-200'}`}
+              className={`w-9 h-9 rounded-full flex items-center justify-center text-[13px] font-semibold transition-colors cursor-pointer ${unit === 'C' ? 'bg-[#16a34a] text-white shadow-[0_2px_8px_rgba(22,163,74,0.4)]' : 'text-[#0f1f17] bg-white hover:bg-green-50'}`}
             >
               °C
             </button>
             <button
               onClick={() => setUnit('F')}
-              className={`w-9 h-9 rounded-full flex items-center justify-center text-[13px] font-semibold transition-colors cursor-pointer ${unit === 'F' ? 'bg-[#1c1c1e] text-white' : 'text-[#1c1c1e] bg-white hover:bg-gray-200'}`}
+              className={`w-9 h-9 rounded-full flex items-center justify-center text-[13px] font-semibold transition-colors cursor-pointer ${unit === 'F' ? 'bg-[#16a34a] text-white shadow-[0_2px_8px_rgba(22,163,74,0.4)]' : 'text-[#0f1f17] bg-white hover:bg-green-50'}`}
             >
               °F
             </button>
@@ -222,8 +222,8 @@ export const MainContent = ({
               <svg viewBox="0 0 44 44" width="100%" height="100%">
                 <defs>
                   <linearGradient id="avatarGrad" x1="0" y1="0" x2="1" y2="1">
-                    <stop offset="0%" stopColor="#6b6f9c" />
-                    <stop offset="100%" stopColor="#2f3352" />
+                    <stop offset="0%" stopColor="#6b9c7c" />
+                    <stop offset="100%" stopColor="#1a3c2e" />
                   </linearGradient>
                 </defs>
                 <rect width="44" height="44" fill="url(#avatarGrad)" />
@@ -236,7 +236,7 @@ export const MainContent = ({
       </div>
 
       {/* Mobile Main Weather (Visible only on narrow screens) */}
-      <div className="lg:hidden flex flex-col items-center justify-center mb-10 text-center bg-white p-8 rounded-[32px] shadow-[0_4px_20px_rgb(0,0,0,0.02)] border border-gray-50">
+      <div className="lg:hidden flex flex-col items-center justify-center mb-10 text-center bg-white p-8 rounded-[32px] shadow-[0_4px_20px_rgb(0,0,0,0.02)] border border-green-100">
         <div className="text-[72px] font-semibold leading-none tracking-tight flex items-start justify-center">
           {loading ? '...' : (
             <>
@@ -277,7 +277,7 @@ export const MainContent = ({
               <div className="w-full text-center text-gray-500 py-4 flex items-center justify-center">Tidak ada data prakiraan.</div>
             ) : dailyForecasts.map((d, i) => (
               <div key={i} className="flex-1 bg-white rounded-[24px] p-6 text-center hover:shadow-lg hover:-translate-y-1 transition-all cursor-pointer h-full flex flex-col justify-between items-center shadow-[0_4px_20px_rgb(0,0,0,0.02)]">
-                <div className="text-[16px] font-medium text-[#9a9aa2]">{d.day}</div>
+                <div className="text-[16px] font-medium text-[#6b8f78]">{d.day}</div>
                 <div className="flex-1 flex items-center justify-center my-4">
                   <WeatherIcon
                     condition={d.condition}
