@@ -9,6 +9,104 @@ Format tanggal: YYYY-MM-DD.
 
 ## [Unreleased]
 
+## [Tahap 38] - Penyelarasan Nilai Card Sorotan Cuaca - 2026-07-28
+### Ditambahkan
+- Tidak ada komponen atau dependency baru.
+
+### Diubah
+- Card `Kondisi Angin`, `Kelembapan`, dan `Jarak Pandang` menggunakan area nilai `flex-1` yang sama dan dipusatkan secara vertikal.
+- Nilai arah angin aktual dipindahkan ke sisi kanan header card agar tidak mendorong posisi nilai kecepatan angin.
+- Nilai dan satuan kecepatan angin dibuat tidak membungkus saat berbagi ruang dengan kompas.
+
+### File Terkait
+- `components/MainContent.tsx`
+- `CHANGELOG.md`
+
+### Catatan
+- Ukuran nilai, data BMKG, kompas, dan susunan tiga card tetap dipertahankan; perubahan hanya menyelaraskan posisi vertikal nilai utama.
+- Panel admin dan komponen selain card sorotan landing page tidak berubah.
+
+## [Tahap 37] - Penyederhanaan Card Sorotan Cuaca - 2026-07-28
+### Ditambahkan
+- Tidak ada komponen atau dependency baru.
+
+### Diubah
+- Ukuran nilai utama pada card `Kondisi Angin`, `Kelembapan`, dan `Jarak Pandang` dinaikkan dari 34 piksel menjadi 40 piksel agar lebih proporsional.
+- Ukuran satuan kecepatan angin dan kelembapan dinaikkan dari 14 piksel menjadi 15 piksel.
+- Nilai kelembapan dan jarak pandang diposisikan seimbang secara vertikal setelah teks keterangan bawah dihapus.
+
+### Dihapus
+- Teks `Arah angin` pada card `Kondisi Angin`; nilai arah aktual tetap ditampilkan.
+- Teks `Normal` pada card `Kelembapan`.
+- Teks `Rata-rata` pada card `Jarak Pandang`.
+
+### File Terkait
+- `components/MainContent.tsx`
+- `CHANGELOG.md`
+
+### Catatan
+- Perubahan hanya memengaruhi presentasi tiga card sorotan di landing page; data BMKG, grafik, dan panel admin tidak berubah.
+
+## [Tahap 36] - Penyesuaian Tampilan Jarak Pandang BMKG - 2026-07-28
+### Ditambahkan
+- Tidak ada komponen atau dependency baru.
+
+### Diubah
+- Card `Jarak Pandang` pada landing page kini menampilkan nilai `vs_text` persis seperti yang dikirim API BMKG.
+
+### Dihapus
+- Penghapusan teks `km` dan penambahan satuan `km` secara manual pada card jarak pandang.
+
+### File Terkait
+- `components/MainContent.tsx`
+- `CHANGELOG.md`
+
+### Catatan
+- Format dan satuan jarak pandang sekarang sepenuhnya mengikuti respons BMKG, termasuk apabila BMKG mengirim nilai dalam meter atau kilometer.
+- Tidak ada perubahan pada request API, transformasi data cuaca, maupun panel admin.
+
+## [Tahap 35] - Penghapusan Informasi Curah Hujan Duplikat - 2026-07-28
+### Ditambahkan
+- Tidak ada komponen atau dependency baru.
+
+### Diubah
+- Grid sorotan landing page disesuaikan dari empat menjadi tiga kolom pada layar lebar setelah card curah hujan dihapus.
+
+### Dihapus
+- Card `Curah Hujan` pada bagian `Sorotan Hari Ini` di landing page.
+- Informasi curah hujan beserta ikonnya pada side panel landing page.
+- Perhitungan lokal `hasRain` dan nilai `rainInfo` yang tidak lagi digunakan.
+
+### File Terkait
+- `components/MainContent.tsx`
+- `components/Sidebar.tsx`
+- `CHANGELOG.md`
+
+### Catatan
+- Grafik `Curah Hujan 10 Harian & Rekomendasi Tanam` dan card backend `Info Curah Hujan` tetap dipertahankan karena merupakan fitur terpisah dari dua informasi yang dihapus.
+- Tidak ada perubahan pada endpoint, pengambilan data, panel admin, maupun komponen lain.
+
+## [Tahap 34] - Penyesuaian Warna Hijau Landing Page - 2026-07-28
+### Ditambahkan
+- Varian aksen `green` pada `RainfallRecommendationChart` agar palet landing page dapat diterapkan tanpa mengubah warna grafik pada Dashboard admin.
+
+### Diubah
+- Warna landing page diselaraskan dengan landing page proyek referensi `PKL_BMKG_UINMA_2026`, mencakup sidebar, latar halaman, kontrol satuan suhu, kartu informasi, navigasi carousel, aksen grafik, dan tombol footer.
+- Perubahan dibatasi pada warna; struktur, ukuran, tipografi, teks, data, dan perilaku komponen dipertahankan.
+
+### File Terkait
+- `components/Sidebar.tsx`
+- `components/MainContent.tsx`
+- `components/BackendCards.tsx`
+- `components/InfoSection.tsx`
+- `components/RainfallRecommendationChart.tsx`
+- `components/PublicFooter.tsx`
+- `CHANGELOG.md`
+
+### Catatan
+- Palet referensi utama: hijau `#16A34A`, hijau gelap `#15803D`, sidebar `#168039` ke `#0A3A19`, latar `#F0F4F1`, teks utama `#0F1F17`, dan teks muted `#6B8F78`.
+- Panel admin tidak diubah; pemanggilan grafik dari Dashboard tetap menggunakan varian warna default.
+
 ## [Tahap 33] - Integrasi Ikon SVG Cuaca AM/PM ke Landing Page - 2026-07-22
 ### Ditambahkan
 - `lib/weatherIcons.ts` — utilitas terpusat mapping `kondisi_cuaca` BMKG → path file SVG dengan logika AM/PM (06:00–17:59 = siang, 18:00–05:59 = malam).

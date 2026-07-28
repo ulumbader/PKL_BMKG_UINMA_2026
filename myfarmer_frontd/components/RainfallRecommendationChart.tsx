@@ -77,6 +77,7 @@ type ChartPoint = {
 type RainfallRecommendationChartProps = {
   className?: string;
   periodCount?: number;
+  accent?: "default" | "green";
 };
 
 const numberFormatter = new Intl.NumberFormat("id-ID", {
@@ -196,6 +197,7 @@ function ChartSkeleton({ className = "" }: { className?: string }) {
 export function RainfallRecommendationChart({
   className = "",
   periodCount = 12,
+  accent = "default",
 }: RainfallRecommendationChartProps) {
   const normalizedPeriodCount = Math.min(36, Math.max(1, Math.round(periodCount)));
   const [data, setData] = useState<RainfallChartResponse | null>(null);
@@ -235,6 +237,8 @@ export function RainfallRecommendationChart({
     return () => controller.abort();
   }, [normalizedPeriodCount, requestKey]);
 
+  const greenAccent = accent === "green";
+
   if (loading) return <ChartSkeleton className={className} />;
 
   if (error) {
@@ -249,7 +253,7 @@ export function RainfallRecommendationChart({
         <button
           type="button"
           onClick={() => setRequestKey((key) => key + 1)}
-          className="mt-4 inline-flex h-10 items-center justify-center rounded-[10px] bg-[#1c1c1e] px-4 text-[13px] font-semibold text-white transition-colors hover:bg-[#343438] focus:outline-none focus:ring-2 focus:ring-[#4a4ff7]/30"
+          className={`mt-4 inline-flex h-10 items-center justify-center rounded-[10px] px-4 text-[13px] font-semibold text-white transition-colors focus:outline-none focus:ring-2 ${greenAccent ? "bg-[#16a34a] hover:bg-[#15803d] focus:ring-[#16a34a]/30" : "bg-[#1c1c1e] hover:bg-[#343438] focus:ring-[#4a4ff7]/30"}`}
         >
           Coba lagi
         </button>
@@ -262,8 +266,8 @@ export function RainfallRecommendationChart({
       <section
         className={`rounded-[22px] border border-black/[0.04] bg-white p-6 text-center shadow-sm ${className}`}
       >
-        <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-[#f0f0ff]">
-                    <svg className="size-6" viewBox="0 0 24 24" fill="none" stroke="#4a4ff7" strokeWidth="2" strokeLinecap="round"><path d="M12 2v6M8 4v8M16 4v6" /></svg>
+        <div className={`mx-auto flex size-12 items-center justify-center rounded-full ${greenAccent ? "bg-[#dcfce7]" : "bg-[#f0f0ff]"}`}>
+                    <svg className="size-6" viewBox="0 0 24 24" fill="none" stroke={greenAccent ? "#16a34a" : "#4a4ff7"} strokeWidth="2" strokeLinecap="round"><path d="M12 2v6M8 4v8M16 4v6" /></svg>
         </div>
         <p className="mt-4 text-[16px] font-semibold text-[#1c1c1e]">
           Data curah hujan belum tersedia
@@ -296,8 +300,8 @@ export function RainfallRecommendationChart({
     >
       <div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-start">
         <div className="flex min-w-0 items-start gap-3">
-          <div className="flex size-11 shrink-0 items-center justify-center rounded-[13px] bg-[#f0f0ff]">
-                      <svg className="size-6" viewBox="0 0 24 24" fill="none" stroke="#4a4ff7" strokeWidth="2" strokeLinecap="round"><path d="M12 2v6M8 4v8M16 4v6" /></svg>
+          <div className={`flex size-11 shrink-0 items-center justify-center rounded-[13px] ${greenAccent ? "bg-[#dcfce7]" : "bg-[#f0f0ff]"}`}>
+                      <svg className="size-6" viewBox="0 0 24 24" fill="none" stroke={greenAccent ? "#16a34a" : "#4a4ff7"} strokeWidth="2" strokeLinecap="round"><path d="M12 2v6M8 4v8M16 4v6" /></svg>
           </div>
           <div className="min-w-0">
             <h2 className="text-[18px] font-semibold leading-7">
@@ -322,7 +326,7 @@ export function RainfallRecommendationChart({
         </div>
       </div>
 
-      <div className="mt-5 grid overflow-hidden rounded-[15px] border border-[#ececee] bg-[#fafafa] sm:grid-cols-3">
+      <div className={`mt-5 grid overflow-hidden rounded-[15px] border border-[#ececee] sm:grid-cols-3 ${greenAccent ? "bg-[#f0f9f3]" : "bg-[#fafafa]"}`}>
         <Metric
           label="Curah hujan terbaru"
           value={`${formatNumber(latest.rainfall)} mm`}
@@ -366,7 +370,7 @@ export function RainfallRecommendationChart({
             >
               <CartesianGrid
                 vertical={false}
-                stroke="#ececee"
+                stroke={greenAccent ? "#e2ede6" : "#ececee"}
                 strokeDasharray="4 4"
               />
               <XAxis

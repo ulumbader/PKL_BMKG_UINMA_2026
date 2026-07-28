@@ -43,7 +43,6 @@ export const Sidebar = ({
   }
 
   const condition = currentSlot?.kondisi_cuaca || '--';
-  const rainInfo = currentSlot ? `Curah hujan - ${currentSlot.curah_hujan_mm} mm` : '--';
 
   return (
     <>
@@ -57,8 +56,8 @@ export const Sidebar = ({
 
       {/* Sidebar container */}
       <aside className={`
-        fixed inset-y-0 left-0 z-50 w-[340px] flex-shrink-0 bg-white 
-        flex flex-col py-9 px-8 border-r border-[#ececee]
+        fixed inset-y-0 left-0 z-50 w-[340px] flex-shrink-0 bg-gradient-to-b from-[#168039] to-[#0a3a19]
+        flex flex-col py-9 px-8 border-r border-white/10
         transition-transform duration-300 ease-in-out
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
         lg:relative lg:translate-x-0
@@ -66,7 +65,7 @@ export const Sidebar = ({
         {/* Close button for mobile */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-2 lg:hidden text-gray-500 hover:text-gray-800"
+          className="absolute top-4 right-4 p-2 lg:hidden text-white/60 hover:text-white"
         >
           <CloseIcon className="w-6 h-6" />
         </button>
@@ -80,7 +79,7 @@ export const Sidebar = ({
             height={36}
             className="h-9 w-9 shrink-0"
           />
-          <span className="text-[17px] font-semibold text-[#1c1c1e] tracking-tight">MyFarmer</span>
+          <span className="text-[17px] font-semibold text-white tracking-tight">MyFarmer</span>
         </div>
 
         <div className="flex justify-center items-center my-6">
@@ -91,26 +90,26 @@ export const Sidebar = ({
               size={160}
             />
           ) : (
-            <div className="w-[160px] h-[160px] rounded-full bg-[#f0f0f2] animate-pulse" />
+            <div className="w-[160px] h-[160px] rounded-full bg-white/10 animate-pulse" />
           )}
         </div>
 
-        <div className="text-[64px] font-semibold leading-none tracking-tight mt-1.5 flex items-start">
+        <div className="text-[64px] font-semibold leading-none tracking-tight mt-1.5 flex items-start text-white">
           {loading ? '...' : (
             <>
               {tempValue}
-              <span className="text-[34px] font-medium ml-1 mt-1 text-[#1c1c1e]">°{unit}</span>
+              <span className="text-[34px] font-medium ml-1 mt-1 text-white/80">°{unit}</span>
             </>
           )}
         </div>
 
-        <div className="mt-[18px] text-[15px] text-[#1c1c1e] font-medium">
-          {day}, <span className="text-[#9a9aa2] font-normal">{timeStr}</span>
+        <div className="mt-[18px] text-[15px] text-white font-medium">
+          {day}, <span className="text-white/60 font-normal">{timeStr}</span>
         </div>
 
-        <div className="h-px bg-[#ececee] my-5"></div>
+        <div className="h-px bg-white/10 my-5"></div>
 
-        <div className="flex items-center gap-3 text-sm text-[#1c1c1e] mb-4 capitalize">
+        <div className="flex items-center gap-3 text-sm text-white/80 mb-4 capitalize">
           {currentSlot ? (
             <WeatherIcon
               condition={currentSlot.kondisi_cuaca}
@@ -119,15 +118,9 @@ export const Sidebar = ({
               className="shrink-0"
             />
           ) : (
-            <div className="w-5 h-5 rounded-full bg-[#f0f0f2] shrink-0" />
+            <div className="w-5 h-5 rounded-full bg-white/10 shrink-0" />
           )}
           {condition}
-        </div>
-        <div className="flex items-center gap-3 text-sm text-[#1c1c1e] mb-4">
-          <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="#4a4ff7" strokeWidth="2" strokeLinecap="round">
-            <path d="M12 2v6M8 4v8M16 4v6" />
-          </svg>
-          {rainInfo}
         </div>
 
         <div className="mt-auto relative rounded-[18px] overflow-hidden h-[130px] w-full group shrink-0">

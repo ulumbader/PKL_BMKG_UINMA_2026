@@ -318,7 +318,7 @@ export function PublicFooter() {
             </p>
             <Link
               href="/"
-              className="mt-6 inline-flex rounded-full bg-[#0c4cff] px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#2d66ff]"
+              className="mt-6 inline-flex rounded-full bg-[#16a34a] px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#15803d]"
             >
               Lihat halaman utama
             </Link>

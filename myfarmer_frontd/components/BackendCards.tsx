@@ -42,7 +42,7 @@ export type BackendInfoCard = {
 };
 
 export const BACKEND_CARD_SURFACE_CLASS =
-  "bg-white rounded-[24px] shadow-[0_8px_30px_rgb(0,0,0,0.06)] border border-gray-100 overflow-hidden";
+  "bg-white rounded-[24px] shadow-[0_8px_30px_rgb(0,0,0,0.06)] border border-green-100/60 overflow-hidden";
 
 export function BackendCardContent({
   card,
@@ -53,7 +53,7 @@ export function BackendCardContent({
 }) {
   return (
     <>
-      <div className="absolute top-0 right-0 py-1.5 px-4 bg-[#1c1c1e] text-white text-[11px] font-semibold uppercase tracking-wide rounded-bl-[16px] z-10 shadow-sm">
+      <div className="absolute top-0 right-0 py-1.5 px-4 bg-gradient-to-r from-[#16a34a] to-[#15803d] text-white text-[11px] font-semibold uppercase tracking-wide rounded-bl-[16px] z-10 shadow-sm">
         {card.title}
       </div>
       {dim && (
@@ -291,7 +291,7 @@ export const BackendCards = ({ cards }: { cards: BackendInfoCard[] }) => {
           <button
             key={idx}
             onClick={() => setActiveIndex(idx)}
-            className={`h-2 rounded-full transition-all duration-500 ${activeIndex === idx ? 'bg-[#1c1c1e] w-6' : 'bg-[#e0e0e0] w-2 hover:bg-gray-400'}`}
+            className={`h-2 rounded-full transition-all duration-500 ${activeIndex === idx ? 'bg-[#16a34a] w-6' : 'bg-green-100 w-2 hover:bg-green-200'}`}
           />
         ))}
       </div>

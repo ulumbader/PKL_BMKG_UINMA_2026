@@ -149,7 +149,6 @@ export const MainContent = ({
   const dailyForecasts = getDailyForecasts(weatherData?.prakiraan);
   const currentSlot = weatherData?.prakiraan[0];
   const windDirection = getWindDirection(currentSlot?.arah_angin);
-  const hasRain = Number.parseFloat(currentSlot?.curah_hujan_mm ?? '0') > 0;
 
   let day = '--';
   let timeStr = '--:--';
@@ -180,7 +179,7 @@ export const MainContent = ({
   const greeting = h < 12 ? 'Selamat Pagi...' : h < 17 ? 'Selamat Siang...' : 'Selamat Malam...';
 
   return (
-    <main className="flex-1 py-10 px-6 lg:px-11 min-w-0 bg-[#fafafa] overflow-y-auto h-screen">
+    <main className="flex-1 py-10 px-6 lg:px-11 min-w-0 bg-[#f0f4f1] text-[#0f1f17] overflow-y-auto h-screen">
 
       {/* Top Nav */}
       <div className="flex items-center justify-between mb-8">
@@ -208,13 +207,13 @@ export const MainContent = ({
           <div className="flex items-center gap-2.5">
             <button
               onClick={() => setUnit('C')}
-              className={`w-9 h-9 rounded-full flex items-center justify-center text-[13px] font-semibold transition-colors cursor-pointer ${unit === 'C' ? 'bg-[#1c1c1e] text-white' : 'text-[#1c1c1e] bg-white hover:bg-gray-200'}`}
+              className={`w-9 h-9 rounded-full flex items-center justify-center text-[13px] font-semibold transition-colors cursor-pointer ${unit === 'C' ? 'bg-[#16a34a] text-white' : 'text-[#0f1f17] bg-white hover:bg-green-50'}`}
             >
               °C
             </button>
             <button
               onClick={() => setUnit('F')}
-              className={`w-9 h-9 rounded-full flex items-center justify-center text-[13px] font-semibold transition-colors cursor-pointer ${unit === 'F' ? 'bg-[#1c1c1e] text-white' : 'text-[#1c1c1e] bg-white hover:bg-gray-200'}`}
+              className={`w-9 h-9 rounded-full flex items-center justify-center text-[13px] font-semibold transition-colors cursor-pointer ${unit === 'F' ? 'bg-[#16a34a] text-white' : 'text-[#0f1f17] bg-white hover:bg-green-50'}`}
             >
               °F
             </button>
@@ -222,8 +221,8 @@ export const MainContent = ({
               <svg viewBox="0 0 44 44" width="100%" height="100%">
                 <defs>
                   <linearGradient id="avatarGrad" x1="0" y1="0" x2="1" y2="1">
-                    <stop offset="0%" stopColor="#6b6f9c" />
-                    <stop offset="100%" stopColor="#2f3352" />
+                    <stop offset="0%" stopColor="#6b9c7c" />
+                    <stop offset="100%" stopColor="#1a3c2e" />
                   </linearGradient>
                 </defs>
                 <rect width="44" height="44" fill="url(#avatarGrad)" />
@@ -236,7 +235,7 @@ export const MainContent = ({
       </div>
 
       {/* Mobile Main Weather (Visible only on narrow screens) */}
-      <div className="lg:hidden flex flex-col items-center justify-center mb-10 text-center bg-white p-8 rounded-[32px] shadow-[0_4px_20px_rgb(0,0,0,0.02)] border border-gray-50">
+      <div className="lg:hidden flex flex-col items-center justify-center mb-10 text-center bg-white p-8 rounded-[32px] shadow-[0_4px_20px_rgb(0,0,0,0.02)] border border-green-100">
         <div className="text-[72px] font-semibold leading-none tracking-tight flex items-start justify-center">
           {loading ? '...' : (
             <>
@@ -277,7 +276,7 @@ export const MainContent = ({
               <div className="w-full text-center text-gray-500 py-4 flex items-center justify-center">Tidak ada data prakiraan.</div>
             ) : dailyForecasts.map((d, i) => (
               <div key={i} className="flex-1 bg-white rounded-[24px] p-6 text-center hover:shadow-lg hover:-translate-y-1 transition-all cursor-pointer h-full flex flex-col justify-between items-center shadow-[0_4px_20px_rgb(0,0,0,0.02)]">
-                <div className="text-[16px] font-medium text-[#9a9aa2]">{d.day}</div>
+                <div className="text-[16px] font-medium text-[#6b8f78]">{d.day}</div>
                 <div className="flex-1 flex items-center justify-center my-4">
                   <WeatherIcon
                     condition={d.condition}
@@ -301,61 +300,42 @@ export const MainContent = ({
 
       <InfoSection cards={infoCards} />
 
-      <div className="text-[20px] font-semibold mb-5">Sorotan Hari Ini</div>
+      <div className="text-[20px] font-semibold mb-5 text-[#0f1f17]">Sorotan Hari Ini</div>
 
-      <RainfallRecommendationChart className="mb-5" />
+      <RainfallRecommendationChart className="mb-5" accent="green" />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5 pb-8">
-
-        {/* Curah Hujan (Rainfall - replacing UV Index) */}
-        <div className="bg-white rounded-[22px] p-[22px_24px] min-h-[170px] flex flex-col shadow-sm">
-          <div className="text-[14px] text-[#a9a9b0] mb-3.5">Curah Hujan</div>
-          <div className="text-[34px] font-semibold leading-none mb-auto">
-            {currentSlot?.curah_hujan_mm || '0'}<span className="text-[14px] font-medium text-[#a9a9b0] ml-[2px]">mm</span>
-          </div>
-          <div className="flex items-center gap-1.5 text-[14px] font-medium mt-3.5 text-blue-600">
-            Prakiraan {hasRain ? 'Hujan' : 'Cerah'}
-          </div>
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 pb-8">
 
         {/* Wind Status */}
         <div className="bg-white rounded-[22px] p-[22px_24px] min-h-[170px] flex flex-col shadow-sm">
-          <div className="text-[14px] text-[#a9a9b0] mb-3.5">Kondisi Angin</div>
-          <div className="flex items-start justify-between gap-3 mb-auto">
-            <div className="text-[34px] font-semibold leading-none">
-              {currentSlot?.kecepatan_angin_kmjam || '--'}<span className="text-[14px] font-medium text-[#a9a9b0] ml-[2px]">km/jam</span>
-            </div>
-            <WindCompass direction={windDirection} />
-          </div>
-          <div className="flex items-center justify-between gap-2 text-[13px] mt-3.5">
-            <span className="text-[#a9a9b0]">Arah angin</span>
-            <span className="font-medium text-right">
+          <div className="mb-3.5 flex items-center justify-between gap-3 text-[14px]">
+            <span className="text-[#6b8f78]">Kondisi Angin</span>
+            <span className="font-medium text-right text-[#0f1f17]">
               {windDirection.label}
               {windDirection.abbreviation ? ` (${windDirection.abbreviation})` : ''}
             </span>
+          </div>
+          <div className="flex flex-1 items-center justify-between gap-3">
+            <div className="whitespace-nowrap text-[40px] font-semibold leading-none">
+              {currentSlot?.kecepatan_angin_kmjam || '--'}<span className="text-[15px] font-medium text-[#a9a9b0] ml-[2px]">km/jam</span>
+            </div>
+            <WindCompass direction={windDirection} />
           </div>
         </div>
 
         {/* Humidity */}
         <div className="bg-white rounded-[22px] p-[22px_24px] min-h-[170px] flex flex-col shadow-sm">
-          <div className="text-[14px] text-[#a9a9b0] mb-3.5">Kelembapan</div>
-          <div className="text-[34px] font-semibold leading-none mb-auto">
-            {currentSlot?.kelembapan_persen || '--'}<span className="text-[14px] font-medium text-[#a9a9b0] ml-[2px]">%</span>
-          </div>
-          <div className="flex items-center gap-1.5 text-[14px] font-medium mt-3.5">
-            Normal
+          <div className="text-[14px] text-[#6b8f78] mb-3.5">Kelembapan</div>
+          <div className="flex flex-1 items-center text-[40px] font-semibold leading-none">
+            {currentSlot?.kelembapan_persen || '--'}<span className="text-[15px] font-medium text-[#a9a9b0] ml-[2px]">%</span>
           </div>
         </div>
 
         {/* Visibility */}
         <div className="bg-white rounded-[22px] p-[22px_24px] min-h-[170px] flex flex-col shadow-sm">
-          <div className="text-[14px] text-[#a9a9b0] mb-3.5">Jarak Pandang</div>
-          <div className="text-[34px] font-semibold leading-none mb-auto">
-            {currentSlot?.jarak_pandang ? currentSlot.jarak_pandang.replace(/km/i, '').trim() : '--'}
-            <span className="text-[14px] font-medium text-[#a9a9b0] ml-[2px]">km</span>
-          </div>
-          <div className="flex items-center gap-1.5 text-[14px] font-medium mt-3.5">
-            Rata-rata
+          <div className="text-[14px] text-[#6b8f78] mb-3.5">Jarak Pandang</div>
+          <div className="flex flex-1 items-center text-[40px] font-semibold leading-none">
+            {currentSlot?.jarak_pandang || '--'}
           </div>
         </div>
 
