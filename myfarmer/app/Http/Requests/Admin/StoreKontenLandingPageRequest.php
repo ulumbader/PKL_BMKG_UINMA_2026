@@ -2,7 +2,10 @@
 
 namespace App\Http\Requests\Admin;
 
+use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Http\Exceptions\HttpResponseException;
+use Illuminate\Validation\Rules\File;
 
 class StoreKontenLandingPageRequest extends FormRequest
 {
@@ -21,13 +24,68 @@ class StoreKontenLandingPageRequest extends FormRequest
      */
     public function rules(): array
     {
+        $tipe = $this->input('tipe');
+
         return [
-            'judul'        => ['required', 'string', 'max:255'],
-            'isi'          => ['required', 'string', 'min:10'],
-            'tipe'         => ['required', 'in:pengumuman,tips'],
-            'is_active'    => ['sometimes', 'boolean'],
+            'judul' => ['required', 'string', 'max:255'],
+            'isi' => [$this->isTextType($tipe) ? 'required' : 'nullable', 'string', 'min:10'],
+            'tipe' => ['required', 'in:pengumuman,tips,sorotan,poster,pdf'],
+            'file_media' => $this->mediaFileRules($tipe, true),
+            'thumbnail' => in_array($tipe, ['sorotan', 'pdf'], true)
+                ? ['nullable', File::types(['jpg', 'jpeg', 'png', 'webp'])->max(5 * 1024)]
+                : ['prohibited'],
+            'url_sumber' => [
+                in_array($tipe, ['poster', 'pdf'], true) ? 'required' : 'nullable',
+                'string',
+                'max:2048',
+                $this->httpUrlRule(),
+            ],
+            'alt_text' => ['nullable', 'string', 'max:255'],
+            'is_active' => ['sometimes', 'boolean'],
             'urutan_tampil' => ['sometimes', 'integer', 'min:0'],
         ];
+    }
+
+    private function mediaFileRules(?string $tipe, bool $required): array
+    {
+        if (! in_array($tipe, ['sorotan', 'poster', 'pdf'], true)) {
+            return ['prohibited'];
+        }
+
+        $types = $tipe === 'sorotan'
+            ? ['jpg', 'jpeg', 'png', 'webp', 'gif', 'mp4', 'webm']
+            : ($tipe === 'poster' ? ['jpg', 'jpeg', 'png', 'webp'] : ['pdf']);
+        $maxKilobytes = $tipe === 'sorotan' ? 50 * 1024 : ($tipe === 'pdf' ? 20 * 1024 : 10 * 1024);
+
+        return [$required ? 'required' : 'nullable', File::types($types)->max($maxKilobytes)];
+    }
+
+    private function isTextType(?string $tipe): bool
+    {
+        return in_array($tipe, ['pengumuman', 'tips'], true);
+    }
+
+    private function httpUrlRule(): \Closure
+    {
+        return function (string $attribute, mixed $value, \Closure $fail): void {
+            if ($value === null || $value === '') {
+                return;
+            }
+
+            $scheme = strtolower((string) parse_url((string) $value, PHP_URL_SCHEME));
+            if (! filter_var($value, FILTER_VALIDATE_URL) || ! in_array($scheme, ['http', 'https'], true)) {
+                $fail('URL sumber harus berupa alamat HTTP atau HTTPS yang valid.');
+            }
+        };
+    }
+
+    protected function failedValidation(Validator $validator): void
+    {
+        throw new HttpResponseException(response()->json([
+            'status' => 'error',
+            'message' => 'Terjadi kesalahan validasi.',
+            'errors' => $validator->errors(),
+        ], 422));
     }
 
     /**
@@ -36,15 +94,18 @@ class StoreKontenLandingPageRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'judul.required'        => 'Judul konten wajib diisi.',
-            'judul.max'             => 'Judul konten maksimal 255 karakter.',
-            'isi.required'          => 'Isi konten wajib diisi.',
-            'isi.min'               => 'Isi konten minimal 10 karakter.',
-            'tipe.required'         => 'Tipe konten wajib dipilih.',
-            'tipe.in'               => 'Tipe konten harus berupa: pengumuman atau tips.',
-            'is_active.boolean'     => 'Status aktif harus berupa true/false.',
+            'judul.required' => 'Judul konten wajib diisi.',
+            'judul.max' => 'Judul konten maksimal 255 karakter.',
+            'isi.required' => 'Isi konten wajib diisi.',
+            'isi.min' => 'Isi konten minimal 10 karakter.',
+            'tipe.required' => 'Tipe konten wajib dipilih.',
+            'tipe.in' => 'Tipe konten tidak didukung.',
+            'file_media.required' => 'File media wajib diunggah.',
+            'file_media.prohibited' => 'File media tidak boleh diunggah untuk konten teks.',
+            'url_sumber.required' => 'URL sumber wajib diisi.',
+            'is_active.boolean' => 'Status aktif harus berupa true/false.',
             'urutan_tampil.integer' => 'Urutan tampil harus berupa angka.',
-            'urutan_tampil.min'     => 'Urutan tampil tidak boleh negatif.',
+            'urutan_tampil.min' => 'Urutan tampil tidak boleh negatif.',
         ];
     }
 }

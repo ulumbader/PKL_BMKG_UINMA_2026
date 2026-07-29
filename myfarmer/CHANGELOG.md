@@ -8,6 +8,50 @@ Format tanggal: YYYY-MM-DD.
 
 ## [Unreleased]
 
+## [Tahap 27] - Sinkronisasi ERD Fitur Media - 2026-07-29
+### Diubah
+- Dokumentasi ERD diselaraskan dengan migration media pada tabel `konten_landing_page`, meliputi perubahan `isi` menjadi nullable, `tipe` menjadi `varchar(30)`, lima kolom metadata media, dan dua index komposit.
+- Diagram Mermaid, daftar nilai kategorikal, catatan nullable, serta aturan penyimpanan file diperbarui tanpa mengubah skema database atau kode aplikasi.
+
+### File Terkait
+- `../diagram_erd.md`
+- `CHANGELOG.md`
+
+### Catatan
+- Struktur didokumentasikan berdasarkan migration `2026_07_28_000016_add_media_fields_to_konten_landing_page_table.php` dan model `KontenLandingPage`.
+- Verifikasi dokumentasi berhasil: blok Mermaid memuat 14 kolom tabel konten, referensi enum lama sudah tidak ada, dan `git diff --check` lulus.
+
+## [Tahap 26] - Konten Media Landing Page - 2026-07-28
+### Ditambahkan
+- Migration backward-compatible untuk memperluas `konten_landing_page` dengan metadata media tanpa menghapus data pengumuman/tips.
+- `MediaKontenService` untuk penyimpanan file bernama UUID pada public disk dan penghapusan terbatas di direktori `media/`.
+- Resource publik media dan endpoint `GET /api/publik/media` yang mengelompokkan sorotan, poster, serta PDF aktif.
+- Feature test media untuk create tiga tipe, validasi file/URL, status dan urutan publik, serta lifecycle file ketika diganti/dihapus.
+
+### Diubah
+- Model, Form Request, dan controller konten mendukung gambar/video/PDF multipart dengan transaksi database dan cleanup file gagal.
+- Endpoint konten publik lama dibatasi ke pengumuman/tips agar kontraknya tetap backward-compatible.
+- Dokumentasi API diperbarui menjadi 39 endpoint.
+
+### File Terkait
+- `database/migrations/2026_07_28_000016_add_media_fields_to_konten_landing_page_table.php`
+- `app/Models/KontenLandingPage.php`
+- `app/Services/MediaKontenService.php`
+- `app/Http/Requests/Admin/StoreKontenLandingPageRequest.php`
+- `app/Http/Requests/Admin/UpdateKontenLandingPageRequest.php`
+- `app/Http/Controllers/Api/KontenLandingPageController.php`
+- `app/Http/Controllers/Api/PublicController.php`
+- `app/Http/Resources/MediaPublicResource.php`
+- `routes/api.php`
+- `tests/Feature/MediaKontenTest.php`
+- `../API_DOCUMENTATION.md`
+- `CHANGELOG.md`
+
+### Catatan
+- Format aman: gambar JPG/PNG/WebP/GIF, video MP4/WebM, dan PDF; SVG/executable ditolak. Batas ukuran masing-masing 10 MB untuk poster, 20 MB untuk PDF, 50 MB untuk sorotan, dan 5 MB untuk thumbnail.
+- Migration development berhasil dijalankan dan `public/storage` berhasil dibuat melalui `php artisan storage:link`.
+- Verifikasi berhasil: 56 test backend dengan 186 assertion, Pint pada sembilan file fitur lulus, serta 39 route API terdaftar. Pemeriksaan Pint seluruh repository masih menemukan 31 masalah gaya lama pada file di luar fitur ini dan tidak diformat untuk menghindari perubahan di luar scope.
+
 ## [Tahap 25] - Endpoint Grafik Curah Hujan dan Rekomendasi Tanam - 2026-07-17
 ### Ditambahkan
 - Endpoint publik `GET /api/publik/grafik-curah-hujan` untuk menyajikan histori curah hujan per 10 hari dan rekomendasi tanam dalam urutan kronologis tanpa autentikasi.

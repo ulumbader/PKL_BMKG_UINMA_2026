@@ -856,7 +856,7 @@ List konten landing page admin (semua, termasuk nonaktif).
 
 | Query Param | Tipe | Deskripsi |
 |---|---|---|
-| `tipe` | string | `pengumuman` atau `tips` |
+| `tipe` | string | `pengumuman`, `tips`, `sorotan`, `poster`, atau `pdf` |
 | `is_active` | boolean | Filter status aktif |
 | `per_page` | integer | Default 15 |
 
@@ -919,7 +919,32 @@ Update konten. Semua field opsional (partial update).
 
 ### DELETE `/api/admin/konten/{id}`
 
-Hapus konten.
+Hapus konten. Untuk konten media, file utama dan thumbnail yang berada di direktori terkelola ikut dihapus.
+
+### Upload media melalui endpoint Konten
+
+Sorotan, poster, dan PDF menggunakan endpoint CRUD yang sama dengan konten teks, tetapi request create/update dikirim sebagai `multipart/form-data`.
+
+| Field | Sorotan | Poster | PDF | Keterangan |
+|---|---|---|---|---|
+| `judul` | Wajib | Wajib | Wajib | Maksimal 255 karakter |
+| `tipe` | `sorotan` | `poster` | `pdf` | Menentukan validasi file |
+| `file_media` | Wajib saat create | Wajib saat create | Wajib saat create | Opsional saat edit jika file tidak diganti |
+| `thumbnail` | Opsional | Tidak diizinkan | Opsional | JPG, PNG, atau WebP; maksimal 5 MB |
+| `alt_text` | Opsional | Opsional | Opsional | Fallback publik menggunakan judul |
+| `url_sumber` | Opsional | Wajib | Wajib | Hanya URL HTTP/HTTPS |
+| `urutan_tampil` | Opsional | Opsional | Opsional | Integer >= 0 |
+| `is_active` | Opsional | Opsional | Opsional | Boolean |
+| `hapus_thumbnail` | Edit saja | - | Edit saja | Boolean untuk menghapus thumbnail lama |
+
+Format file dan batas ukuran:
+
+- Sorotan gambar: JPG, PNG, WebP, atau GIF; sorotan video: MP4 atau WebM; maksimal 50 MB.
+- Poster: JPG, PNG, atau WebP; maksimal 10 MB.
+- PDF: PDF valid; maksimal 20 MB.
+- File disimpan pada public disk dengan nama UUID. Response admin menyediakan `file_url` dan `thumbnail_url`; path internal tidak dikirim oleh endpoint publik.
+
+Untuk update multipart, kirim `POST /api/admin/konten/{id}` dengan field `_method=PUT`. Jika file baru berhasil disimpan tetapi transaksi database gagal, file baru dibersihkan. File lama baru dihapus setelah update database berhasil.
 
 ---
 
@@ -1239,6 +1264,39 @@ Daftar konten landing page yang aktif (`is_active = true`), diurutkan `urutan_ta
 
 ---
 
+### GET `/api/publik/media`
+
+Media landing page aktif, dikelompokkan berdasarkan jenis dan diurutkan dengan `urutan_tampil` ascending lalu ID ascending. Endpoint tidak membutuhkan autentikasi dan tidak mengirim path filesystem maupun data admin.
+
+**Response Sukses (200):**
+
+```json
+{
+  "status": "success",
+  "message": "Media landing page berhasil diambil.",
+  "data": {
+    "sorotan": [
+      {
+        "id": 10,
+        "judul": "Panen Hari Ini",
+        "tipe": "sorotan",
+        "jenis_media": "video",
+        "file_url": "http://localhost:8000/storage/media/sorotan/uuid.mp4",
+        "thumbnail_url": "http://localhost:8000/storage/media/sorotan/thumbnail/uuid.jpg",
+        "url_sumber": null,
+        "alt_text": "Petani sedang memanen padi"
+      }
+    ],
+    "poster": [],
+    "pdf": []
+  }
+}
+```
+
+Jika suatu grup tidak memiliki konten aktif, grup tetap dikembalikan sebagai array kosong. Frontend tidak menampilkan section kosong.
+
+---
+
 ## Ringkasan Seluruh Endpoint
 
 | # | Method | Path | Middleware | Fungsi |
@@ -1281,5 +1339,6 @@ Daftar konten landing page yang aktif (`is_active = true`), diurutkan `urutan_ta
 | 36 | GET | `/api/publik/rekomendasi-terkini` | — | Rekomendasi terkini |
 | 37 | GET | `/api/publik/ringkasan-terkini` | — | Ringkasan AI terkini |
 | 38 | GET | `/api/publik/konten` | — | Konten landing page |
+| 39 | GET | `/api/publik/media` | — | Sorotan, poster, dan PDF aktif |
 
-**Total: 38 endpoint**
+**Total: 39 endpoint**

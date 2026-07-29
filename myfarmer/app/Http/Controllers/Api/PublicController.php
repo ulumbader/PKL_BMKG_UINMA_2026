@@ -7,6 +7,7 @@ use App\Http\Requests\Public\GrafikCurahHujanRequest;
 use App\Http\Resources\CuacaDasarianResource;
 use App\Http\Resources\GrafikCurahHujanResource;
 use App\Http\Resources\KontenPublicResource;
+use App\Http\Resources\MediaPublicResource;
 use App\Http\Resources\RekomendasiPublicResource;
 use App\Http\Resources\RingkasanPublicResource;
 use App\Models\DataIklimDasarian;
@@ -221,6 +222,7 @@ class PublicController extends Controller
     public function kontenAktif(): JsonResponse
     {
         $konten = KontenLandingPage::where('is_active', true)
+            ->whereIn('tipe', ['pengumuman', 'tips'])
             ->orderBy('urutan_tampil', 'asc')
             ->get();
 
@@ -228,5 +230,25 @@ class PublicController extends Controller
             KontenPublicResource::collection($konten),
             'Konten landing page berhasil diambil.'
         );
+    }
+
+    /**
+     * Kembalikan media aktif yang sudah dikelompokkan dan diurutkan.
+     */
+    public function mediaAktif(): JsonResponse
+    {
+        $media = KontenLandingPage::query()
+            ->where('is_active', true)
+            ->whereIn('tipe', ['sorotan', 'poster', 'pdf'])
+            ->orderBy('urutan_tampil')
+            ->orderBy('id')
+            ->get()
+            ->groupBy('tipe');
+
+        return $this->successResponse([
+            'sorotan' => MediaPublicResource::collection($media->get('sorotan', collect())),
+            'poster' => MediaPublicResource::collection($media->get('poster', collect())),
+            'pdf' => MediaPublicResource::collection($media->get('pdf', collect())),
+        ], 'Media landing page berhasil diambil.');
     }
 }

@@ -174,4 +174,5 @@ Route::prefix('publik')->group(function () {
     Route::get('/rekomendasi-terkini', [PublicController::class, 'rekomendasiTerkini']);
     Route::get('/ringkasan-terkini', [PublicController::class, 'ringkasanTerkini']);
     Route::get('/konten', [PublicController::class, 'kontenAktif']);
+    Route::get('/media', [PublicController::class, 'mediaAktif']);
 });

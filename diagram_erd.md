@@ -9,7 +9,7 @@
 | **DBMS** | MySQL |
 | **Framework** | Laravel v10.50.2 |
 | **PHP Version** | 8.1.10 |
-| **Tanggal Dokumentasi** | 16 Juli 2026 |
+| **Tanggal Dokumentasi** | 29 Juli 2026 |
 
 ---
 
@@ -60,7 +60,7 @@ Database terdiri dari **14 tabel**, dengan rincian:
 | 9 | `rule_rekomendasi` | Definisi rule beserta parameter threshold | Rule Engine |
 | 10 | `hasil_rekomendasi` | Output evaluasi rule engine per periode dasarian | Rule Engine |
 | 11 | `ringkasan_ai` | Ringkasan kondisi iklim dari Groq API | AI Summary |
-| 12 | `konten_landing_page` | Konten pengumuman dan tips untuk petani | Konten |
+| 12 | `konten_landing_page` | Konten teks dan media (sorotan, poster, PDF) untuk landing page | Konten |
 | 13 | `log_import_data` | Log proses import data dari file CSV BMKG | Logging |
 | 14 | `audit_log` | Jejak aktivitas admin untuk keperluan audit | Audit |
 
@@ -363,26 +363,36 @@ Database terdiri dari **14 tabel**, dengan rincian:
 
 ### 3.12. Tabel `konten_landing_page`
 
-**Fungsi:** Menyimpan konten pengumuman dan tips pertanian yang ditampilkan di landing page untuk petani. Konten dikelola oleh admin melalui endpoint CRUD.
+**Fungsi:** Menyimpan konten teks (`pengumuman`, `tips`) dan media (`sorotan`, `poster`, `pdf`) yang ditampilkan di landing page untuk petani. Konten dikelola oleh admin melalui endpoint CRUD.
 
 | No | Kolom | Tipe Data | Constraint | Nullable | Default | Keterangan |
 |----|---|---|---|---|---|---|
 | 1 | `id` | `bigint unsigned` | PRIMARY KEY, AUTO_INCREMENT | Tidak | — | Identifier unik |
 | 2 | `judul` | `varchar(255)` | — | Tidak | — | Judul konten |
-| 3 | `isi` | `text` | — | Tidak | — | Isi/body konten |
-| 4 | `tipe` | `enum('pengumuman','tips')` | — | Tidak | — | Kategori konten |
-| 5 | `is_active` | `tinyint(1)` | — | Tidak | `true` | Status aktif konten |
-| 6 | `urutan_tampil` | `int` | — | Tidak | `0` | Urutan tampil di landing page (ascending) |
-| 7 | `dibuat_oleh` | `bigint unsigned` | FOREIGN KEY → `users.id` (ON DELETE RESTRICT) | Tidak | — | Admin yang membuat konten |
-| 8 | `created_at` | `timestamp` | — | Ya | `NULL` | Waktu pembuatan record |
-| 9 | `updated_at` | `timestamp` | — | Ya | `NULL` | Waktu pembaruan terakhir |
+| 3 | `isi` | `text` | — | Ya | `NULL` | Isi/body untuk konten teks; boleh kosong pada konten media |
+| 4 | `tipe` | `varchar(30)` | — | Tidak | — | Kategori aplikasi: `pengumuman`, `tips`, `sorotan`, `poster`, atau `pdf` |
+| 5 | `jenis_media` | `varchar(20)` | — | Ya | `NULL` | Jenis media hasil normalisasi: `image`, `video`, atau `pdf`; kosong untuk konten teks |
+| 6 | `path_file` | `varchar(255)` | — | Ya | `NULL` | Path file utama pada public disk, bukan isi binary file |
+| 7 | `path_thumbnail` | `varchar(255)` | — | Ya | `NULL` | Path thumbnail opsional pada public disk |
+| 8 | `url_sumber` | `varchar(2048)` | — | Ya | `NULL` | URL sumber/tautan eksternal; wajib di level aplikasi untuk poster dan PDF |
+| 9 | `alt_text` | `varchar(255)` | — | Ya | `NULL` | Teks alternatif media untuk aksesibilitas |
+| 10 | `is_active` | `tinyint(1)` | — | Tidak | `true` | Status aktif konten |
+| 11 | `urutan_tampil` | `int` | — | Tidak | `0` | Urutan tampil di landing page (ascending) |
+| 12 | `dibuat_oleh` | `bigint unsigned` | FOREIGN KEY → `users.id` (ON DELETE RESTRICT) | Tidak | — | Admin yang membuat konten |
+| 13 | `created_at` | `timestamp` | — | Ya | `NULL` | Waktu pembuatan record |
+| 14 | `updated_at` | `timestamp` | — | Ya | `NULL` | Waktu pembaruan terakhir |
 
 - **Primary Key:** `id`
 - **Foreign Key:** `dibuat_oleh` → `users.id` (ON DELETE RESTRICT)
+- **Index:**
+  - `(is_active, urutan_tampil)` — nama index: `idx_konten_active_urutan`
+  - `(tipe, is_active, urutan_tampil)` — nama index: `idx_konten_tipe_active_urutan`
 - **Timestamps:** `created_at`, `updated_at` (standar Laravel)
 - **Soft Delete:** Tidak digunakan
 - **Cast di Model:**
   - `is_active` → `boolean`
+
+> **Catatan media:** Database hanya menyimpan metadata dan path relatif file. Atribut `file_url` dan `thumbnail_url` pada response API merupakan accessor terhitung dari model, bukan kolom database.
 
 ---
 
@@ -599,7 +609,12 @@ erDiagram
         bigint_unsigned id PK
         varchar judul
         text isi
-        enum tipe
+        varchar tipe
+        varchar jenis_media
+        varchar path_file
+        varchar path_thumbnail
+        varchar url_sumber
+        varchar alt_text
         boolean is_active
         int urutan_tampil
         bigint_unsigned dibuat_oleh FK
@@ -677,7 +692,7 @@ Alur data utama sistem mengikuti pola *pipeline* bertahap:
 
 ### 6.2. Tabel Pendukung
 
-- **`konten_landing_page`** berdiri relatif independen, hanya terhubung ke `users` sebagai pencatat konten.
+- **`konten_landing_page`** berdiri relatif independen dan terhubung ke `users` sebagai pembuat konten. Tabel yang sama menampung konten teks serta metadata media sorotan, poster, dan PDF; file fisiknya disimpan di public disk.
 - **`log_import_data`** dan **`audit_log`** berfungsi sebagai tabel pencatatan (*logging*) yang terhubung ke `users` untuk traceability.
 
 ### 6.3. Peran Tabel `users`
@@ -711,7 +726,7 @@ Proyek ini memiliki satu factory bawaan Laravel:
 |---|---|---|
 | `UserFactory` | **Tidak disesuaikan** | Masih menggunakan definisi bawaan Laravel (field `name` dan `remember_token` yang sudah di-drop dari tabel `users`). Factory ini tidak digunakan di seeder utama; AdminSeeder membuat user secara eksplisit. |
 
-### 7.3. Nilai Enum dan Status
+### 7.3. Nilai Kategorikal dan Status
 
 | Tabel | Kolom | Nilai yang Diizinkan |
 |---|---|---|
@@ -720,13 +735,15 @@ Proyek ini memiliki satu factory bawaan Laravel:
 | `data_iklim_dasarian` | `status_musim` | `basah`, `normal`, `kering` |
 | `hasil_rekomendasi` | `status_rekomendasi` | `optimal_tanam`, `tunggu`, `tidak_disarankan` |
 | `ringkasan_ai` | `status` | `draft`, `published` |
-| `konten_landing_page` | `tipe` | `pengumuman`, `tips` |
+| `konten_landing_page` | `tipe` | `pengumuman`, `tips`, `sorotan`, `poster`, `pdf` |
 | `log_import_data` | `status` | `sukses`, `gagal` |
 
 **Penjelasan kode status data iklim harian:**
 - `normal` — Data terukur dengan benar, nilai `curah_hujan_mm` terisi
 - `tidak_terukur` — Alat ukur bermasalah (kode BMKG: `8888`), `curah_hujan_mm` = `NULL`
 - `tidak_ada_data` — Tidak ada data sama sekali (kode BMKG: `9999`), `curah_hujan_mm` = `NULL`
+
+> **Catatan:** `konten_landing_page.tipe` disimpan sebagai `varchar(30)`, bukan enum MySQL. Daftar nilai di atas dibatasi oleh validasi aplikasi agar tipe media dapat dikembangkan tanpa mengubah enum database.
 
 ### 7.4. Aturan Cascade Delete
 
@@ -757,6 +774,12 @@ Proyek ini memiliki satu factory bawaan Laravel:
 | `rule_rekomendasi` | `diubah_oleh` | `NULL` jika rule belum pernah diubah sejak dibuat |
 | `ringkasan_ai` | `direview_oleh` | `NULL` jika ringkasan masih berstatus `draft` (belum direview) |
 | `ringkasan_ai` | `published_at` | `NULL` jika ringkasan belum dipublikasi |
+| `konten_landing_page` | `isi` | `NULL` untuk konten media yang tidak membutuhkan body teks |
+| `konten_landing_page` | `jenis_media` | `NULL` untuk tipe teks `pengumuman` dan `tips` |
+| `konten_landing_page` | `path_file` | `NULL` untuk konten teks; file wajib di level aplikasi untuk setiap tipe media |
+| `konten_landing_page` | `path_thumbnail` | Thumbnail bersifat opsional, termasuk untuk sorotan video |
+| `konten_landing_page` | `url_sumber` | Secara skema nullable untuk kompatibilitas; validasi aplikasi mewajibkannya pada poster dan PDF |
+| `konten_landing_page` | `alt_text` | Opsional; aplikasi dapat menggunakan judul sebagai fallback aksesibilitas |
 
 ### 7.6. Unique Constraints
 
@@ -777,6 +800,8 @@ Proyek ini memiliki satu factory bawaan Laravel:
 | `data_iklim_harian` | `tanggal` | *(auto-generated)* | Mempercepat query filter berdasarkan tanggal |
 | `data_iklim_dasarian` | `(tahun, bulan)` | `idx_dasarian_tahun_bulan` | Mempercepat query filter berdasarkan periode |
 | `ringkasan_ai` | `status` | `idx_ringkasan_status` | Mempercepat query ringkasan berstatus `published` untuk landing page |
+| `konten_landing_page` | `(is_active, urutan_tampil)` | `idx_konten_active_urutan` | Mempercepat pengambilan seluruh konten aktif sesuai urutan tampil |
+| `konten_landing_page` | `(tipe, is_active, urutan_tampil)` | `idx_konten_tipe_active_urutan` | Mempercepat filter konten aktif per tipe media dan urutan tampil |
 | `personal_access_tokens` | `(tokenable_type, tokenable_id)` | *(auto-generated)* | Index polimorfik untuk pencarian token berdasarkan pemilik |
 
 ### 7.8. Observer Audit Log
@@ -800,7 +825,8 @@ Proyek ini memiliki satu factory bawaan Laravel:
 4. **Prakiraan cuaca real-time berada di luar skema backend.** Frontend mengambil data tersebut langsung dari API publik BMKG; data prakiraan tidak disimpan dan tidak digunakan sebagai input rule engine.
 5. **Konvensi penamaan database menggunakan Bahasa Indonesia** dengan format `snake_case` (contoh: `data_iklim_harian`, `curah_hujan_mm`, `dibuat_oleh`). Ini merupakan aturan proyek yang ditetapkan di `AGENTS.md`.
 6. **Tabel bawaan Laravel** (`personal_access_tokens`, `password_reset_tokens`, `failed_jobs`) tetap menggunakan penamaan asli berbahasa Inggris karena merupakan bagian dari framework dan tidak dimodifikasi.
+7. **File media tidak disimpan sebagai binary/blob di database.** Tabel `konten_landing_page` hanya menyimpan path relatif dan metadata; lifecycle file dikelola oleh service penyimpanan aplikasi ketika konten dibuat, diganti, atau dihapus.
 
 ---
 
-*Dokumentasi ini disusun berdasarkan analisis kode aktual pada file migration, model Eloquent, seeder, dan factory yang terdapat dalam proyek MyFarmer per tanggal 16 Juli 2026.*
+*Dokumentasi ini disusun berdasarkan analisis kode aktual pada file migration, model Eloquent, seeder, dan factory yang terdapat dalam proyek MyFarmer per tanggal 29 Juli 2026.*

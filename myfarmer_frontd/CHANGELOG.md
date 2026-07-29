@@ -9,6 +9,38 @@ Format tanggal: YYYY-MM-DD.
 
 ## [Unreleased]
 
+## [Tahap 39] - Media Dinamis Landing Page - 2026-07-28
+### Ditambahkan
+- Komponen publik terpisah untuk Sorotan story, viewer story, carousel dan popup Poster, serta viewer PDF native browser.
+- Hook dan kontrak TypeScript media melalui API client terpusat `GET /publik/media`.
+- `ContentManager` untuk pengelolaan konten bertab: Pengumuman & Tips, Sorotan, Poster, dan PDF.
+- Preview file lama/baru, upload multipart, toggle aktif, urutan, error validasi, loading, notifikasi, dan konfirmasi hapus pada panel admin.
+
+### Diubah
+- `MainContent` menempatkan media setelah seluruh card prakiraan/cuaca dan tepat sebelum `PublicFooter`, dengan urutan Sorotan, Poster, lalu PDF.
+- Halaman admin Konten menggunakan manager bertab tanpa mengubah menu atau shell admin.
+
+### File Terkait
+- `app/admin/konten/page.tsx`
+- `components/MainContent.tsx`
+- `components/admin/ContentManager.tsx`
+- `components/public/media/LandingMediaSection.tsx`
+- `components/public/media/MediaModal.tsx`
+- `components/public/media/StoryHighlights.tsx`
+- `components/public/media/StoryViewerModal.tsx`
+- `components/public/media/PosterCarousel.tsx`
+- `components/public/media/PosterModal.tsx`
+- `components/public/media/PdfViewerSection.tsx`
+- `components/public/media/useLandingMedia.ts`
+- `lib/media.ts`
+- `CHANGELOG.md`
+
+### Catatan
+- Palet landing page yang dipakai tetap hijau Tahap 34 (`#16A34A`, `#15803D`, latar `#F0F4F1`) dan tidak ada dependency baru.
+- Modal menangani Escape, focus trap, pengembalian fokus, label dialog, dan navigasi keyboard. Autoplay gambar dihentikan saat `prefers-reduced-motion`; video memakai `preload="metadata"`.
+- Verifikasi berhasil: ESLint tanpa error (satu warning lama pada `page_backup.tsx`), TypeScript lulus, dan build produksi Next.js 16.2.10 berhasil untuk seluruh route.
+- Browser headless memverifikasi viewport desktop 1440x1000, tablet 768x900, dan mobile 390x844 tanpa overflow; carousel menghasilkan 3/2/1 kolom, modal Story/Poster menutup dengan Escape dan mengembalikan fokus, link eksternal aman, serta iframe dan fallback PDF tersedia. Seluruh fixture verifikasi sudah dibersihkan.
+
 ## [Tahap 38] - Penyelarasan Nilai Card Sorotan Cuaca - 2026-07-28
 ### Ditambahkan
 - Tidak ada komponen atau dependency baru.

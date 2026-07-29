@@ -9,6 +9,7 @@ import { BackendCards, useBackendCards } from './BackendCards';
 import { InfoSection } from './InfoSection';
 import { PublicFooter } from './PublicFooter';
 import { RainfallRecommendationChart } from './RainfallRecommendationChart';
+import { LandingMediaSection } from './public/media/LandingMediaSection';
 
 
 type Unit = 'C' | 'F';
@@ -340,6 +341,8 @@ export const MainContent = ({
         </div>
 
       </div>
+
+      <LandingMediaSection />
 
       <PublicFooter />
 
