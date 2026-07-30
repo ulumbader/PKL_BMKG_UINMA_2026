@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Bar,
   CartesianGrid,
@@ -196,7 +196,7 @@ function ChartSkeleton({ className = "" }: { className?: string }) {
 
 export function RainfallRecommendationChart({
   className = "",
-  periodCount = 12,
+  periodCount = 36,
   accent = "default",
 }: RainfallRecommendationChartProps) {
   const normalizedPeriodCount = Math.min(36, Math.max(1, Math.round(periodCount)));
@@ -204,6 +204,7 @@ export function RainfallRecommendationChart({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [requestKey, setRequestKey] = useState(0);
+  const chartScrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -236,6 +237,20 @@ export function RainfallRecommendationChart({
     loadChart();
     return () => controller.abort();
   }, [normalizedPeriodCount, requestKey]);
+
+  useEffect(() => {
+    if (loading || !data?.periode.length) return;
+
+    const frameId = requestAnimationFrame(() => {
+      const scrollContainer = chartScrollRef.current;
+      if (!scrollContainer) return;
+
+      scrollContainer.scrollLeft =
+        scrollContainer.scrollWidth - scrollContainer.clientWidth;
+    });
+
+    return () => cancelAnimationFrame(frameId);
+  }, [data, loading]);
 
   const greenAccent = accent === "green";
 
@@ -360,88 +375,92 @@ export function RainfallRecommendationChart({
         </div>
       </div>
 
-      <div className="-mx-2 mt-2 overflow-x-auto pb-2">
-        <div className="h-[330px] px-2" style={{ minWidth: chartMinWidth }}>
-          <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart
-              data={chartData}
-              margin={{ top: 24, right: 4, bottom: 4, left: -10 }}
-              accessibilityLayer
-            >
-              <CartesianGrid
-                vertical={false}
-                stroke={greenAccent ? "#e2ede6" : "#ececee"}
-                strokeDasharray="4 4"
-              />
-              <XAxis
-                dataKey="shortLabel"
-                axisLine={false}
-                tickLine={false}
-                tick={{ fill: "#77777f", fontSize: 11 }}
-                tickMargin={12}
-                interval={0}
-              />
-              <YAxis
-                yAxisId="rainfall"
-                axisLine={false}
-                tickLine={false}
-                tick={{ fill: "#9999a1", fontSize: 11 }}
-                tickFormatter={(value: number) => formatNumber(value)}
-                width={48}
-              />
-              <YAxis
-                yAxisId="days"
-                orientation="right"
-                domain={[0, 12]}
-                ticks={[0, 3, 6, 9, 12]}
-                axisLine={false}
-                tickLine={false}
-                tick={{ fill: "#9999a1", fontSize: 11 }}
-                width={30}
-              />
-              <Tooltip
-                content={ChartTooltip}
-                cursor={{ fill: "#f4f4f6", radius: 8 }}
-                animationDuration={180}
-              />
-              {threshold !== null ? (
-                <ReferenceLine
-                  yAxisId="rainfall"
-                  y={threshold}
-                  stroke="#5f6b5b"
-                  strokeDasharray="5 5"
-                  strokeWidth={1.5}
-                />
-              ) : null}
-              <Bar
-                yAxisId="rainfall"
-                dataKey="rainfall"
-                name="Curah hujan"
-                maxBarSize={42}
-                radius={[8, 8, 2, 2]}
-                isAnimationActive={false}
+      <div className="relative -mx-2 mt-2">
+        <div ref={chartScrollRef} className="overflow-x-auto pb-2">
+          <div className="h-[330px] px-2" style={{ minWidth: chartMinWidth }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <ComposedChart
+                data={chartData}
+                margin={{ top: 24, right: 4, bottom: 4, left: -10 }}
+                accessibilityLayer
               >
-                {chartData.map((point) => (
-                  <Cell
-                    key={`${point.shortLabel}-${point.fullLabel}`}
-                    fill={statusColors[getStatusKey(point.status)]}
+                <CartesianGrid
+                  vertical={false}
+                  stroke={greenAccent ? "#e2ede6" : "#ececee"}
+                  strokeDasharray="4 4"
+                />
+                <XAxis
+                  dataKey="shortLabel"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: "#77777f", fontSize: 11 }}
+                  tickMargin={12}
+                  interval={0}
+                />
+                <YAxis
+                  yAxisId="rainfall"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: "#9999a1", fontSize: 11 }}
+                  tickFormatter={(value: number) => formatNumber(value)}
+                  width={48}
+                />
+                <YAxis
+                  yAxisId="days"
+                  orientation="right"
+                  domain={[0, 12]}
+                  ticks={[0, 3, 6, 9, 12]}
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: "#9999a1", fontSize: 11 }}
+                  width={30}
+                />
+                <Tooltip
+                  content={ChartTooltip}
+                  cursor={{ fill: "#f4f4f6", radius: 8 }}
+                  animationDuration={180}
+                />
+                {threshold !== null ? (
+                  <ReferenceLine
+                    yAxisId="rainfall"
+                    y={threshold}
+                    stroke="#5f6b5b"
+                    strokeDasharray="5 5"
+                    strokeWidth={1.5}
                   />
-                ))}
-              </Bar>
-              <Line
-                yAxisId="days"
-                type="monotone"
-                dataKey="rainyDays"
-                name="Hari hujan"
-                stroke="#4a4ff7"
-                strokeWidth={2.5}
-                dot={{ r: 3.5, fill: "#ffffff", stroke: "#4a4ff7", strokeWidth: 2 }}
-                activeDot={{ r: 5, fill: "#4a4ff7", stroke: "#ffffff", strokeWidth: 2 }}
-                isAnimationActive={false}
-              />
-            </ComposedChart>
-          </ResponsiveContainer>
+                ) : null}
+                <Bar
+                  yAxisId="rainfall"
+                  dataKey="rainfall"
+                  name="Curah hujan"
+                  maxBarSize={42}
+                  radius={[8, 8, 2, 2]}
+                  isAnimationActive={false}
+                >
+                  {chartData.map((point) => (
+                    <Cell
+                      key={`${point.shortLabel}-${point.fullLabel}`}
+                      fill={statusColors[getStatusKey(point.status)]}
+                    />
+                  ))}
+                </Bar>
+                <Line
+                  yAxisId="days"
+                  type="monotone"
+                  dataKey="rainyDays"
+                  name="Hari hujan"
+                  stroke="#4a4ff7"
+                  strokeWidth={2.5}
+                  dot={{ r: 3.5, fill: "#ffffff", stroke: "#4a4ff7", strokeWidth: 2 }}
+                  activeDot={{ r: 5, fill: "#4a4ff7", stroke: "#ffffff", strokeWidth: 2 }}
+                  isAnimationActive={false}
+                />
+              </ComposedChart>
+            </ResponsiveContainer>
+          </div>
         </div>
+
+        <FixedChartAxes chartData={chartData} />
       </div>
 
       <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-[#ececee] pt-4">
@@ -472,6 +491,77 @@ export function RainfallRecommendationChart({
           : "Rule rekomendasi aktif belum tersedia; data curah hujan tetap ditampilkan."}
       </p>
     </section>
+  );
+}
+
+function FixedChartAxes({ chartData }: { chartData: ChartPoint[] }) {
+  return (
+    <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-[330px]">
+      <div className="absolute inset-y-0 left-0 w-[58px] bg-white">
+        <ResponsiveContainer width="100%" height="100%">
+          <ComposedChart
+            data={chartData}
+            margin={{ top: 24, right: 0, bottom: 4, left: -10 }}
+          >
+            <XAxis
+              dataKey="shortLabel"
+              axisLine={false}
+              tick={false}
+              tickLine={false}
+              height={30}
+            />
+            <YAxis
+              yAxisId="rainfall"
+              axisLine={false}
+              tickLine={false}
+              tick={{ fill: "#9999a1", fontSize: 11 }}
+              tickFormatter={(value: number) => formatNumber(value)}
+              width={48}
+            />
+            <Bar
+              yAxisId="rainfall"
+              dataKey="rainfall"
+              fill="transparent"
+              isAnimationActive={false}
+            />
+          </ComposedChart>
+        </ResponsiveContainer>
+      </div>
+
+      <div className="absolute inset-y-0 right-0 w-[44px] bg-white">
+        <ResponsiveContainer width="100%" height="100%">
+          <ComposedChart
+            data={chartData}
+            margin={{ top: 24, right: 4, bottom: 4, left: 0 }}
+          >
+            <XAxis
+              dataKey="shortLabel"
+              axisLine={false}
+              tick={false}
+              tickLine={false}
+              height={30}
+            />
+            <YAxis
+              yAxisId="days"
+              orientation="right"
+              domain={[0, 12]}
+              ticks={[0, 3, 6, 9, 12]}
+              axisLine={false}
+              tickLine={false}
+              tick={{ fill: "#9999a1", fontSize: 11 }}
+              width={30}
+            />
+            <Line
+              yAxisId="days"
+              dataKey="rainyDays"
+              stroke="transparent"
+              dot={false}
+              isAnimationActive={false}
+            />
+          </ComposedChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
   );
 }
 

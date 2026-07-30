@@ -332,9 +332,7 @@ Seluruh `N` dasarian dalam jendela memiliki curah hujan minimal sesuai parameter
 
 ### Kriteria alternatif
 
-- Dasarian pertama mencapai minimum curah hujan.
-- Sedikitnya satu dasarian lanjutan berada di bawah minimum.
-- Total curah hujan seluruh jendela mencapai batas alternatif.
+Kriteria ini hanya diperiksa jika kriteria utama gagal. Total curah hujan seluruh jendela harus mencapai batas alternatif, tanpa syarat minimum tambahan pada dasarian tertentu.
 
 ### Penguatan hari hujan
 

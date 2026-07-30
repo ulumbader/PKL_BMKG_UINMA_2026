@@ -299,9 +299,9 @@ Database terdiri dari **14 tabel**, dengan rincian:
   ```
 
 - **Makna Parameter Rule:**
-  - `min_curah_hujan_dasarian`: minimum CH untuk kriteria utama dan dasarian pertama kriteria alternatif.
+  - `min_curah_hujan_dasarian`: minimum CH setiap dasarian untuk kriteria utama.
   - `min_dasarian_berturut`: jumlah dasarian dalam jendela evaluasi.
-  - `total_alternatif_mm`: minimum total CH jendela ketika salah satu dasarian lanjutan berada di bawah minimum.
+  - `total_alternatif_mm`: minimum total CH jendela pada kriteria alternatif yang diperiksa setelah kriteria utama gagal.
   - `pakai_kriteria_hari_hujan`: mengaktifkan atau menonaktifkan penguatan HH untuk keperluan evaluasi metodologi.
   - `min_hari_hujan_dasarian`: minimum HH setiap dasarian ketika penguatan HH aktif.
 - Penambahan parameter tidak mengubah skema karena seluruh konfigurasi tetap disimpan dalam kolom JSON `parameter`.

@@ -11,8 +11,8 @@ class RuleRekomendasiSeeder extends Seeder
     /**
      * Seed rule default: "Rule Awal Musim Tanam".
      *
-     * Logika: kriteria utama dan alternatif curah hujan BMKG diperkuat
-     * kriteria minimal hari hujan per dasarian untuk wilayah Jawa Timur.
+     * Logika: kriteria utama diperiksa lebih dulu, kemudian total alternatif
+     * menjadi fallback, dan kriteria minimal hari hujan dapat memperkuat hasil.
      *
      * Parameter threshold disimpan di kolom JSON 'parameter' dan DIBACA
      * dari database saat evaluasi (Golden Rule #5, tidak di-hardcode).
@@ -33,8 +33,8 @@ class RuleRekomendasiSeeder extends Seeder
         RuleRekomendasi::updateOrCreate(
             ['nama_rule' => 'Rule Awal Musim Tanam'],
             [
-                'deskripsi' => 'Menentukan awal musim tanam padi dengan kriteria utama dan '
-                    .'alternatif curah hujan BMKG, serta penguatan jumlah hari hujan per dasarian '
+                'deskripsi' => 'Menentukan awal musim tanam padi dengan kriteria utama, '
+                    .'fallback total curah hujan alternatif, serta penguatan jumlah hari hujan per dasarian '
                     .'berdasarkan kajian Ulfah dan Sulistya untuk wilayah Jawa Timur.',
                 'parameter' => [
                     'min_curah_hujan_dasarian' => 50,

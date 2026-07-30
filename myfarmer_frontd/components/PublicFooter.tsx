@@ -1,16 +1,60 @@
-import Link from 'next/link';
 import Image from 'next/image';
 
-const footerColumns = [
+const phoneContacts = [
   {
-    title: 'Layanan',
-    items: ['Prakiraan cuaca BMKG', 'Rekomendasi tanam', 'Ringkasan iklim AI', 'Info curah hujan'],
+    label: 'WhatsApp (chat only)',
+    value: '0816 1609 937',
+    href: 'https://wa.me/628161609937',
   },
   {
-    title: 'Informasi',
-    items: ['Pengumuman', 'Tips pertanian', 'Data iklim dasarian', 'Konten edukasi'],
+    label: 'Telepon',
+    value: '(0341) 464827',
+    href: 'tel:+62341464827',
+  },
+  {
+    label: 'Telepon',
+    value: '(0341) 461388',
+    href: 'tel:+62341461388',
+  },
+  {
+    label: 'Telepon',
+    value: '(0341) 461595',
+    href: 'tel:+62341461595',
   },
 ];
+
+const emailAddresses = [
+  'zentana33@yahoo.com',
+  'staklim.jatim@bmkg.go.id',
+  'staklimkarangploso@gmail.com',
+];
+
+const socialMediaLinks = [
+  { label: 'Facebook', href: 'https://www.facebook.com/BMKGIklimJatim' },
+  { label: 'Twitter', href: 'https://www.twitter.com/bmkgiklimjatim' },
+  { label: 'Instagram', href: 'https://www.instagram.com/bmkg.iklimjatim/' },
+  { label: 'Telegram Bot', href: 'https://t.me/BMKGstaklimmalang_bot' },
+  { label: 'Telegram Channel', href: 'https://t.me/s/bmkg_jatim' },
+  { label: 'WhatsApp Channel', href: 'https://whatsapp.com/channel/0029VaHHLONCBtx7a6adTF2N' },
+  { label: 'TikTok', href: 'https://www.tiktok.com/@bmkg.iklimjatim' },
+  { label: 'Google Review', href: 'https://g.co/kgs/kMpnvZg' },
+  { label: 'YouTube Channel', href: 'https://www.youtube.com/c/StasiunklimatologiKarangplosomalang' },
+];
+
+const bmkgLinks = [
+  { label: 'Informasi Cuaca Jawa Timur', href: 'https://stamet-juanda.bmkg.go.id/' },
+  {
+    label: 'Prakiraan Cuaca Maritim dan Tinggi Gelombang Provinsi Jawa Timur',
+    href: 'https://maritim.bmkg.go.id/',
+  },
+  { label: 'CEWS (Climate Early Warning System)', href: 'http://cews.bmkg.go.id/' },
+  { label: 'Data Online BMKG', href: 'http://dataonline.bmkg.go.id/' },
+  { label: 'Pusdiklat BMKG', href: 'http://pusdiklat.bmkg.go.id/' },
+  { label: 'BMKG Pusat Jakarta', href: 'https://www.bmkg.go.id/' },
+];
+
+const footerLinkClass =
+  'text-white/70 underline decoration-white/20 underline-offset-4 transition-colors hover:text-white hover:decoration-[#16a34a] focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16a34a] focus-visible:ring-offset-2 focus-visible:ring-offset-[#050726]';
 
 const footerAnimationCss = `
 .public-footer-scene {
@@ -276,8 +320,8 @@ export function PublicFooter() {
         dangerouslySetInnerHTML={{ __html: footerAnimationSvg }}
       />
       <footer className="bg-[#050726] text-white">
-        <div className="mx-auto grid max-w-6xl gap-9 px-6 py-10 sm:px-8 md:grid-cols-2 xl:grid-cols-[1.25fr_1fr_1fr_1.15fr] xl:py-14">
-          <div>
+        <div className="mx-auto max-w-6xl px-6 sm:px-8">
+          <div className="py-10 xl:py-12">
             <div className="flex items-center gap-4">
               <Image
                 src="/logo_bmkg.png"
@@ -294,34 +338,154 @@ export function PublicFooter() {
             <p className="mt-5 max-w-xs text-sm leading-6 text-white/70">
               Informasi iklim, cuaca, dan rekomendasi tanam untuk mendukung keputusan pertanian.
             </p>
-            <div className="mt-6 space-y-2 text-sm text-white/60">
-              <div>Karangploso, Malang, Jawa Timur</div>
-              <div>BMKG - Layanan informasi iklim publik</div>
+          </div>
+
+          <div className="grid gap-10 border-t border-white/10 py-10 lg:grid-cols-12 xl:py-12">
+            <section className="lg:col-span-7" aria-labelledby="footer-address-title">
+              <h2 id="footer-address-title" className="text-base font-semibold">
+                Alamat Kantor
+              </h2>
+              <address className="mt-5 max-w-2xl text-sm not-italic leading-6 text-white/70">
+                Jl. Zentana No. 33, RT 55/RW 08, Desa Ngijo, Kecamatan Karangploso,
+                Kabupaten Malang, Provinsi Jawa Timur, Indonesia 65152.
+              </address>
+              <p className="mt-3 text-sm leading-6 text-white/60">
+                Koordinat GPS: 7° 54&apos; 4.02&quot; S, 112° 35&apos; 51.19&quot; E
+              </p>
+
+              <div className="mt-6 overflow-hidden rounded-xl border border-white/10 bg-white/5">
+                <iframe
+                  title="Google Maps Stasiun Klimatologi Jawa Timur"
+                  src="https://maps.google.com/maps?q=-7.901117,112.597553&z=15&output=embed"
+                  className="h-64 w-full border-0 sm:h-72"
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  allowFullScreen
+                />
+                <div className="flex flex-col gap-2 border-t border-white/10 px-4 py-4 text-sm sm:flex-row sm:items-center sm:justify-between">
+                  <span className="text-white/55">-7.901117, 112.597553</span>
+                  <a
+                    href="https://goo.gl/maps/B8YxMuJYF292"
+                    target="_blank"
+                    rel="noreferrer"
+                    className={footerLinkClass}
+                  >
+                    Buka di Google Maps <span aria-hidden="true">↗</span>
+                  </a>
+                </div>
+              </div>
+            </section>
+
+            <div className="grid content-start gap-10 sm:grid-cols-2 lg:col-span-5 lg:grid-cols-1">
+              <section aria-labelledby="footer-service-hours-title">
+                <h2 id="footer-service-hours-title" className="text-base font-semibold">
+                  Jam Pelayanan Kantor
+                </h2>
+                <dl className="mt-5 space-y-4 text-sm">
+                  <div>
+                    <dt className="font-medium text-white/90">Senin - Kamis</dt>
+                    <dd className="mt-1 text-white/65">07:30 WIB - 16:00 WIB</dd>
+                  </div>
+                  <div>
+                    <dt className="font-medium text-white/90">Jumat</dt>
+                    <dd className="mt-1 text-white/65">07:30 WIB - 16:30 WIB</dd>
+                  </div>
+                </dl>
+              </section>
+
+              <section aria-labelledby="footer-phone-title">
+                <h2 id="footer-phone-title" className="text-base font-semibold">
+                  Telepon
+                </h2>
+                <ul className="mt-5 space-y-3 text-sm">
+                  {phoneContacts.map((contact) => (
+                    <li key={`${contact.label}-${contact.value}`}>
+                      <span className="block text-xs text-white/50">{contact.label}</span>
+                      <a href={contact.href} className={footerLinkClass}>
+                        {contact.value}
+                      </a>
+                    </li>
+                  ))}
+                  <li>
+                    <span className="block text-xs text-white/50">Faksimile</span>
+                    <span className="text-white/70">(0341) 464827</span>
+                  </li>
+                </ul>
+              </section>
             </div>
           </div>
 
-          {footerColumns.map((column) => (
-            <div key={column.title}>
-              <h2 className="text-base font-semibold">{column.title}</h2>
-              <ul className="mt-5 space-y-3 text-sm text-white/70">
-                {column.items.map((item) => (
-                  <li key={item}>{item}</li>
+          <div className="grid gap-10 border-t border-white/10 py-10 sm:grid-cols-2 xl:grid-cols-4 xl:py-12">
+            <section aria-labelledby="footer-email-title">
+              <h2 id="footer-email-title" className="text-base font-semibold">
+                Alamat Email
+              </h2>
+              <ul className="mt-5 space-y-3 text-sm">
+                {emailAddresses.map((email) => (
+                  <li key={email} className="break-words">
+                    <a href={`mailto:${email}`} className={footerLinkClass}>
+                      {email}
+                    </a>
+                  </li>
                 ))}
               </ul>
-            </div>
-          ))}
+            </section>
 
-          <div>
-            <h2 className="text-base font-semibold">Butuh pantauan iklim?</h2>
-            <p className="mt-5 max-w-sm text-sm leading-6 text-white/70">
-              Lihat rekomendasi dan ringkasan terbaru sebelum mengambil keputusan tanam.
-            </p>
-            <Link
-              href="/"
-              className="mt-6 inline-flex rounded-full bg-[#16a34a] px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#15803d]"
-            >
-              Lihat halaman utama
-            </Link>
+            <section aria-labelledby="footer-website-title">
+              <h2 id="footer-website-title" className="text-base font-semibold">
+                Alamat Website
+              </h2>
+              <p className="mt-5 break-words text-sm">
+                <a
+                  href="https://staklim-jatim.bmkg.go.id/"
+                  target="_blank"
+                  rel="noreferrer"
+                  className={footerLinkClass}
+                >
+                  staklim-jatim.bmkg.go.id
+                </a>
+              </p>
+            </section>
+
+            <section aria-labelledby="footer-social-title">
+              <h2 id="footer-social-title" className="text-base font-semibold">
+                Alamat Media Sosial
+              </h2>
+              <ul className="mt-5 space-y-3 text-sm">
+                {socialMediaLinks.map((item) => (
+                  <li key={item.href}>
+                    <a
+                      href={item.href}
+                      target="_blank"
+                      rel="noreferrer"
+                      className={footerLinkClass}
+                    >
+                      {item.label} <span aria-hidden="true">↗</span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </section>
+
+            <section aria-labelledby="footer-bmkg-links-title">
+              <h2 id="footer-bmkg-links-title" className="text-base font-semibold">
+                Link BMKG
+              </h2>
+              <ul className="mt-5 space-y-3 text-sm leading-6">
+                {bmkgLinks.map((item) => (
+                  <li key={item.href}>
+                    <a
+                      href={item.href}
+                      target="_blank"
+                      rel="noreferrer"
+                      className={footerLinkClass}
+                    >
+                      {item.label} <span aria-hidden="true">↗</span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </section>
           </div>
         </div>
         <div className="border-t border-white/10">

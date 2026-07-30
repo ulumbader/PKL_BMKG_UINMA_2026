@@ -24,7 +24,7 @@ Sumber kebenaran implementasi:
 | AMH | Awal Musim Hujan, yang digunakan sebagai indikator ketersediaan hujan untuk memulai musim tanam. |
 | Jendela evaluasi | Sejumlah dasarian berurutan yang berakhir pada dasarian yang sedang dievaluasi. Nilai default-nya tiga dasarian. |
 | Kriteria utama | Seluruh dasarian dalam jendela memenuhi minimum CH. |
-| Kriteria alternatif | Dasarian pertama memenuhi minimum CH, sedikitnya satu dasarian berikutnya berada di bawah minimum, tetapi total CH jendela mencapai batas alternatif. |
+| Kriteria alternatif | Jalur cadangan yang hanya diperiksa ketika kriteria utama gagal; total CH jendela harus mencapai batas alternatif. |
 | Kriteria HH | Penguatan opsional yang mewajibkan setiap dasarian mencapai minimum jumlah hari hujan. |
 
 ## 3. Landasan Akademis dan Ketertelusuran Keputusan
@@ -113,13 +113,13 @@ Konfigurasi default:
 
 | Parameter | Tipe | Default | Fungsi |
 |---|---:|---:|---|
-| `min_curah_hujan_dasarian` | number | 50 | Batas minimum CH setiap dasarian untuk kriteria utama dan dasarian pertama pada kriteria alternatif. |
+| `min_curah_hujan_dasarian` | number | 50 | Batas minimum CH setiap dasarian untuk kriteria utama. |
 | `min_dasarian_berturut` | integer | 3 | Banyaknya dasarian dalam jendela evaluasi. |
 | `total_alternatif_mm` | number | 150 | Minimum total CH seluruh jendela untuk meluluskan kriteria alternatif. |
 | `pakai_kriteria_hari_hujan` | boolean | `true` | Mengaktifkan atau menonaktifkan penguatan HH. |
 | `min_hari_hujan_dasarian` | integer | 3 | Minimum HH setiap dasarian ketika penguatan HH aktif. |
 
-Walaupun nilai default mengikuti tiga dasarian, implementasi menggeneralisasi jendela menjadi `N = min_dasarian_berturut`. Dasarian pertama selalu berarti periode tertua dalam jendela dan dasarian terakhir adalah periode yang sedang dievaluasi.
+Walaupun nilai default mengikuti tiga dasarian, implementasi menggeneralisasi jendela menjadi `N = min_dasarian_berturut`. Dasarian terakhir adalah periode yang sedang dievaluasi.
 
 ## 7. Logika Evaluasi
 
@@ -141,21 +141,26 @@ kondisi_utama = untuk setiap i=1..N, CHᵢ >= CH_min
 
 ### 7.2. Kriteria alternatif
 
-Kriteria alternatif terpenuhi jika:
+Kriteria alternatif hanya diperiksa jika kriteria utama gagal. Jalur ini terpenuhi jika total CH seluruh jendela mencapai batas alternatif:
 
 ```text
 kondisi_alternatif =
-    CH₁ >= CH_min
-    DAN sedikitnya satu CHᵢ < CH_min untuk i=2..N
+    kondisi_utama = false
     DAN jumlah(CH₁..CHₙ) >= CH_alt
 ```
 
-Operator “sedikitnya satu” mengikuti bentuk kondisi `OR` pada rancangan rule proyek. Dengan demikian, lebih dari satu dasarian lanjutan boleh berada di bawah 50 mm selama dasarian pertama dan total jendela memenuhi parameter.
+Nilai CH setiap dasarian tidak menjadi syarat tambahan pada jalur alternatif. Hal ini membuat total alternatif benar-benar berfungsi sebagai fallback setelah kriteria utama tidak terpenuhi.
 
 ### 7.3. Kriteria BMKG dan penguatan HH
 
 ```text
-is_amh_curah_hujan = kondisi_utama ATAU kondisi_alternatif
+JIKA kondisi_utama terpenuhi:
+    is_amh_curah_hujan = true
+    jenis_kriteria = utama
+LAINNYA:
+    kondisi_alternatif = jumlah(CH₁..CHₙ) >= CH_alt
+    is_amh_curah_hujan = kondisi_alternatif
+    jenis_kriteria = alternatif jika kondisi_alternatif terpenuhi
 
 JIKA pakai_kriteria_hari_hujan = true:
     kondisi_hh = untuk setiap i=1..N, HHᵢ >= HH_min
@@ -180,12 +185,14 @@ FUNGSI evaluasiRule(dasarian_target, parameter):
         KEMBALIKAN TUNGGU
 
     kondisi_utama = semua CH >= CH_min
-    kondisi_alternatif =
-        CH dasarian pertama >= CH_min
-        DAN ada CH dasarian lanjutan < CH_min
-        DAN total CH >= CH_alt
 
-    kondisi_curah_hujan = kondisi_utama OR kondisi_alternatif
+    JIKA kondisi_utama terpenuhi:
+        kondisi_curah_hujan = true
+        jenis_kriteria = utama
+    LAINNYA:
+        kondisi_alternatif = total CH >= CH_alt
+        kondisi_curah_hujan = kondisi_alternatif
+        jenis_kriteria = alternatif jika kondisi_alternatif terpenuhi
 
     JIKA toggle HH aktif:
         kondisi_hh = semua HH >= HH_min
@@ -223,7 +230,7 @@ Semua contoh menggunakan parameter default.
 | Contoh | CH per dasarian (mm) | HH per dasarian | Toggle HH | Hasil | Alasan |
 |---|---|---|---|---|---|
 | A | `[55, 60, 70]` | `[3, 4, 5]` | Aktif | `optimal_tanam` | Seluruh CH ≥ 50 dan seluruh HH ≥ 3; kriteria utama lulus. |
-| B | `[80, 30, 40]` | `[3, 3, 3]` | Aktif | `optimal_tanam` | D₁ ≥ 50, ada dasarian lanjutan < 50, dan total CH = 150; kriteria alternatif lulus. |
+| B | `[38.4, 49.2, 268.6]` | `[3, 3, 10]` | Aktif | `optimal_tanam` | Kriteria utama gagal, lalu total CH = 356,2 mm ≥ 150 mm; kriteria alternatif lulus. |
 | C | `[50, 50, 50]` | `[3, 2, 3]` | Aktif | `tunggu` | Kriteria CH lulus, tetapi HH dasarian kedua gagal. |
 | D | `[50, 50, 50]` | `[3, 2, 3]` | Nonaktif | `optimal_tanam` | Kriteria utama lulus dan HH diabaikan. |
 | E | `[60, 30, 50]` | `[3, 3, 3]` | Nonaktif | `tunggu` | Total hanya 140 mm, tetapi CH dasarian terbaru sudah mencapai 50 mm. |
@@ -265,15 +272,17 @@ Setiap evaluasi menulis atau memperbarui `hasil_rekomendasi`. Ringkasan AI dibua
 4. **Belum memasukkan faktor nonhujan.** Jenis tanah, kelembapan tanah, kapasitas irigasi, varietas, fase tanaman, banjir, hama, dan keputusan pembukaan waduk belum menjadi input rule.
 5. **Representativitas lokasi.** Data satu stasiun atau pos tidak otomatis mewakili seluruh kecamatan. Validasi spasial memerlukan tambahan pos hujan dan analisis representativitas wilayah.
 6. **Total alternatif 150 mm adalah keputusan proyek.** Nilai tersebut harus ditulis sebagai perluasan berdasarkan arahan pembimbing, bukan diklaim sebagai hasil langsung jurnal Ulfah–Sulistya.
-7. **Pemetaan status adalah desain aplikasi.** Label `optimal_tanam`, `tunggu`, dan `tidak_disarankan` merupakan bentuk operasional untuk antarmuka MyFarmer.
-8. **AI tidak memvalidasi keputusan.** Groq hanya mengubah hasil deterministik menjadi ringkasan; kebenaran agronomis tetap bergantung pada rule, kualitas data, dan validasi lapangan.
+7. **Total alternatif dapat didominasi satu dasarian.** Karena jalur alternatif menilai total jendela, satu periode dengan hujan sangat tinggi dapat meluluskan kriteria meskipun periode lain rendah; dampaknya perlu divalidasi terhadap observasi lapangan.
+8. **Pemetaan status adalah desain aplikasi.** Label `optimal_tanam`, `tunggu`, dan `tidak_disarankan` merupakan bentuk operasional untuk antarmuka MyFarmer.
+9. **AI tidak memvalidasi keputusan.** Groq hanya mengubah hasil deterministik menjadi ringkasan; kebenaran agronomis tetap bergantung pada rule, kualitas data, dan validasi lapangan.
 
 ## 14. Validasi Perangkat Lunak
 
 Pengujian otomatis mencakup:
 
 - kriteria utama dengan HH;
-- kriteria alternatif total 150 mm;
+- prioritas kriteria utama sebelum kriteria alternatif;
+- kriteria alternatif total 150 mm, termasuk ketika dasarian pertama berada di bawah minimum;
 - perbandingan toggle HH aktif/nonaktif;
 - status `tunggu` dan `tidak_disarankan`;
 - data dasarian yang belum lengkap;

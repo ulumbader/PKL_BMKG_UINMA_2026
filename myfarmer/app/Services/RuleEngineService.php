@@ -62,9 +62,7 @@ class RuleEngineService
      * Kriteria utama:
      *   - Semua N dasarian memiliki CH >= min_curah_hujan_dasarian.
      *
-     * Kriteria alternatif:
-     *   - Dasarian pertama memenuhi minimum CH.
-     *   - Sedikitnya satu dasarian berikutnya berada di bawah minimum CH.
+     * Kriteria alternatif (hanya diperiksa jika kriteria utama gagal):
      *   - Total CH seluruh jendela >= total_alternatif_mm.
      *
      * Penguatan hari hujan (opsional):
@@ -124,9 +122,8 @@ class RuleEngineService
             ];
         }
 
-        // Collection diurutkan kronologis: elemen pertama adalah awal kandidat
-        // musim dan elemen terakhir adalah periode yang sedang dievaluasi.
-        $dasarianPertama = $dasarianBerturut->first();
+        // Collection diurutkan kronologis dan elemen terakhir adalah periode
+        // yang sedang dievaluasi.
         $dasarianTerkini = $dasarianBerturut->last();
         $totalCurahHujan = (float) $dasarianBerturut->sum('total_curah_hujan_mm');
 
@@ -134,23 +131,20 @@ class RuleEngineService
             fn (DataIklimDasarian $item) => (float) $item->total_curah_hujan_mm >= $minCurahHujan
         );
 
-        $adaDasarianLanjutanDiBawahMinimum = $dasarianBerturut
-            ->slice(1)
-            ->contains(
-                fn (DataIklimDasarian $item) => (float) $item->total_curah_hujan_mm < $minCurahHujan
-            );
+        // Kriteria alternatif adalah fallback. Jika kriteria utama sudah lulus,
+        // nilai total alternatif tidak ikut menentukan jenis kelulusan.
+        $kondisiAlternatif = ! $kondisiUtama && $totalCurahHujan >= $totalAlternatif;
 
-        $kondisiAlternatif = (float) $dasarianPertama->total_curah_hujan_mm >= $minCurahHujan
-            && $adaDasarianLanjutanDiBawahMinimum
-            && $totalCurahHujan >= $totalAlternatif;
-
-        $isAmhBmkg = $kondisiUtama || $kondisiAlternatif;
+        $kondisiCurahHujanTerpenuhi = $kondisiUtama || $kondisiAlternatif;
+        $jenisKriteriaCurahHujan = $kondisiUtama
+            ? 'utama'
+            : ($kondisiAlternatif ? 'alternatif' : null);
 
         $kondisiHariHujan = ! $pakaiKriteriaHariHujan || $dasarianBerturut->every(
             fn (DataIklimDasarian $item) => (int) $item->jumlah_hari_hujan >= $minHariHujan
         );
 
-        $isAmhFinal = $isAmhBmkg && $kondisiHariHujan;
+        $isAmhFinal = $kondisiCurahHujanTerpenuhi && $kondisiHariHujan;
         $catatanDetail = $this->formatDetailDasarian(
             $dasarianBerturut,
             $minCurahHujan,
@@ -159,27 +153,27 @@ class RuleEngineService
         );
 
         if ($isAmhFinal) {
-            $jenisKriteria = $kondisiUtama ? 'utama' : 'alternatif';
             $keteranganKriteria = $kondisiUtama
                 ? "semua {$minBerturut} dasarian memiliki CH >= {$minCurahHujan}mm"
-                : "dasarian pertama memiliki CH >= {$minCurahHujan}mm dan total CH "
-                    ."{$totalCurahHujan}mm >= {$totalAlternatif}mm";
+                : "kriteria utama tidak terpenuhi; total CH {$totalCurahHujan}mm "
+                    .">= {$totalAlternatif}mm";
             $keteranganHariHujan = $pakaiKriteriaHariHujan
                 ? " Kriteria HH juga terpenuhi (setiap dasarian >= {$minHariHujan} hari)."
                 : ' Kriteria HH dinonaktifkan.';
 
             return [
                 'status' => 'optimal_tanam',
-                'catatan' => "Rule '{$rule->nama_rule}': OPTIMAL - kriteria {$jenisKriteria} "
+                'catatan' => "Rule '{$rule->nama_rule}': OPTIMAL - kriteria {$jenisKriteriaCurahHujan} "
                     ."terpenuhi ({$keteranganKriteria}).{$keteranganHariHujan} "
                     ."Detail kronologis: {$catatanDetail}",
             ];
         }
 
-        if ($isAmhBmkg && ! $kondisiHariHujan) {
+        if ($kondisiCurahHujanTerpenuhi && ! $kondisiHariHujan) {
             return [
                 'status' => 'tunggu',
-                'catatan' => "Rule '{$rule->nama_rule}': TUNGGU - kriteria curah hujan "
+                'catatan' => "Rule '{$rule->nama_rule}': TUNGGU - kriteria "
+                    ."{$jenisKriteriaCurahHujan} curah hujan "
                     .'terpenuhi, tetapi kriteria HH tidak terpenuhi pada seluruh dasarian '
                     ."(minimum {$minHariHujan} hari per dasarian). "
                     ."Detail kronologis: {$catatanDetail}",
@@ -194,17 +188,17 @@ class RuleEngineService
             return [
                 'status' => 'tunggu',
                 'catatan' => "Rule '{$rule->nama_rule}': TUNGGU - dasarian terkini memiliki "
-                    ."CH >= {$minCurahHujan}mm, tetapi kriteria utama maupun alternatif "
-                    ."belum terpenuhi (total CH {$totalCurahHujan}mm; minimum alternatif "
-                    ."{$totalAlternatif}mm). Detail kronologis: {$catatanDetail}",
+                    ."CH >= {$minCurahHujan}mm, tetapi kriteria utama gagal dan total CH "
+                    ."{$totalCurahHujan}mm masih di bawah minimum alternatif "
+                    ."{$totalAlternatif}mm. Detail kronologis: {$catatanDetail}",
             ];
         }
 
         return [
             'status' => 'tidak_disarankan',
             'catatan' => "Rule '{$rule->nama_rule}': TIDAK DISARANKAN - dasarian terkini "
-                ."memiliki CH < {$minCurahHujan}mm dan kriteria alternatif tidak terpenuhi "
-                ."(total CH {$totalCurahHujan}mm; minimum alternatif {$totalAlternatif}mm). "
+                ."memiliki CH < {$minCurahHujan}mm, kriteria utama gagal, dan total CH "
+                ."{$totalCurahHujan}mm masih di bawah minimum alternatif {$totalAlternatif}mm. "
                 ."Detail kronologis: {$catatanDetail}",
         ];
     }

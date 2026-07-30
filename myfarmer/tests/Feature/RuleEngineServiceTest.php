@@ -57,6 +57,7 @@ class RuleEngineServiceTest extends TestCase
 
         $this->assertSame('optimal_tanam', $hasil->status_rekomendasi);
         $this->assertStringContainsString('kriteria utama', $hasil->catatan_teknis);
+        $this->assertStringNotContainsString('kriteria alternatif', $hasil->catatan_teknis);
         $this->assertStringContainsString('Kriteria HH juga terpenuhi', $hasil->catatan_teknis);
     }
 
@@ -65,6 +66,34 @@ class RuleEngineServiceTest extends TestCase
     {
         $this->buatRule('Rule alternatif', true);
         $target = $this->buatJendelaDasarian([80, 30, 40], [3, 3, 3]);
+
+        $hasil = app(RuleEngineService::class)->evaluate($target->id)[0];
+
+        $this->assertSame('optimal_tanam', $hasil->status_rekomendasi);
+        $this->assertStringContainsString('kriteria alternatif', $hasil->catatan_teknis);
+        $this->assertStringContainsString('total CH 150mm >= 150mm', $hasil->catatan_teknis);
+    }
+
+    /** @test */
+    public function kasus_id_33_lulus_kriteria_alternatif_setelah_kriteria_utama_gagal(): void
+    {
+        $this->buatRule('Rule kasus ID 33', false);
+        $target = $this->buatJendelaDasarian([38.4, 49.2, 268.6], [3, 3, 10]);
+
+        $hasil = app(RuleEngineService::class)->evaluate($target->id)[0];
+
+        $this->assertSame('optimal_tanam', $hasil->status_rekomendasi);
+        $this->assertStringContainsString('kriteria alternatif', $hasil->catatan_teknis);
+        $this->assertStringContainsString('kriteria utama tidak terpenuhi', $hasil->catatan_teknis);
+        $this->assertStringContainsString('total CH 356.2mm >= 150mm', $hasil->catatan_teknis);
+        $this->assertStringContainsString('Kriteria HH dinonaktifkan', $hasil->catatan_teknis);
+    }
+
+    /** @test */
+    public function kriteria_alternatif_hanya_menilai_total_setelah_kriteria_utama_gagal(): void
+    {
+        $this->buatRule('Rule total alternatif murni', false);
+        $target = $this->buatJendelaDasarian([0, 0, 150], [0, 0, 3]);
 
         $hasil = app(RuleEngineService::class)->evaluate($target->id)[0];
 

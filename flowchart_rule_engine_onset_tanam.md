@@ -15,7 +15,7 @@ flowchart TD
 
     C{"Kriteria Utama:<br/>Semua CH dasarian<br/>≥ 50 mm?"}
 
-    D{"Kriteria Alternatif:<br/>CH D₁ ≥ 50 mm<br/>DAN total CH ≥ 150 mm?"}
+    D{"Kriteria Alternatif:<br/>Total CH jendela<br/>≥ 150 mm?"}
 
     E{"Toggle HH<br/>aktif?"}
 
@@ -86,11 +86,7 @@ Kriteria ini mengadopsi prinsip penentuan awal musim hujan yang umum digunakan B
 
 ### 4. Kriteria Alternatif (Total Curah Hujan Jendela)
 
-Jika kriteria utama tidak terpenuhi, sistem memeriksa kriteria alternatif dengan tiga syarat:
-
-1. Curah hujan dasarian **pertama** (tertua) dalam jendela ≥ 50 mm;
-2. Sedikitnya **satu** dasarian lanjutan memiliki curah hujan < 50 mm;
-3. **Total** curah hujan seluruh jendela ≥ 150 mm.
+Jika kriteria utama tidak terpenuhi, sistem baru memeriksa kriteria alternatif. Jalur alternatif lulus ketika **total** curah hujan seluruh jendela ≥ 150 mm, tanpa syarat minimum tambahan pada dasarian tertentu.
 
 Kriteria ini mengakomodasi kondisi distribusi hujan yang tidak merata antar dasarian namun secara akumulatif masih memadai.
 
@@ -139,7 +135,7 @@ Semua contoh menggunakan parameter default (CH_min = 50 mm, N = 3, total_alt = 1
 | Kasus | CH per Dasarian | HH per Dasarian | Toggle HH | Hasil | Alur pada Flowchart |
 |---|---|---|---|---|---|
 | A | 55, 60, 70 mm | 3, 4, 5 hari | Aktif | 🟢 Optimal | Parameter ✓ → Data ✓ → Utama ✓ → Toggle aktif → HH ✓ |
-| B | 80, 30, 40 mm | 3, 3, 3 hari | Aktif | 🟢 Optimal | Parameter ✓ → Data ✓ → Utama ✗ → Alternatif ✓ (total=150) → Toggle aktif → HH ✓ |
+| B | 38,4; 49,2; 268,6 mm | 3, 3, 10 hari | Aktif | 🟢 Optimal | Parameter ✓ → Data ✓ → Utama ✗ → Alternatif ✓ (total=356,2) → Toggle aktif → HH ✓ |
 | C | 50, 50, 50 mm | 3, 2, 3 hari | Aktif | 🟡 Tunggu | Parameter ✓ → Data ✓ → Utama ✓ → Toggle aktif → HH ✗ |
 | D | 50, 50, 50 mm | 3, 2, 3 hari | Nonaktif | 🟢 Optimal | Parameter ✓ → Data ✓ → Utama ✓ → Toggle nonaktif |
 | E | 60, 30, 50 mm | 3, 3, 3 hari | Nonaktif | 🟡 Tunggu | Parameter ✓ → Data ✓ → Utama ✗ → Alternatif ✗ (total=140) → CH terbaru ✓ (50) |

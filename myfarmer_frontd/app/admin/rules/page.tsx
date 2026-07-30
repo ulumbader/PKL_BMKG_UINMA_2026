@@ -494,7 +494,7 @@ export default function Page() {
 
                   <Field
                     label="Total Curah Hujan Alternatif"
-                    hint="Minimum total CH agar jalur alternatif dapat dinyatakan terpenuhi."
+                    hint="Minimum total CH yang diperiksa hanya ketika kriteria utama gagal."
                     error={formErrors["parameter.total_alternatif_mm"]}
                   >
                     <div className="relative">

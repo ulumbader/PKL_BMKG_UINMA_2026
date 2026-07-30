@@ -8,6 +8,35 @@ Format tanggal: YYYY-MM-DD.
 
 ## [Unreleased]
 
+## [Tahap 28] - Penyempurnaan Urutan Kriteria Rule Engine - 2026-07-30
+### Ditambahkan
+- Pengujian regresi untuk kasus dasarian ID 33 dengan CH `38,4 + 49,2 + 268,6 = 356,2 mm` yang harus lulus melalui kriteria alternatif.
+- Pengujian batas yang memastikan kriteria alternatif hanya menilai total jendela setelah kriteria utama gagal, termasuk total tepat 150 mm.
+
+### Diubah
+- `RuleEngineService` kini memeriksa kriteria utama lebih dahulu dan hanya menjalankan fallback kriteria alternatif ketika kriteria utama gagal.
+- Kriteria alternatif disederhanakan menjadi total CH seluruh jendela minimal `total_alternatif_mm`, tanpa syarat minimum pada dasarian pertama atau pola dasarian lanjutan.
+- Catatan teknis menjelaskan jalur kriteria yang dipakai, alasan kriteria utama gagal, perbandingan total alternatif, dan hasil HH secara eksplisit.
+- Dokumentasi API, rule base, knowledge base, flowchart, diagram data flow, ERD, serta deskripsi seeder diselaraskan dengan urutan evaluasi baru.
+
+### File Terkait
+- `app/Services/RuleEngineService.php`
+- `tests/Feature/RuleEngineServiceTest.php`
+- `database/seeders/RuleRekomendasiSeeder.php`
+- `../API_DOCUMENTATION.md`
+- `../RULE_BASE.md`
+- `../KNOWLEDGE_BASE.md`
+- `../flowchart_rule_engine_onset_tanam.md`
+- `../diagram_data_flow_tiga_layer_data.md`
+- `../diagram_erd.md`
+- `CHANGELOG.md`
+
+### Catatan
+- Hasil rekomendasi ID 39 untuk dasarian ID 33 dan rule ID 6 sudah dievaluasi ulang menjadi `optimal_tanam`.
+- Audit read-only terhadap 36 hasil rule aktif menemukan empat histori lain yang terdampak; hasil ID 15, 23, 24, dan 40 juga sudah dievaluasi ulang menjadi `optimal_tanam`. Kelima record tersebut tidak memiliki ringkasan AI terkait, dan audit akhir menghasilkan nol perbedaan terhadap logika baru.
+- Tidak ada perubahan skema atau migration. Histori milik rule nonaktif tidak diubah.
+- Verifikasi berhasil: 58 test backend dengan 195 assertion, 12 test khusus rule engine dengan 45 assertion, PHP syntax check, dan Laravel Pint pada tiga file backend lulus.
+
 ## [Tahap 27] - Sinkronisasi ERD Fitur Media - 2026-07-29
 ### Diubah
 - Dokumentasi ERD diselaraskan dengan migration media pada tabel `konten_landing_page`, meliputi perubahan `isi` menjadi nullable, `tipe` menjadi `varchar(30)`, lima kolom metadata media, dan dua index komposit.

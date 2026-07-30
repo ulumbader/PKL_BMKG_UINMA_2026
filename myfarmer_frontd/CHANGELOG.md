@@ -9,6 +9,81 @@ Format tanggal: YYYY-MM-DD.
 
 ## [Unreleased]
 
+## [Tahap 44] - Penjelasan Fallback Total CH Alternatif - 2026-07-30
+### Diubah
+- Petunjuk parameter `Total Curah Hujan Alternatif` menegaskan bahwa nilai tersebut hanya diperiksa ketika kriteria utama gagal.
+
+### File Terkait
+- `app/admin/rules/page.tsx`
+- `CHANGELOG.md`
+
+### Catatan
+- Perubahan hanya menyelaraskan penjelasan UI dengan rule engine; struktur form dan payload API tetap sama.
+- Verifikasi berhasil: TypeScript dan build produksi Next.js 16.2.10 lulus; ESLint tanpa error dengan satu warning lama pada `page_backup.tsx`.
+
+## [Tahap 43] - Sumbu Grafik Tetap Saat Digeser - 2026-07-30
+### Ditambahkan
+- Lapisan sumbu vertikal tetap untuk angka curah hujan di sisi kiri dan jumlah hari hujan di sisi kanan grafik.
+
+### Diubah
+- Scroll horizontal kini hanya menggeser periode dan plot grafik, sementara angka pada kedua sumbu tetap terlihat di tepi kartu.
+
+### File Terkait
+- `components/RainfallRecommendationChart.tsx`
+- `CHANGELOG.md`
+
+### Catatan
+- Lapisan sumbu tidak menangkap interaksi pointer sehingga tooltip dan fungsi geser grafik tetap dapat digunakan seperti sebelumnya.
+- Verifikasi berhasil menggunakan 36 periode aktual: kedua sumbu terlihat tetap pada pemeriksaan browser headless, ESLint tanpa error (satu warning lama pada `page_backup.tsx`), TypeScript lulus, dan build produksi Next.js 16.2.10 berhasil.
+
+## [Tahap 42] - Posisi Awal Grafik pada Periode Terbaru - 2026-07-30
+### Ditambahkan
+- Pengaturan posisi scroll awal grafik secara otomatis ke sisi paling kanan setelah data dan grafik selesai dimuat.
+
+### Diubah
+- Grafik 36 dasarian kini langsung menampilkan periode paling baru saat halaman pertama kali dibuka, sementara periode lama tetap dapat dilihat dengan menggeser grafik ke kiri.
+
+### File Terkait
+- `components/RainfallRecommendationChart.tsx`
+- `CHANGELOG.md`
+
+### Catatan
+- Perpindahan posisi dilakukan tanpa animasi agar periode pertama yang terlihat setelah pemuatan adalah data terbaru.
+- Verifikasi berhasil: ESLint tanpa error (satu warning lama pada `page_backup.tsx`), TypeScript lulus, dan build produksi Next.js 16.2.10 berhasil untuk seluruh route.
+
+## [Tahap 41] - Grafik Curah Hujan Satu Tahun - 2026-07-30
+### Ditambahkan
+- Tampilan histori curah hujan lengkap selama satu tahun yang mencakup maksimal 36 dasarian.
+
+### Diubah
+- Nilai default `RainfallRecommendationChart` dari 12 menjadi 36 periode sehingga landing page dan dashboard admin meminta seluruh dasarian satu tahun dari endpoint publik.
+- Ukuran kartu dan jarak antartitik grafik tetap dipertahankan; data yang melebihi lebar kartu dapat dilihat melalui scroll horizontal yang sudah tersedia.
+
+### File Terkait
+- `components/RainfallRecommendationChart.tsx`
+- `CHANGELOG.md`
+
+### Catatan
+- Endpoint tetap memakai `GET /publik/grafik-curah-hujan` dengan `jumlah_periode=36`, sesuai batas maksimum pada kontrak backend.
+- Verifikasi berhasil: ESLint tanpa error (satu warning lama pada `page_backup.tsx`), TypeScript lulus, dan build produksi Next.js 16.2.10 berhasil untuk seluruh route.
+
+## [Tahap 40] - Pembaruan Konten Footer Landing Page - 2026-07-29
+### Ditambahkan
+- Informasi jam pelayanan kantor, alamat lengkap, koordinat, kontak WhatsApp/telepon/faksimile, tiga alamat email, alamat website, sembilan kanal media sosial, dan enam link layanan BMKG pada footer publik.
+- Peta Google Maps responsif dengan pemuatan malas serta link langsung menuju lokasi Stasiun Klimatologi Jawa Timur.
+
+### Diubah
+- Konten footer generik `Layanan`, `Informasi`, dan ajakan menuju halaman utama diganti dengan informasi resmi dari footer referensi `profil and footer.html`.
+- Susunan isi footer dibuat responsif dalam kelompok alamat/peta, jam layanan/telepon, serta kelompok tautan tanpa mengubah ilustrasi animasi, logo, warna navy, tipografi, atau aksen hijau footer yang sudah ada.
+
+### File Terkait
+- `components/PublicFooter.tsx`
+- `CHANGELOG.md`
+
+### Catatan
+- Seluruh link kontak dapat diklik, sedangkan link website, media sosial, Google Maps, dan layanan BMKG dibuka di tab baru.
+- Verifikasi berhasil: ESLint tanpa error (satu warning lama pada `page_backup.tsx`), TypeScript lulus, dan build produksi Next.js 16.2.10 berhasil untuk seluruh route.
+
 ## [Tahap 39] - Media Dinamis Landing Page - 2026-07-28
 ### Ditambahkan
 - Komponen publik terpisah untuk Sorotan story, viewer story, carousel dan popup Poster, serta viewer PDF native browser.

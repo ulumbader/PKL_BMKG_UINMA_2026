@@ -144,7 +144,7 @@ Periode dasarian: **Dasarian I** (tanggal 1–10), **Dasarian II** (tanggal 11�
 Proses ini membaca `N` dasarian berturut-turut (default: 3) yang berakhir pada dasarian target, lalu mengevaluasi setiap rule aktif menggunakan tiga kriteria:
 
 1. **Kriteria utama**: Seluruh `N` dasarian memiliki CH ≥ `min_curah_hujan_dasarian`.
-2. **Kriteria alternatif**: Dasarian pertama ≥ minimum CH, sedikitnya satu dasarian lanjutan di bawah minimum, tetapi total CH jendela ≥ `total_alternatif_mm`.
+2. **Kriteria alternatif**: Hanya diperiksa jika kriteria utama gagal; total CH jendela harus ≥ `total_alternatif_mm`.
 3. **Kriteria hari hujan** (opsional): Jika toggle aktif, seluruh dasarian harus memiliki HH ≥ `min_hari_hujan_dasarian`.
 
 Hasil evaluasi berupa status rekomendasi:

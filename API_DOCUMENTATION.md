@@ -645,7 +645,7 @@ Semua key di dalam `parameter` wajib dikirim ketika parameter dibuat atau diperb
 
 | Key | Tipe | Fungsi |
 |---|---|---|
-| `min_curah_hujan_dasarian` | number | Minimum curah hujan setiap dasarian untuk kriteria utama dan dasarian pertama kriteria alternatif |
+| `min_curah_hujan_dasarian` | number | Minimum curah hujan setiap dasarian untuk kriteria utama |
 | `min_dasarian_berturut` | integer | Ukuran jendela dasarian yang dievaluasi |
 | `total_alternatif_mm` | number | Minimum total curah hujan seluruh jendela untuk kriteria alternatif |
 | `pakai_kriteria_hari_hujan` | boolean | Toggle penguatan kriteria hari hujan Jawa Timur |
@@ -693,7 +693,7 @@ Trigger evaluasi rule engine terhadap satu dasarian.
 Rule membaca jendela dasarian secara kronologis sampai periode yang dipilih:
 
 1. **Kriteria utama:** semua dasarian memiliki curah hujan minimal sesuai `min_curah_hujan_dasarian`.
-2. **Kriteria alternatif:** dasarian pertama memenuhi minimum, sedikitnya satu dasarian berikutnya berada di bawah minimum, tetapi total seluruh jendela mencapai `total_alternatif_mm`.
+2. **Kriteria alternatif:** hanya diperiksa jika kriteria utama gagal; total seluruh jendela harus mencapai `total_alternatif_mm`.
 3. **Penguatan hari hujan:** jika `pakai_kriteria_hari_hujan = true`, setiap dasarian juga wajib mencapai `min_hari_hujan_dasarian`.
 
 Kriteria hari hujan mengikuti kajian Ulfah dan Sulistya untuk Jawa Timur (`CH >= 50 mm` dan `HH >= 3 hari` per dasarian). Pada proses agregasi, satu hari dihitung sebagai hari hujan jika CH harian `>= 0,5 mm`. Kriteria total alternatif merupakan konfigurasi metodologi proyek berdasarkan arahan pembimbing, bukan kesimpulan utama kajian Ulfah dan Sulistya.
@@ -716,7 +716,7 @@ Kriteria hari hujan mengikuti kajian Ulfah dan Sulistya untuk Jawa Timur (`CH >=
       "dasarian_id": 1,
       "rule_id": 1,
       "status_rekomendasi": "tunggu",
-      "catatan_teknis": "Rule 'Rule Awal Musim Tanam': OPTIMAL - kriteria alternatif terpenuhi... Detail kronologis: D1 01/2026: CH 80.0mm (CH lulus), HH 3 hari (HH lulus)...",
+      "catatan_teknis": "Rule 'Rule Awal Musim Tanam': OPTIMAL - kriteria alternatif terpenuhi (kriteria utama tidak terpenuhi; total CH 356.2mm >= 150mm)...",
       "generated_at": "2026-07-05T14:00:00.000000Z"
     }
   ]
