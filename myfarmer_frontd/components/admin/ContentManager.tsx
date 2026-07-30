@@ -432,7 +432,7 @@ export function ContentManager() {
               ) : null}
 
               {form.tipe === "poster" || form.tipe === "pdf" ? (
-                <Field label="URL sumber" required error={formErrors.url_sumber} hint="Hanya alamat http:// atau https://.">
+                <Field label="URL sumber (opsional)" error={formErrors.url_sumber} hint="Jika diisi, gunakan alamat http:// atau https://.">
                   <input className={controlClass} type="url" value={form.url_sumber} onChange={(event) => setForm((value) => ({ ...value, url_sumber: event.target.value }))} />
                 </Field>
               ) : null}

@@ -32,6 +32,7 @@ type RainfallPeriod = {
     label: string;
     tanggal_mulai: string;
     tanggal_selesai: string;
+    dalam_mt1: boolean | null;
   };
   curah_hujan: {
     total_mm: number;
@@ -58,6 +59,11 @@ type RainfallChartResponse = {
     batas_total_alternatif_mm: number | null;
     kriteria_hari_hujan_aktif: boolean | null;
     batas_hari_hujan: number | null;
+    kalender_mt1: {
+      mulai: { bulan: number; periode_ke: number };
+      selesai: { bulan: number; periode_ke: number };
+      label: string;
+    } | null;
   } | null;
   jumlah_periode: number;
   periode: RainfallPeriod[];
@@ -72,6 +78,7 @@ type ChartPoint = {
   missingDays: number;
   status: RecommendationStatus;
   recommendationLabel: string;
+  dalamMt1: boolean;
 };
 
 type RainfallRecommendationChartProps = {
@@ -167,6 +174,43 @@ function ChartTooltip({ active, payload }: TooltipContentProps) {
         {point.recommendationLabel}
       </div>
     </div>
+  );
+}
+
+function Mt1Background({
+  x,
+  y,
+  width,
+  height,
+  payload,
+}: {
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
+  payload?: ChartPoint;
+}) {
+  if (
+    !payload?.dalamMt1
+    || x === undefined
+    || y === undefined
+    || width === undefined
+    || height === undefined
+  ) {
+    return null;
+  }
+
+  const horizontalPadding = 10;
+
+  return (
+    <rect
+      x={x - horizontalPadding}
+      y={y}
+      width={width + (horizontalPadding * 2)}
+      height={height}
+      rx={6}
+      fill="#e8f5e9"
+    />
   );
 }
 
@@ -303,6 +347,7 @@ export function RainfallRecommendationChart({
     missingDays: Number(item.curah_hujan.jumlah_hari_missing) || 0,
     status: item.rekomendasi.status,
     recommendationLabel: item.rekomendasi.label,
+    dalamMt1: item.periode.dalam_mt1 === true,
   }));
   const latest = chartData[chartData.length - 1];
   const latestStatusKey = getStatusKey(latest.status);
@@ -372,6 +417,12 @@ export function RainfallRecommendationChart({
               Batas {formatNumber(threshold)} mm
             </span>
           ) : null}
+          {data.rule?.kalender_mt1 ? (
+            <span className="inline-flex items-center gap-2">
+              <span className="size-3 rounded-[3px] border border-[#b7dfbd] bg-[#e8f5e9]" />
+              Rentang MT1
+            </span>
+          ) : null}
         </div>
       </div>
 
@@ -435,6 +486,7 @@ export function RainfallRecommendationChart({
                   name="Curah hujan"
                   maxBarSize={42}
                   radius={[8, 8, 2, 2]}
+                  background={<Mt1Background />}
                   isAnimationActive={false}
                 >
                   {chartData.map((point) => (

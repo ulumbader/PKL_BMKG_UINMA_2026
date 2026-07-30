@@ -19,6 +19,10 @@ use Illuminate\Support\Collection;
  */
 class RuleEngineService
 {
+    public function __construct(
+        private readonly KalenderMt1Service $kalenderMt1Service
+    ) {}
+
     /**
      * Evaluasi semua rule aktif terhadap satu dasarian.
      *
@@ -69,6 +73,10 @@ class RuleEngineService
      *   - Jika toggle aktif, semua N dasarian memiliki
      *     HH >= min_hari_hujan_dasarian.
      *
+     * Guard kalender MT1:
+     *   - Dasarian yang sedang direkomendasikan harus berada di antara
+     *     awal dan akhir MT1. Rentang dapat melintasi pergantian tahun.
+     *
      * @return array{status: string, catatan: string}
      */
     private function evaluateRule(RuleRekomendasi $rule, DataIklimDasarian $dasarian): array
@@ -79,6 +87,10 @@ class RuleEngineService
         $totalAlternatif = $parameter['total_alternatif_mm'] ?? null;
         $pakaiKriteriaHariHujan = $parameter['pakai_kriteria_hari_hujan'] ?? null;
         $minHariHujan = $parameter['min_hari_hujan_dasarian'] ?? null;
+        $mt1BulanMulai = $parameter['mt1_bulan_mulai'] ?? null;
+        $mt1DasarianMulai = $parameter['mt1_dasarian_mulai'] ?? null;
+        $mt1BulanSelesai = $parameter['mt1_bulan_selesai'] ?? null;
+        $mt1DasarianSelesai = $parameter['mt1_dasarian_selesai'] ?? null;
 
         if (
             $minCurahHujan === null
@@ -86,13 +98,18 @@ class RuleEngineService
             || $totalAlternatif === null
             || $pakaiKriteriaHariHujan === null
             || $minHariHujan === null
+            || $mt1BulanMulai === null
+            || $mt1DasarianMulai === null
+            || $mt1BulanSelesai === null
+            || $mt1DasarianSelesai === null
         ) {
             return [
                 'status' => 'tunggu',
                 'catatan' => "Parameter rule '{$rule->nama_rule}' tidak lengkap. "
                     .'Dibutuhkan: min_curah_hujan_dasarian, min_dasarian_berturut, '
                     .'total_alternatif_mm, pakai_kriteria_hari_hujan, dan '
-                    .'min_hari_hujan_dasarian. Parameter saat ini: '
+                    .'min_hari_hujan_dasarian, mt1_bulan_mulai, mt1_dasarian_mulai, '
+                    .'mt1_bulan_selesai, dan mt1_dasarian_selesai. Parameter saat ini: '
                     .json_encode($parameter, JSON_UNESCAPED_UNICODE),
             ];
         }
@@ -126,6 +143,12 @@ class RuleEngineService
         // yang sedang dievaluasi.
         $dasarianTerkini = $dasarianBerturut->last();
         $totalCurahHujan = (float) $dasarianBerturut->sum('total_curah_hujan_mm');
+        $dalamRentangMt1 = $this->kalenderMt1Service->dalamRentang(
+            $parameter,
+            (int) $dasarianTerkini->bulan,
+            (int) $dasarianTerkini->dasarian_ke
+        );
+        $labelRentangMt1 = $this->kalenderMt1Service->labelRentang($parameter);
 
         $kondisiUtama = $dasarianBerturut->every(
             fn (DataIklimDasarian $item) => (float) $item->total_curah_hujan_mm >= $minCurahHujan
@@ -144,13 +167,26 @@ class RuleEngineService
             fn (DataIklimDasarian $item) => (int) $item->jumlah_hari_hujan >= $minHariHujan
         );
 
-        $isAmhFinal = $kondisiCurahHujanTerpenuhi && $kondisiHariHujan;
+        $isAmhFinal = $kondisiCurahHujanTerpenuhi && $kondisiHariHujan && $dalamRentangMt1;
         $catatanDetail = $this->formatDetailDasarian(
             $dasarianBerturut,
             $minCurahHujan,
             $pakaiKriteriaHariHujan,
             $minHariHujan
         );
+
+        if (! $dalamRentangMt1) {
+            $keteranganCurahHujan = $kondisiCurahHujanTerpenuhi
+                ? "Kriteria {$jenisKriteriaCurahHujan} curah hujan terpenuhi, tetapi"
+                : 'Kriteria curah hujan belum terpenuhi dan';
+
+            return [
+                'status' => 'tidak_disarankan',
+                'catatan' => "Rule '{$rule->nama_rule}': TIDAK DISARANKAN - {$keteranganCurahHujan} "
+                    ."dasarian evaluasi berada di luar rentang MT1 ({$labelRentangMt1}). "
+                    ."Detail kronologis: {$catatanDetail}",
+            ];
+        }
 
         if ($isAmhFinal) {
             $keteranganKriteria = $kondisiUtama
@@ -165,6 +201,7 @@ class RuleEngineService
                 'status' => 'optimal_tanam',
                 'catatan' => "Rule '{$rule->nama_rule}': OPTIMAL - kriteria {$jenisKriteriaCurahHujan} "
                     ."terpenuhi ({$keteranganKriteria}).{$keteranganHariHujan} "
+                    ."Dasarian evaluasi berada dalam rentang MT1 ({$labelRentangMt1}). "
                     ."Detail kronologis: {$catatanDetail}",
             ];
         }
@@ -176,6 +213,7 @@ class RuleEngineService
                     ."{$jenisKriteriaCurahHujan} curah hujan "
                     .'terpenuhi, tetapi kriteria HH tidak terpenuhi pada seluruh dasarian '
                     ."(minimum {$minHariHujan} hari per dasarian). "
+                    ."Dasarian evaluasi berada dalam rentang MT1 ({$labelRentangMt1}). "
                     ."Detail kronologis: {$catatanDetail}",
             ];
         }

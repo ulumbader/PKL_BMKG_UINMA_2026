@@ -54,6 +54,10 @@ class PublicGrafikCurahHujanTest extends TestCase
                 'total_alternatif_mm' => 150,
                 'pakai_kriteria_hari_hujan' => true,
                 'min_hari_hujan_dasarian' => 4,
+                'mt1_bulan_mulai' => 11,
+                'mt1_dasarian_mulai' => 1,
+                'mt1_bulan_selesai' => 4,
+                'mt1_dasarian_selesai' => 2,
             ],
             'is_active' => true,
             'dibuat_oleh' => $user->id,
@@ -90,11 +94,23 @@ class PublicGrafikCurahHujanTest extends TestCase
                         'batas_total_alternatif_mm' => 150,
                         'kriteria_hari_hujan_aktif' => true,
                         'batas_hari_hujan' => 4,
+                        'kalender_mt1' => [
+                            'mulai' => [
+                                'bulan' => 11,
+                                'periode_ke' => 1,
+                            ],
+                            'selesai' => [
+                                'bulan' => 4,
+                                'periode_ke' => 2,
+                            ],
+                            'label' => 'November periode 1 sampai April periode 2',
+                        ],
                     ],
                     'jumlah_periode' => 3,
                 ],
             ])
             ->assertJsonPath('data.periode.0.periode.label', '11–20 Januari 2026')
+            ->assertJsonPath('data.periode.0.periode.dalam_mt1', true)
             ->assertJsonPath('data.periode.0.curah_hujan.total_mm', 48.5)
             ->assertJsonPath('data.periode.0.rekomendasi.status', 'tunggu')
             ->assertJsonPath('data.periode.1.periode.label', '21–31 Januari 2026')
@@ -103,6 +119,19 @@ class PublicGrafikCurahHujanTest extends TestCase
             ->assertJsonPath('data.periode.2.periode.label', '1–10 Februari 2026')
             ->assertJsonPath('data.periode.2.rekomendasi.status', 'optimal_tanam')
             ->assertJsonCount(3, 'data.periode');
+    }
+
+    /** @test */
+    public function endpoint_grafik_menandai_periode_di_luar_mt1(): void
+    {
+        $this->buatDasarian(2026, 4, 2, 70, 5);
+        $this->buatDasarian(2026, 4, 3, 80, 6);
+
+        $response = $this->getJson('/api/publik/grafik-curah-hujan?jumlah_periode=2');
+
+        $response->assertOk()
+            ->assertJsonPath('data.periode.0.periode.dalam_mt1', true)
+            ->assertJsonPath('data.periode.1.periode.dalam_mt1', false);
     }
 
     /** @test */
@@ -127,6 +156,7 @@ class PublicGrafikCurahHujanTest extends TestCase
             ->assertOk()
             ->assertJsonPath('data.rule', null)
             ->assertJsonPath('data.jumlah_periode', 1)
+            ->assertJsonPath('data.periode.0.periode.dalam_mt1', null)
             ->assertJsonPath('data.periode.0.curah_hujan.total_mm', 25)
             ->assertJsonPath('data.periode.0.rekomendasi.status', null)
             ->assertJsonPath('data.periode.0.rekomendasi.label', 'Belum dianalisis');

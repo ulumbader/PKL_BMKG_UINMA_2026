@@ -572,7 +572,11 @@ List semua rule rekomendasi.
         "min_dasarian_berturut": 3,
         "total_alternatif_mm": 150,
         "pakai_kriteria_hari_hujan": true,
-        "min_hari_hujan_dasarian": 3
+        "min_hari_hujan_dasarian": 3,
+        "mt1_bulan_mulai": 11,
+        "mt1_dasarian_mulai": 1,
+        "mt1_bulan_selesai": 4,
+        "mt1_dasarian_selesai": 2
       },
       "is_active": true,
       "dibuat_oleh": 1,
@@ -605,7 +609,11 @@ Buat rule baru (**super_admin only**, dicek di Form Request authorize).
     "min_dasarian_berturut": 3,
     "total_alternatif_mm": 225,
     "pakai_kriteria_hari_hujan": true,
-    "min_hari_hujan_dasarian": 3
+    "min_hari_hujan_dasarian": 3,
+    "mt1_bulan_mulai": 11,
+    "mt1_dasarian_mulai": 1,
+    "mt1_bulan_selesai": 4,
+    "mt1_dasarian_selesai": 2
   },
   "is_active": true
 }
@@ -636,7 +644,11 @@ Update rule rekomendasi.
     "min_dasarian_berturut": 3,
     "total_alternatif_mm": 180,
     "pakai_kriteria_hari_hujan": false,
-    "min_hari_hujan_dasarian": 3
+    "min_hari_hujan_dasarian": 3,
+    "mt1_bulan_mulai": 11,
+    "mt1_dasarian_mulai": 1,
+    "mt1_bulan_selesai": 4,
+    "mt1_dasarian_selesai": 2
   }
 }
 ```
@@ -650,6 +662,12 @@ Semua key di dalam `parameter` wajib dikirim ketika parameter dibuat atau diperb
 | `total_alternatif_mm` | number | Minimum total curah hujan seluruh jendela untuk kriteria alternatif |
 | `pakai_kriteria_hari_hujan` | boolean | Toggle penguatan kriteria hari hujan Jawa Timur |
 | `min_hari_hujan_dasarian` | integer | Minimum jumlah hari hujan pada setiap dasarian jika toggle aktif |
+| `mt1_bulan_mulai` | integer | Bulan mulai MT1, nilai 1–12 |
+| `mt1_dasarian_mulai` | integer | Dasarian mulai MT1, nilai 1–3 |
+| `mt1_bulan_selesai` | integer | Bulan selesai MT1, nilai 1–12 |
+| `mt1_dasarian_selesai` | integer | Dasarian selesai MT1, nilai 1–3 |
+
+Rentang MT1 bersifat inklusif dan dapat melewati pergantian tahun, misalnya November periode 1 sampai April periode 2.
 
 > Untuk membandingkan metodologi dengan dan tanpa kriteria hari hujan, buat dua record rule dengan parameter yang sama dan nilai toggle berbeda. Jangan hanya mengganti toggle pada satu rule karena evaluasi ulang pasangan `dasarian_id` + `rule_id` akan memperbarui hasil lama.
 
@@ -695,6 +713,7 @@ Rule membaca jendela dasarian secara kronologis sampai periode yang dipilih:
 1. **Kriteria utama:** semua dasarian memiliki curah hujan minimal sesuai `min_curah_hujan_dasarian`.
 2. **Kriteria alternatif:** hanya diperiksa jika kriteria utama gagal; total seluruh jendela harus mencapai `total_alternatif_mm`.
 3. **Penguatan hari hujan:** jika `pakai_kriteria_hari_hujan = true`, setiap dasarian juga wajib mencapai `min_hari_hujan_dasarian`.
+4. **Guard kalender MT1:** dasarian yang sedang direkomendasikan wajib berada dalam rentang awal dan akhir MT1. Di luar rentang, status akhir `tidak_disarankan` meskipun kriteria hujan lulus.
 
 Kriteria hari hujan mengikuti kajian Ulfah dan Sulistya untuk Jawa Timur (`CH >= 50 mm` dan `HH >= 3 hari` per dasarian). Pada proses agregasi, satu hari dihitung sebagai hari hujan jika CH harian `>= 0,5 mm`. Kriteria total alternatif merupakan konfigurasi metodologi proyek berdasarkan arahan pembimbing, bukan kesimpulan utama kajian Ulfah dan Sulistya.
 
@@ -932,7 +951,7 @@ Sorotan, poster, dan PDF menggunakan endpoint CRUD yang sama dengan konten teks,
 | `file_media` | Wajib saat create | Wajib saat create | Wajib saat create | Opsional saat edit jika file tidak diganti |
 | `thumbnail` | Opsional | Tidak diizinkan | Opsional | JPG, PNG, atau WebP; maksimal 5 MB |
 | `alt_text` | Opsional | Opsional | Opsional | Fallback publik menggunakan judul |
-| `url_sumber` | Opsional | Wajib | Wajib | Hanya URL HTTP/HTTPS |
+| `url_sumber` | Opsional | Opsional | Opsional | Jika diisi harus berupa URL HTTP/HTTPS; tombol sumber tidak ditampilkan ketika kosong |
 | `urutan_tampil` | Opsional | Opsional | Opsional | Integer >= 0 |
 | `is_active` | Opsional | Opsional | Opsional | Boolean |
 | `hapus_thumbnail` | Edit saja | - | Edit saja | Boolean untuk menghapus thumbnail lama |
@@ -1081,7 +1100,12 @@ GET /api/publik/grafik-curah-hujan?jumlah_periode=12
       "jumlah_periode_berturut": 3,
       "batas_total_alternatif_mm": 150,
       "kriteria_hari_hujan_aktif": true,
-      "batas_hari_hujan": 3
+      "batas_hari_hujan": 3,
+      "kalender_mt1": {
+        "mulai": { "bulan": 11, "periode_ke": 1 },
+        "selesai": { "bulan": 4, "periode_ke": 2 },
+        "label": "November periode 1 sampai April periode 2"
+      }
     },
     "jumlah_periode": 2,
     "periode": [
@@ -1092,7 +1116,8 @@ GET /api/publik/grafik-curah-hujan?jumlah_periode=12
           "periode_ke": 2,
           "label": "11–20 Januari 2026",
           "tanggal_mulai": "2026-01-11",
-          "tanggal_selesai": "2026-01-20"
+          "tanggal_selesai": "2026-01-20",
+          "dalam_mt1": true
         },
         "curah_hujan": {
           "total_mm": 55.5,
@@ -1113,7 +1138,8 @@ GET /api/publik/grafik-curah-hujan?jumlah_periode=12
           "periode_ke": 3,
           "label": "21–31 Januari 2026",
           "tanggal_mulai": "2026-01-21",
-          "tanggal_selesai": "2026-01-31"
+          "tanggal_selesai": "2026-01-31",
+          "dalam_mt1": true
         },
         "curah_hujan": {
           "total_mm": 72,
@@ -1209,7 +1235,12 @@ Hasil rekomendasi tanam paling baru.
   "data": {
     "status_rekomendasi": "optimal_tanam",
     "label_rekomendasi": "Waktu yang baik untuk menanam padi",
-    "tanggal_evaluasi": "2026-07-05T14:00:00.000000Z",
+    "tanggal_evaluasi": "2026-07-05 14:00",
+    "kalender_mt1": {
+      "dalam_mt1": true,
+      "keterangan": "Sudah memasuki musim tanam",
+      "rentang": "November periode 1 sampai April periode 2"
+    },
     "rule": { "nama": "Rule Awal Musim Tanam" },
     "dasarian": { "..." : "..." }
   }
@@ -1221,6 +1252,16 @@ Hasil rekomendasi tanam paling baru.
 | `optimal_tanam` | "Waktu yang baik untuk menanam padi" |
 | `tunggu` | "Belum waktunya, pantau terus cuaca" |
 | `tidak_disarankan` | "Belum disarankan untuk menanam" |
+
+`kalender_mt1.keterangan` menggabungkan posisi dasarian terhadap kalender MT1 dengan hasil rekomendasi agar mudah dipahami petani:
+
+| Kondisi | `kalender_mt1.keterangan` |
+|---|---|
+| Di dalam MT1 dan `optimal_tanam` | "Sudah memasuki musim tanam" |
+| Di dalam MT1 tetapi belum optimal | "Walaupun sudah memasuki musim tanam, kondisi hujan belum mencukupi" |
+| Di luar MT1 | "Di luar musim tanam" |
+
+Jika rule lama belum memiliki konfigurasi MT1 lengkap, `kalender_mt1` bernilai `null`.
 
 ---
 

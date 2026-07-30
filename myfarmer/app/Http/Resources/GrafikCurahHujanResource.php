@@ -26,6 +26,7 @@ class GrafikCurahHujanResource extends JsonResource
                 'label' => $this->labelPeriode(),
                 'tanggal_mulai' => $this->tanggal_mulai?->format('Y-m-d'),
                 'tanggal_selesai' => $this->tanggal_selesai?->format('Y-m-d'),
+                'dalam_mt1' => $this->getAttribute('dalam_mt1'),
             ],
             'curah_hujan' => [
                 'total_mm' => (float) $this->total_curah_hujan_mm,

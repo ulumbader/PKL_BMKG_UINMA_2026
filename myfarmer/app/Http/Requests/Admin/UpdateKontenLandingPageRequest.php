@@ -31,8 +31,6 @@ class UpdateKontenLandingPageRequest extends FormRequest
             && ($tipeBerubah || ! $konten?->path_file);
         $isiWajib = in_array($tipe, ['pengumuman', 'tips'], true)
             && ($tipeBerubah || ! $konten?->isi);
-        $urlWajib = in_array($tipe, ['poster', 'pdf'], true)
-            && ($tipeBerubah || ! $konten?->url_sumber);
 
         return [
             'judul' => ['sometimes', 'string', 'max:255'],
@@ -48,7 +46,7 @@ class UpdateKontenLandingPageRequest extends FormRequest
                 ? ['sometimes', 'boolean']
                 : ['prohibited'],
             'url_sumber' => in_array($tipe, ['poster', 'pdf'], true)
-                ? [$urlWajib ? 'required' : 'sometimes', 'string', 'max:2048', $this->httpUrlRule()]
+                ? ['sometimes', 'nullable', 'string', 'max:2048', $this->httpUrlRule()]
                 : ['nullable', 'string', 'max:2048', $this->httpUrlRule()],
             'alt_text' => ['nullable', 'string', 'max:255'],
             'is_active' => ['sometimes', 'boolean'],
@@ -104,7 +102,6 @@ class UpdateKontenLandingPageRequest extends FormRequest
             'tipe.in' => 'Tipe konten tidak didukung.',
             'file_media.required' => 'File media wajib diunggah.',
             'file_media.prohibited' => 'File media tidak boleh diunggah untuk konten teks.',
-            'url_sumber.required' => 'URL sumber wajib diisi.',
             'is_active.boolean' => 'Status aktif harus berupa true/false.',
             'urutan_tampil.integer' => 'Urutan tampil harus berupa angka.',
             'urutan_tampil.min' => 'Urutan tampil tidak boleh negatif.',

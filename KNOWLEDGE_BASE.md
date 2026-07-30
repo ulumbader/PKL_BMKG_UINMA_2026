@@ -322,7 +322,11 @@ Parameter default:
   "min_dasarian_berturut": 3,
   "total_alternatif_mm": 150,
   "pakai_kriteria_hari_hujan": true,
-  "min_hari_hujan_dasarian": 3
+  "min_hari_hujan_dasarian": 3,
+  "mt1_bulan_mulai": 11,
+  "mt1_dasarian_mulai": 1,
+  "mt1_bulan_selesai": 4,
+  "mt1_dasarian_selesai": 2
 }
 ```
 
@@ -338,13 +342,17 @@ Kriteria ini hanya diperiksa jika kriteria utama gagal. Total curah hujan seluru
 
 Jika `pakai_kriteria_hari_hujan` aktif, setiap dasarian harus mencapai minimum jumlah hari hujan.
 
+### Guard kalender MT1
+
+Dasarian target harus berada dalam rentang awal dan akhir MT1 yang dikonfigurasi pada rule. Rentang bersifat inklusif dan dapat melewati pergantian tahun. Di luar MT1, hasil akhir `tidak_disarankan` meskipun kriteria hujan lulus.
+
 ### Status keluaran
 
 | Status | Makna |
 |---|---|
-| `optimal_tanam` | Indikator curah hujan dan, jika aktif, hari hujan mendukung awal tanam |
+| `optimal_tanam` | Indikator curah hujan, hari hujan jika aktif, dan kalender MT1 mendukung awal tanam |
 | `tunggu` | Data belum cukup atau kondisi belum terkonfirmasi |
-| `tidak_disarankan` | Kondisi terkini belum mendukung |
+| `tidak_disarankan` | Kondisi terkini belum mendukung atau dasarian target berada di luar MT1 |
 
 Rule engine menggunakan data aktual yang sudah terkumpul. Hasilnya adalah rekomendasi atau konfirmasi berbasis indikator hujan, bukan prediksi cuaca masa depan.
 

@@ -21,6 +21,10 @@ flowchart TD
 
     F{"Kriteria Hari Hujan:<br/>Semua HH dasarian<br/>≥ 3 hari?"}
 
+    H{"Dasarian target<br/>dalam rentang MT1?"}
+    H_HH{"Dasarian target<br/>dalam rentang MT1?"}
+    H_CH{"Dasarian target<br/>dalam rentang MT1?"}
+
     G{"CH dasarian<br/>terbaru ≥ 50 mm?"}
 
     OPTIMAL(["🟢 OPTIMAL TANAM"])
@@ -39,13 +43,22 @@ flowchart TD
     C -- Tidak --> D
 
     D -- Ya --> E
-    D -- Tidak --> G
+    D -- Tidak --> H_CH
 
-    E -- Tidak --> OPTIMAL
+    E -- Tidak --> H
     E -- Ya --> F
 
-    F -- Ya --> OPTIMAL
-    F -- Tidak --> TUNGGU
+    F -- Ya --> H
+    F -- Tidak --> H_HH
+
+    H -- Ya --> OPTIMAL
+    H -- Tidak --> TIDAK
+
+    H_HH -- Ya --> TUNGGU
+    H_HH -- Tidak --> TIDAK
+
+    H_CH -- Ya --> G
+    H_CH -- Tidak --> TIDAK
 
     G -- Ya --> TUNGGU
     G -- Tidak --> TIDAK
@@ -57,7 +70,7 @@ flowchart TD
 
 ### 1. Validasi Parameter Rule
 
-Langkah pertama memastikan kelima parameter rule tersedia dan lengkap sebelum evaluasi dimulai:
+Langkah pertama memastikan sembilan parameter rule tersedia dan lengkap sebelum evaluasi dimulai:
 
 | Parameter | Tipe | Default | Fungsi |
 |---|---|---|---|
@@ -66,6 +79,10 @@ Langkah pertama memastikan kelima parameter rule tersedia dan lengkap sebelum ev
 | `total_alternatif_mm` | number | 150 mm | Minimum total CH seluruh jendela |
 | `pakai_kriteria_hari_hujan` | boolean | true | Toggle penguatan hari hujan |
 | `min_hari_hujan_dasarian` | integer | 3 hari | Minimum hari hujan per dasarian |
+| `mt1_bulan_mulai` | integer | 11 | Bulan mulai MT1 |
+| `mt1_dasarian_mulai` | integer | 1 | Dasarian mulai MT1 |
+| `mt1_bulan_selesai` | integer | 4 | Bulan selesai MT1 |
+| `mt1_dasarian_selesai` | integer | 2 | Dasarian selesai MT1 |
 
 Jika salah satu parameter tidak tersedia, evaluasi dihentikan dan status dikembalikan sebagai **TUNGGU** karena sistem belum memiliki dasar evaluasi yang cukup.
 
@@ -97,7 +114,7 @@ Kriteria ini mengakomodasi kondisi distribusi hujan yang tidak merata antar dasa
 
 Sebelum mengeluarkan status optimal, sistem memeriksa apakah penguatan kriteria hari hujan diaktifkan (`pakai_kriteria_hari_hujan`).
 
-- **Tidak aktif** → langsung **OPTIMAL TANAM** (kriteria CH sudah cukup).
+- **Tidak aktif** → lanjut ke pemeriksaan kalender MT1.
 - **Aktif** → lanjut ke pemeriksaan kriteria hari hujan.
 
 ### 6. Kriteria Hari Hujan (Penguatan Jawa Timur)
@@ -106,10 +123,17 @@ Jika toggle aktif, sistem memeriksa apakah **setiap** dasarian dalam jendela mem
 
 Kriteria ini mengikuti kajian Ulfah dan Sulistya (2015) yang menyimpulkan bahwa untuk wilayah Jawa Timur, penentuan awal musim hujan yang sesuai mensyaratkan CH ≥ 50 mm **dan** HH ≥ 3 hari per dasarian.
 
-- **Terpenuhi** → **OPTIMAL TANAM**.
+- **Terpenuhi** → lanjut ke pemeriksaan kalender MT1.
 - **Tidak terpenuhi** → **TUNGGU** (akumulasi hujan cukup, tetapi frekuensi hari hujan belum merata).
 
-### 7. Pemeriksaan Curah Hujan Dasarian Terbaru
+### 7. Pemeriksaan Kalender MT1
+
+Sebelum menghasilkan status optimal, dasarian target dibandingkan dengan rentang awal dan akhir MT1. Rentang bersifat inklusif dan dapat melintasi pergantian tahun, misalnya November periode 1 sampai April periode 2.
+
+- **Di dalam MT1** → hasil CH/HH yang lulus menjadi **OPTIMAL TANAM**.
+- **Di luar MT1** → **TIDAK DISARANKAN**, termasuk ketika terjadi lonjakan hujan yang meluluskan kriteria CH.
+
+### 8. Pemeriksaan Curah Hujan Dasarian Terbaru
 
 Langkah ini hanya dicapai jika kriteria utama dan alternatif **gagal**. Sistem memeriksa apakah dasarian terbaru (terakhir) dalam jendela setidaknya mencapai batas minimum curah hujan.
 
@@ -122,15 +146,15 @@ Langkah ini hanya dicapai jika kriteria utama dan alternatif **gagal**. Sistem m
 
 | Status | Emoji | Kondisi | Interpretasi |
 |---|---|---|---|
-| **Optimal Tanam** | 🟢 | Kriteria CH (utama/alternatif) lulus **dan** kriteria HH lulus atau dinonaktifkan | Indikator hujan mendukung awal musim tanam |
+| **Optimal Tanam** | 🟢 | Kriteria CH lulus, kriteria HH lulus/dinonaktifkan, dan target berada dalam MT1 | Indikator hujan dan kalender mendukung awal musim tanam |
 | **Tunggu** | 🟡 | Data/parameter belum lengkap, kriteria CH lulus tetapi HH gagal, atau CH dasarian terbaru memadai namun jendela belum lengkap | Kondisi belum cukup untuk keputusan, pantau dasarian berikutnya |
-| **Tidak Disarankan** | 🔴 | Kriteria CH (utama dan alternatif) gagal **dan** CH dasarian terbaru di bawah minimum | Indikator hujan terkini belum mendukung awal tanam |
+| **Tidak Disarankan** | 🔴 | Indikator hujan tidak mendukung atau target berada di luar MT1 | Belum disarankan memulai tanam |
 
 ---
 
 ## Contoh Kasus Evaluasi
 
-Semua contoh menggunakan parameter default (CH_min = 50 mm, N = 3, total_alt = 150 mm, HH_min = 3 hari).
+Semua contoh menggunakan parameter default (CH_min = 50 mm, N = 3, total_alt = 150 mm, HH_min = 3 hari) dan kasus A-F diasumsikan berada dalam MT1.
 
 | Kasus | CH per Dasarian | HH per Dasarian | Toggle HH | Hasil | Alur pada Flowchart |
 |---|---|---|---|---|---|
@@ -140,6 +164,8 @@ Semua contoh menggunakan parameter default (CH_min = 50 mm, N = 3, total_alt = 1
 | D | 50, 50, 50 mm | 3, 2, 3 hari | Nonaktif | 🟢 Optimal | Parameter ✓ → Data ✓ → Utama ✓ → Toggle nonaktif |
 | E | 60, 30, 50 mm | 3, 3, 3 hari | Nonaktif | 🟡 Tunggu | Parameter ✓ → Data ✓ → Utama ✗ → Alternatif ✗ (total=140) → CH terbaru ✓ (50) |
 | F | 60, 30, 40 mm | 3, 3, 3 hari | Nonaktif | 🔴 Tidak Disarankan | Parameter ✓ → Data ✓ → Utama ✗ → Alternatif ✗ (total=130) → CH terbaru ✗ (40) |
+
+Jika kasus A atau B terjadi pada Juli, hasil akhirnya tetap 🔴 **Tidak Disarankan** karena Juli berada di luar rentang MT1 default.
 
 ---
 

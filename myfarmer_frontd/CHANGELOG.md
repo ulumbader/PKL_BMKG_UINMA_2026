@@ -9,6 +9,54 @@ Format tanggal: YYYY-MM-DD.
 
 ## [Unreleased]
 
+## [Tahap 47] - URL Sumber Konten Opsional - 2026-07-30
+### Diubah
+- Isian URL sumber pada form poster dan PDF tidak lagi ditandai wajib dan sekarang menjelaskan bahwa alamat bersifat opsional.
+
+### File Terkait
+- `components/admin/ContentManager.tsx`
+- `CHANGELOG.md`
+
+### Catatan
+- Komponen publik poster dan PDF sebelumnya sudah menyembunyikan tombol `Kunjungi Sumber` ketika `url_sumber` kosong, sehingga tidak diperlukan perubahan render tambahan.
+- Verifikasi berhasil: TypeScript dan build produksi Next.js 16.2.10 lulus; ESLint tanpa error dengan satu warning lama pada `page_backup.tsx`.
+
+## [Tahap 46] - Keterangan Musim Tanam pada Card Rekomendasi - 2026-07-30
+### Ditambahkan
+- Keterangan konteks MT1 pada card rekomendasi landing page dengan bahasa sederhana untuk petani.
+
+### Diubah
+- Card rekomendasi menampilkan `Sudah memasuki musim tanam`, peringatan kondisi hujan yang belum mencukupi di dalam MT1, atau `Di luar musim tanam` berdasarkan respons backend.
+- Warna keterangan mengikuti konteks: hijau untuk optimal di dalam MT1, kuning untuk belum optimal di dalam MT1, dan netral untuk di luar MT1.
+
+### File Terkait
+- `components/BackendCards.tsx`
+- `CHANGELOG.md`
+
+### Catatan
+- Status utama dan label rekomendasi lama tetap dipertahankan; keterangan MT1 merupakan informasi pendamping, bukan pengganti hasil rule engine.
+- Card tetap kompatibel ketika backend lama belum mengirim `kalender_mt1` karena field tersebut ditangani sebagai opsional.
+- Verifikasi berhasil: TypeScript dan build produksi Next.js 16.2.10 lulus; ESLint tanpa error dengan satu warning lama pada `page_backup.tsx`.
+
+## [Tahap 45] - Konfigurasi dan Penanda Rentang MT1 - 2026-07-30
+### Ditambahkan
+- Kontrol bulan dan periode untuk mengatur awal serta akhir Musim Tanam Pertama pada form Rule Rekomendasi.
+- Latar hijau muda `#e8f5e9` pada setiap dasarian grafik yang ditandai backend sebagai bagian dari MT1, beserta legenda sederhana `Rentang MT1`.
+
+### Diubah
+- Payload create/update rule dan ringkasan parameter pada tabel admin sekarang menyertakan empat parameter kalender MT1.
+- Grafik membaca field `dalam_mt1` dari endpoint publik sehingga rentang lintas tahun tetap mengikuti keputusan backend.
+
+### File Terkait
+- `app/admin/rules/page.tsx`
+- `components/RainfallRecommendationChart.tsx`
+- `CHANGELOG.md`
+
+### Catatan
+- Nilai awal form mengikuti konfigurasi backend: November periode 1 sampai April periode 2 dan dapat diubah admin.
+- TypeScript dan build produksi Next.js 16.2.10 lulus; ESLint tanpa error dengan satu warning lama pada `page_backup.tsx`.
+- Pemeriksaan browser headless terhadap 36 periode aktual memastikan bidang hijau dimulai pada November periode 1, sementara lonjakan Oktober tetap berada di luar MT1 dan sumbu grafik tetap terlihat.
+
 ## [Tahap 44] - Penjelasan Fallback Total CH Alternatif - 2026-07-30
 ### Diubah
 - Petunjuk parameter `Total Curah Hujan Alternatif` menegaskan bahwa nilai tersebut hanya diperiksa ketika kriteria utama gagal.

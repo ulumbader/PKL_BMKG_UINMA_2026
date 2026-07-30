@@ -141,19 +141,20 @@ Periode dasarian: **Dasarian I** (tanggal 1–10), **Dasarian II** (tanggal 11�
 
 ### 3.3. Proses 3.0 — Evaluasi Rule Engine (Layer 3: Rule Engine)
 
-Proses ini membaca `N` dasarian berturut-turut (default: 3) yang berakhir pada dasarian target, lalu mengevaluasi setiap rule aktif menggunakan tiga kriteria:
+Proses ini membaca `N` dasarian berturut-turut (default: 3) yang berakhir pada dasarian target, lalu mengevaluasi setiap rule aktif menggunakan empat kriteria:
 
 1. **Kriteria utama**: Seluruh `N` dasarian memiliki CH ≥ `min_curah_hujan_dasarian`.
 2. **Kriteria alternatif**: Hanya diperiksa jika kriteria utama gagal; total CH jendela harus ≥ `total_alternatif_mm`.
 3. **Kriteria hari hujan** (opsional): Jika toggle aktif, seluruh dasarian harus memiliki HH ≥ `min_hari_hujan_dasarian`.
+4. **Guard kalender MT1**: Dasarian target wajib berada di antara awal dan akhir MT1 yang dikonfigurasi pada parameter rule.
 
 Hasil evaluasi berupa status rekomendasi:
 
 | Status | Kondisi |
 |--------|---------|
-| `optimal_tanam` | Kriteria CH (utama/alternatif) terpenuhi DAN kriteria HH terpenuhi atau dinonaktifkan |
+| `optimal_tanam` | Kriteria CH (utama/alternatif), HH jika aktif, dan kalender MT1 terpenuhi |
 | `tunggu` | Data belum cukup, atau CH terpenuhi tapi HH gagal, atau dasarian terkini ≥ minimum tapi jendela belum lengkap |
-| `tidak_disarankan` | CH dasarian terkini di bawah minimum dan kriteria alternatif tidak terpenuhi |
+| `tidak_disarankan` | Indikator hujan belum mendukung atau dasarian target berada di luar MT1 |
 
 Parameter rule disimpan dalam kolom JSON `rule_rekomendasi.parameter` agar dapat dikonfigurasi tanpa mengubah kode. Hasil evaluasi disimpan ke `hasil_rekomendasi` dengan catatan teknis kronologis untuk audit.
 
@@ -196,7 +197,7 @@ Endpoint publik yang menyajikan data ke petani:
 |------|-----------|-------|-----------|
 | D1 | `data_iklim_harian` | Raw | Data mentah curah hujan harian per stasiun per tanggal, termasuk kode status (normal / tidak_terukur / tidak_ada_data) dan sumber data (manual / import_csv). |
 | D2 | `data_iklim_dasarian` | Agregasi | Hasil agregasi per periode 10 hari: total CH, jumlah hari hujan, hari valid/missing, dan status musim. |
-| D3 | `rule_rekomendasi` | Rule Engine | Konfigurasi rule rekomendasi tanam dengan parameter JSON berisi lima threshold. |
+| D3 | `rule_rekomendasi` | Rule Engine | Konfigurasi rule rekomendasi tanam dengan parameter JSON berisi threshold CH/HH dan rentang kalender MT1. |
 | D4 | `hasil_rekomendasi` | Rule Engine | Hasil evaluasi rule engine: status rekomendasi dan catatan teknis naratif per pasangan (dasarian, rule). |
 | D5 | `ringkasan_ai` | Output | Ringkasan bahasa Indonesia dari Groq AI. Memiliki siklus hidup draft → published. |
 | D6 | `log_import_data` | Raw | Log historis proses import CSV: status, jumlah data, pesan error, waktu eksekusi. |
@@ -209,7 +210,7 @@ Endpoint publik yang menyajikan data ke petani:
 |-------|-------|-------|--------------|--------|
 | 1 | **Raw** | File CSV BMKG / input manual | Parsing, validasi, konversi kode BMKG (8888/9999), upsert | `data_iklim_harian` |
 | 2 | **Agregasi** | Data harian per rentang dasarian | Penjumlahan CH, penghitungan HH (CH ≥ 0,5 mm), klasifikasi musim | `data_iklim_dasarian` |
-| 3 | **Rule Engine** | N dasarian berturut-turut + parameter rule | Evaluasi kriteria utama, alternatif, dan HH secara deterministik | `hasil_rekomendasi` |
+| 3 | **Rule Engine** | N dasarian berturut-turut + parameter rule | Evaluasi kriteria utama, alternatif, HH, dan kalender MT1 secara deterministik | `hasil_rekomendasi` |
 | 4 | **Output** | Hasil rekomendasi + data dasarian | Narasi oleh Groq AI → draft → review admin → publish | `ringkasan_ai` → Landing Page Petani |
 
 ---

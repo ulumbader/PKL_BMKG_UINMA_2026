@@ -31,6 +31,10 @@ type RuleParameter = {
   total_alternatif_mm: number;
   pakai_kriteria_hari_hujan: boolean;
   min_hari_hujan_dasarian: number;
+  mt1_bulan_mulai: number;
+  mt1_dasarian_mulai: number;
+  mt1_bulan_selesai: number;
+  mt1_dasarian_selesai: number;
 };
 
 type RuleParameterForm = {
@@ -39,6 +43,10 @@ type RuleParameterForm = {
   total_alternatif_mm: string;
   pakai_kriteria_hari_hujan: boolean;
   min_hari_hujan_dasarian: string;
+  mt1_bulan_mulai: string;
+  mt1_dasarian_mulai: string;
+  mt1_bulan_selesai: string;
+  mt1_dasarian_selesai: string;
 };
 
 const defaultParameter: RuleParameterForm = {
@@ -47,7 +55,32 @@ const defaultParameter: RuleParameterForm = {
   total_alternatif_mm: "150",
   pakai_kriteria_hari_hujan: true,
   min_hari_hujan_dasarian: "3",
+  mt1_bulan_mulai: "11",
+  mt1_dasarian_mulai: "1",
+  mt1_bulan_selesai: "4",
+  mt1_dasarian_selesai: "2",
 };
+
+const monthOptions = [
+  "Januari",
+  "Februari",
+  "Maret",
+  "April",
+  "Mei",
+  "Juni",
+  "Juli",
+  "Agustus",
+  "September",
+  "Oktober",
+  "November",
+  "Desember",
+];
+
+const dasarianOptions = [
+  { value: "1", label: "Periode 1 (tanggal 1–10)" },
+  { value: "2", label: "Periode 2 (tanggal 11–20)" },
+  { value: "3", label: "Periode 3 (tanggal 21–akhir bulan)" },
+];
 
 const emptyForm: RuleForm = {
   nama_rule: "",
@@ -101,6 +134,18 @@ function makeRuleForm(rule: Rule): RuleForm {
       min_hari_hujan_dasarian: String(
         parameter.min_hari_hujan_dasarian ?? defaultParameter.min_hari_hujan_dasarian,
       ),
+      mt1_bulan_mulai: String(
+        parameter.mt1_bulan_mulai ?? defaultParameter.mt1_bulan_mulai,
+      ),
+      mt1_dasarian_mulai: String(
+        parameter.mt1_dasarian_mulai ?? defaultParameter.mt1_dasarian_mulai,
+      ),
+      mt1_bulan_selesai: String(
+        parameter.mt1_bulan_selesai ?? defaultParameter.mt1_bulan_selesai,
+      ),
+      mt1_dasarian_selesai: String(
+        parameter.mt1_dasarian_selesai ?? defaultParameter.mt1_dasarian_selesai,
+      ),
     },
     is_active: Boolean(rule.is_active),
   };
@@ -113,6 +158,10 @@ function makePayload(form: RuleForm, isSuperAdmin: boolean) {
     total_alternatif_mm: Number(form.parameter.total_alternatif_mm),
     pakai_kriteria_hari_hujan: form.parameter.pakai_kriteria_hari_hujan,
     min_hari_hujan_dasarian: Number(form.parameter.min_hari_hujan_dasarian),
+    mt1_bulan_mulai: Number(form.parameter.mt1_bulan_mulai),
+    mt1_dasarian_mulai: Number(form.parameter.mt1_dasarian_mulai),
+    mt1_bulan_selesai: Number(form.parameter.mt1_bulan_selesai),
+    mt1_dasarian_selesai: Number(form.parameter.mt1_dasarian_selesai),
   };
   const payload: Record<string, unknown> = { parameter, is_active: form.is_active };
 
@@ -140,6 +189,11 @@ function formatParameterValue(key: keyof RuleParameter, value: RuleParameter[key
   if (value == null) return "-";
   if (key === "pakai_kriteria_hari_hujan") return value ? "Aktif" : "Nonaktif";
   return unit ? `${value} ${unit}` : String(value);
+}
+
+function formatMt1Period(bulan?: number, dasarian?: number) {
+  if (!bulan || !dasarian) return "-";
+  return `${monthOptions[bulan - 1] ?? `Bulan ${bulan}`} periode ${dasarian}`;
 }
 
 export default function Page() {
@@ -348,6 +402,24 @@ export default function Page() {
                             </span>
                           </div>
                         ))}
+                        <div className="flex items-center justify-between gap-4 text-xs">
+                          <span className="text-muted">Mulai MT1</span>
+                          <span className="text-right font-medium">
+                            {formatMt1Period(
+                              rule.parameter?.mt1_bulan_mulai,
+                              rule.parameter?.mt1_dasarian_mulai,
+                            )}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between gap-4 text-xs">
+                          <span className="text-muted">Selesai MT1</span>
+                          <span className="text-right font-medium">
+                            {formatMt1Period(
+                              rule.parameter?.mt1_bulan_selesai,
+                              rule.parameter?.mt1_dasarian_selesai,
+                            )}
+                          </span>
+                        </div>
                       </div>
                     </td>
                     <td className="px-4 py-3"><RuleStatus active={rule.is_active} /></td>
@@ -594,6 +666,110 @@ export default function Page() {
                 </div>
 
                 {formErrors.parameter ? <p className="text-xs text-danger">{formErrors.parameter}</p> : null}
+              </div>
+
+              <div className="space-y-4 rounded-card border border-border bg-background p-4">
+                <div>
+                  <h3 className="text-sm font-semibold">Kalender Musim Tanam Pertama (MT1)</h3>
+                  <p className="mt-1 text-xs text-muted">
+                    Rekomendasi optimal hanya diberikan pada periode yang berada di antara awal dan akhir MT1.
+                    Rentang boleh melewati pergantian tahun.
+                  </p>
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Field
+                    label="Mulai MT1"
+                    hint="Periode pertama yang diperbolehkan untuk rekomendasi tanam."
+                    error={
+                      formErrors["parameter.mt1_bulan_mulai"]
+                      ?? formErrors["parameter.mt1_dasarian_mulai"]
+                    }
+                  >
+                    <div className="grid gap-2">
+                      <select
+                        required
+                        aria-label="Bulan mulai MT1"
+                        className={controlClass}
+                        value={form.parameter.mt1_bulan_mulai}
+                        onChange={(event) => setForm({
+                          ...form,
+                          parameter: {
+                            ...form.parameter,
+                            mt1_bulan_mulai: event.target.value,
+                          },
+                        })}
+                      >
+                        {monthOptions.map((month, index) => (
+                          <option key={month} value={index + 1}>{month}</option>
+                        ))}
+                      </select>
+                      <select
+                        required
+                        aria-label="Dasarian mulai MT1"
+                        className={controlClass}
+                        value={form.parameter.mt1_dasarian_mulai}
+                        onChange={(event) => setForm({
+                          ...form,
+                          parameter: {
+                            ...form.parameter,
+                            mt1_dasarian_mulai: event.target.value,
+                          },
+                        })}
+                      >
+                        {dasarianOptions.map((option) => (
+                          <option key={option.value} value={option.value}>{option.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </Field>
+
+                  <Field
+                    label="Selesai MT1"
+                    hint="Periode terakhir yang masih diperbolehkan untuk rekomendasi tanam."
+                    error={
+                      formErrors["parameter.mt1_bulan_selesai"]
+                      ?? formErrors["parameter.mt1_dasarian_selesai"]
+                    }
+                  >
+                    <div className="grid gap-2">
+                      <select
+                        required
+                        aria-label="Bulan selesai MT1"
+                        className={controlClass}
+                        value={form.parameter.mt1_bulan_selesai}
+                        onChange={(event) => setForm({
+                          ...form,
+                          parameter: {
+                            ...form.parameter,
+                            mt1_bulan_selesai: event.target.value,
+                          },
+                        })}
+                      >
+                        {monthOptions.map((month, index) => (
+                          <option key={month} value={index + 1}>{month}</option>
+                        ))}
+                      </select>
+                      <select
+                        required
+                        aria-label="Dasarian selesai MT1"
+                        className={controlClass}
+                        value={form.parameter.mt1_dasarian_selesai}
+                        onChange={(event) => setForm({
+                          ...form,
+                          parameter: {
+                            ...form.parameter,
+                            mt1_dasarian_selesai: event.target.value,
+                          },
+                        })}
+                      >
+                        {dasarianOptions.map((option) => (
+                          <option key={option.value} value={option.value}>{option.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </Field>
+                </div>
               </div>
 
               <div className="flex justify-end gap-2">

@@ -107,7 +107,11 @@ Konfigurasi default:
   "min_dasarian_berturut": 3,
   "total_alternatif_mm": 150,
   "pakai_kriteria_hari_hujan": true,
-  "min_hari_hujan_dasarian": 3
+  "min_hari_hujan_dasarian": 3,
+  "mt1_bulan_mulai": 11,
+  "mt1_dasarian_mulai": 1,
+  "mt1_bulan_selesai": 4,
+  "mt1_dasarian_selesai": 2
 }
 ```
 
@@ -118,6 +122,10 @@ Konfigurasi default:
 | `total_alternatif_mm` | number | 150 | Minimum total CH seluruh jendela untuk meluluskan kriteria alternatif. |
 | `pakai_kriteria_hari_hujan` | boolean | `true` | Mengaktifkan atau menonaktifkan penguatan HH. |
 | `min_hari_hujan_dasarian` | integer | 3 | Minimum HH setiap dasarian ketika penguatan HH aktif. |
+| `mt1_bulan_mulai` | integer | 11 | Bulan awal rentang MT1. |
+| `mt1_dasarian_mulai` | integer | 1 | Dasarian awal rentang MT1. |
+| `mt1_bulan_selesai` | integer | 4 | Bulan akhir rentang MT1. |
+| `mt1_dasarian_selesai` | integer | 2 | Dasarian akhir rentang MT1. |
 
 Walaupun nilai default mengikuti tiga dasarian, implementasi menggeneralisasi jendela menjadi `N = min_dasarian_berturut`. Dasarian terakhir adalah periode yang sedang dievaluasi.
 
@@ -130,6 +138,7 @@ Misalkan jendela kronologis terdiri atas dasarian `D₁, D₂, ..., Dₙ`, denga
 - `CH_min`: `min_curah_hujan_dasarian`.
 - `CH_alt`: `total_alternatif_mm`.
 - `HH_min`: `min_hari_hujan_dasarian`.
+- `dalam_MT1`: posisi dasarian target berada dalam rentang awal dan akhir MT1 secara inklusif.
 
 ### 7.1. Kriteria utama
 
@@ -167,14 +176,20 @@ JIKA pakai_kriteria_hari_hujan = true:
 LAINNYA:
     kondisi_hh = true
 
-is_amh_final = is_amh_curah_hujan DAN kondisi_hh
+is_amh_final = is_amh_curah_hujan DAN kondisi_hh DAN dalam_MT1
 ```
+
+### 7.4. Guard kalender MT1
+
+Kalender MT1 hanya membatasi periode rekomendasi; seluruh jendela CH dan HH tetap dihitung. Dasarian target wajib berada di antara awal dan akhir MT1, sedangkan dasarian sebelumnya boleh berada sebelum awal MT1 agar rekomendasi tidak tertunda dua dasarian. Rentang seperti November I sampai April II ditangani sebagai rentang lintas tahun.
+
+Jika kriteria hujan lulus tetapi dasarian target berada di luar MT1, hasil akhir tetap `tidak_disarankan`. Catatan teknis menyimpan bahwa hujan memenuhi rule tetapi kalender MT1 tidak sesuai.
 
 ## 8. Pseudocode Implementasi
 
 ```text
 FUNGSI evaluasiRule(dasarian_target, parameter):
-    validasi kelengkapan lima parameter
+    validasi kelengkapan sembilan parameter
     JIKA parameter tidak lengkap:
         KEMBALIKAN TUNGGU
 
@@ -199,6 +214,11 @@ FUNGSI evaluasiRule(dasarian_target, parameter):
     LAINNYA:
         kondisi_hh = true
 
+    dalam_MT1 = dasarian_target berada pada rentang MT1 secara inklusif
+
+    JIKA dalam_MT1 = false:
+        KEMBALIKAN TIDAK_DISARANKAN
+
     JIKA kondisi_curah_hujan DAN kondisi_hh:
         KEMBALIKAN OPTIMAL_TANAM
 
@@ -216,7 +236,8 @@ FUNGSI evaluasiRule(dasarian_target, parameter):
 | Kondisi | Status | Interpretasi operasional |
 |---|---|---|
 | Data atau parameter belum lengkap | `tunggu` | Sistem belum memiliki dasar evaluasi yang cukup. |
-| Kriteria CH utama/alternatif lulus dan kriteria HH lulus atau dimatikan | `optimal_tanam` | Indikator hujan pada jendela evaluasi mendukung awal tanam. |
+| Dasarian target berada di luar kalender MT1 | `tidak_disarankan` | Rekomendasi tanam tidak diberikan meskipun indikator hujan lulus. |
+| Dasarian target berada dalam MT1, kriteria CH utama/alternatif lulus, dan kriteria HH lulus atau dimatikan | `optimal_tanam` | Indikator hujan dan kalender MT1 mendukung awal tanam. |
 | Kriteria CH lulus tetapi HH aktif dan gagal | `tunggu` | Akumulasi hujan cukup, tetapi frekuensi hari hujan belum merata. |
 | Kriteria utama/alternatif belum lulus, tetapi CH dasarian terbaru mencapai minimum | `tunggu` | Ada indikasi awal, namun jendela belum memenuhi rule. |
 | Kriteria alternatif gagal dan CH dasarian terbaru di bawah minimum | `tidak_disarankan` | Indikator hujan terkini belum mendukung awal tanam. |
@@ -225,7 +246,7 @@ FUNGSI evaluasiRule(dasarian_target, parameter):
 
 ## 10. Contoh Perhitungan
 
-Semua contoh menggunakan parameter default.
+Semua contoh menggunakan parameter default dan contoh A-F diasumsikan berada di dalam rentang MT1.
 
 | Contoh | CH per dasarian (mm) | HH per dasarian | Toggle HH | Hasil | Alasan |
 |---|---|---|---|---|---|
@@ -235,6 +256,8 @@ Semua contoh menggunakan parameter default.
 | D | `[50, 50, 50]` | `[3, 2, 3]` | Nonaktif | `optimal_tanam` | Kriteria utama lulus dan HH diabaikan. |
 | E | `[60, 30, 50]` | `[3, 3, 3]` | Nonaktif | `tunggu` | Total hanya 140 mm, tetapi CH dasarian terbaru sudah mencapai 50 mm. |
 | F | `[60, 30, 40]` | `[3, 3, 3]` | Nonaktif | `tidak_disarankan` | Total hanya 130 mm dan CH dasarian terbaru di bawah 50 mm. |
+
+Jika pola contoh A terjadi pada Juli, hasilnya tetap `tidak_disarankan` karena Juli berada di luar MT1 default November I sampai April II.
 
 ## 11. Perbandingan dengan dan tanpa Kriteria HH
 
@@ -274,7 +297,8 @@ Setiap evaluasi menulis atau memperbarui `hasil_rekomendasi`. Ringkasan AI dibua
 6. **Total alternatif 150 mm adalah keputusan proyek.** Nilai tersebut harus ditulis sebagai perluasan berdasarkan arahan pembimbing, bukan diklaim sebagai hasil langsung jurnal Ulfah–Sulistya.
 7. **Total alternatif dapat didominasi satu dasarian.** Karena jalur alternatif menilai total jendela, satu periode dengan hujan sangat tinggi dapat meluluskan kriteria meskipun periode lain rendah; dampaknya perlu divalidasi terhadap observasi lapangan.
 8. **Pemetaan status adalah desain aplikasi.** Label `optimal_tanam`, `tunggu`, dan `tidak_disarankan` merupakan bentuk operasional untuk antarmuka MyFarmer.
-9. **AI tidak memvalidasi keputusan.** Groq hanya mengubah hasil deterministik menjadi ringkasan; kebenaran agronomis tetap bergantung pada rule, kualitas data, dan validasi lapangan.
+9. **MT1 tidak mendeteksi anomali di dalam rentang.** Guard kalender mencegah rekomendasi di luar MT1, tetapi lonjakan hujan yang terjadi di dalam MT1 masih bergantung pada kriteria CH dan HH.
+10. **AI tidak memvalidasi keputusan.** Groq hanya mengubah hasil deterministik menjadi ringkasan; kebenaran agronomis tetap bergantung pada rule, kualitas data, dan validasi lapangan.
 
 ## 14. Validasi Perangkat Lunak
 
@@ -287,7 +311,8 @@ Pengujian otomatis mencakup:
 - status `tunggu` dan `tidak_disarankan`;
 - data dasarian yang belum lengkap;
 - urutan kronologis lintas tahun;
-- validasi lima parameter melalui API;
+- guard MT1 di dalam dan di luar rentang serta batas awal lintas tahun;
+- validasi sembilan parameter melalui API;
 - seeder dan migration data rule lama;
 - batas definisi HH pada CH harian 0,4 mm dan 0,5 mm.
 

@@ -88,6 +88,42 @@ class MediaKontenTest extends TestCase
         $this->assertDatabaseCount('konten_landing_page', 0);
     }
 
+    public function test_url_sumber_opsional_dan_dapat_dikosongkan_saat_edit(): void
+    {
+        $poster = $this->withToken($this->token)->post('/api/admin/konten', [
+            'judul' => 'Poster Tanpa Sumber',
+            'tipe' => 'poster',
+            'file_media' => UploadedFile::fake()->image('poster-tanpa-sumber.png'),
+            'is_active' => '1',
+        ]);
+
+        $poster->assertCreated()
+            ->assertJsonPath('data.url_sumber', null);
+
+        $pdf = $this->withToken($this->token)->post('/api/admin/konten', [
+            'judul' => 'PDF Dengan Sumber',
+            'tipe' => 'pdf',
+            'file_media' => UploadedFile::fake()->createWithContent(
+                'panduan-dengan-sumber.pdf',
+                "%PDF-1.4\n1 0 obj\n<<>>\nendobj\n%%EOF"
+            ),
+            'url_sumber' => 'https://example.com/panduan',
+            'is_active' => '1',
+        ])->assertCreated();
+
+        $this->withToken($this->token)->post('/api/admin/konten/'.$pdf->json('data.id'), [
+            '_method' => 'PUT',
+            'url_sumber' => '',
+        ])
+            ->assertOk()
+            ->assertJsonPath('data.url_sumber', null);
+
+        $this->getJson('/api/publik/media')
+            ->assertOk()
+            ->assertJsonPath('data.poster.0.url_sumber', null)
+            ->assertJsonPath('data.pdf.0.url_sumber', null);
+    }
+
     public function test_publik_hanya_menerima_media_aktif_dengan_urutan_benar(): void
     {
         $this->buatMedia('Sorotan Kedua', 'sorotan', 20, true);

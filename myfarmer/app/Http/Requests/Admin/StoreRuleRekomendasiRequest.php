@@ -33,6 +33,10 @@ class StoreRuleRekomendasiRequest extends FormRequest
             'parameter.total_alternatif_mm' => ['required', 'numeric', 'min:0'],
             'parameter.pakai_kriteria_hari_hujan' => ['required', 'boolean'],
             'parameter.min_hari_hujan_dasarian' => ['required', 'integer', 'min:1', 'max:11'],
+            'parameter.mt1_bulan_mulai' => ['required', 'integer', 'min:1', 'max:12'],
+            'parameter.mt1_dasarian_mulai' => ['required', 'integer', 'min:1', 'max:3'],
+            'parameter.mt1_bulan_selesai' => ['required', 'integer', 'min:1', 'max:12'],
+            'parameter.mt1_dasarian_selesai' => ['required', 'integer', 'min:1', 'max:3'],
             'is_active' => ['sometimes', 'boolean'],
         ];
     }
@@ -63,6 +67,22 @@ class StoreRuleRekomendasiRequest extends FormRequest
             'parameter.min_hari_hujan_dasarian.integer' => 'min_hari_hujan_dasarian harus berupa bilangan bulat.',
             'parameter.min_hari_hujan_dasarian.min' => 'min_hari_hujan_dasarian minimal 1.',
             'parameter.min_hari_hujan_dasarian.max' => 'min_hari_hujan_dasarian maksimal 11.',
+            'parameter.mt1_bulan_mulai.required' => 'Bulan mulai MT1 wajib diisi.',
+            'parameter.mt1_bulan_mulai.integer' => 'Bulan mulai MT1 harus berupa bilangan bulat.',
+            'parameter.mt1_bulan_mulai.min' => 'Bulan mulai MT1 minimal 1.',
+            'parameter.mt1_bulan_mulai.max' => 'Bulan mulai MT1 maksimal 12.',
+            'parameter.mt1_dasarian_mulai.required' => 'Dasarian mulai MT1 wajib diisi.',
+            'parameter.mt1_dasarian_mulai.integer' => 'Dasarian mulai MT1 harus berupa bilangan bulat.',
+            'parameter.mt1_dasarian_mulai.min' => 'Dasarian mulai MT1 minimal 1.',
+            'parameter.mt1_dasarian_mulai.max' => 'Dasarian mulai MT1 maksimal 3.',
+            'parameter.mt1_bulan_selesai.required' => 'Bulan selesai MT1 wajib diisi.',
+            'parameter.mt1_bulan_selesai.integer' => 'Bulan selesai MT1 harus berupa bilangan bulat.',
+            'parameter.mt1_bulan_selesai.min' => 'Bulan selesai MT1 minimal 1.',
+            'parameter.mt1_bulan_selesai.max' => 'Bulan selesai MT1 maksimal 12.',
+            'parameter.mt1_dasarian_selesai.required' => 'Dasarian selesai MT1 wajib diisi.',
+            'parameter.mt1_dasarian_selesai.integer' => 'Dasarian selesai MT1 harus berupa bilangan bulat.',
+            'parameter.mt1_dasarian_selesai.min' => 'Dasarian selesai MT1 minimal 1.',
+            'parameter.mt1_dasarian_selesai.max' => 'Dasarian selesai MT1 maksimal 3.',
         ];
     }
 

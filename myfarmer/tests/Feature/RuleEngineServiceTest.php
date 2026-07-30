@@ -103,6 +103,37 @@ class RuleEngineServiceTest extends TestCase
     }
 
     /** @test */
+    public function curah_hujan_yang_lulus_di_luar_mt1_tetap_tidak_disarankan(): void
+    {
+        $this->buatRule('Rule guard MT1', false);
+        $target = null;
+
+        foreach ([1, 2, 3] as $dasarianKe) {
+            $target = $this->buatDasarian(2026, 7, $dasarianKe, 60, 4);
+        }
+
+        $hasil = app(RuleEngineService::class)->evaluate($target->id)[0];
+
+        $this->assertSame('tidak_disarankan', $hasil->status_rekomendasi);
+        $this->assertStringContainsString('Kriteria utama curah hujan terpenuhi', $hasil->catatan_teknis);
+        $this->assertStringContainsString('di luar rentang MT1', $hasil->catatan_teknis);
+    }
+
+    /** @test */
+    public function awal_mt1_dapat_memakai_riwayat_hujan_sebelum_rentang(): void
+    {
+        $this->buatRule('Rule batas awal MT1', false);
+        $this->buatDasarian(2025, 10, 2, 50, 3);
+        $this->buatDasarian(2025, 10, 3, 50, 3);
+        $target = $this->buatDasarian(2025, 11, 1, 50, 3);
+
+        $hasil = app(RuleEngineService::class)->evaluate($target->id)[0];
+
+        $this->assertSame('optimal_tanam', $hasil->status_rekomendasi);
+        $this->assertStringContainsString('dalam rentang MT1', $hasil->catatan_teknis);
+    }
+
+    /** @test */
     public function toggle_hari_hujan_memungkinkan_perbandingan_dua_rule(): void
     {
         $ruleDenganHh = $this->buatRule('Rule dengan HH', true);
@@ -186,6 +217,10 @@ class RuleEngineServiceTest extends TestCase
                 'parameter.total_alternatif_mm',
                 'parameter.pakai_kriteria_hari_hujan',
                 'parameter.min_hari_hujan_dasarian',
+                'parameter.mt1_bulan_mulai',
+                'parameter.mt1_dasarian_mulai',
+                'parameter.mt1_bulan_selesai',
+                'parameter.mt1_dasarian_selesai',
             ]);
 
         $responseLengkap = $this->withToken($token)->postJson('/api/admin/rules', [
@@ -196,7 +231,11 @@ class RuleEngineServiceTest extends TestCase
         $responseLengkap->assertCreated()
             ->assertJsonPath('data.parameter.total_alternatif_mm', 150)
             ->assertJsonPath('data.parameter.pakai_kriteria_hari_hujan', true)
-            ->assertJsonPath('data.parameter.min_hari_hujan_dasarian', 3);
+            ->assertJsonPath('data.parameter.min_hari_hujan_dasarian', 3)
+            ->assertJsonPath('data.parameter.mt1_bulan_mulai', 11)
+            ->assertJsonPath('data.parameter.mt1_dasarian_mulai', 1)
+            ->assertJsonPath('data.parameter.mt1_bulan_selesai', 4)
+            ->assertJsonPath('data.parameter.mt1_dasarian_selesai', 2);
     }
 
     /** @test */
@@ -211,6 +250,10 @@ class RuleEngineServiceTest extends TestCase
         $this->assertSame(150, $rule->parameter['total_alternatif_mm']);
         $this->assertTrue($rule->parameter['pakai_kriteria_hari_hujan']);
         $this->assertSame(3, $rule->parameter['min_hari_hujan_dasarian']);
+        $this->assertSame(11, $rule->parameter['mt1_bulan_mulai']);
+        $this->assertSame(1, $rule->parameter['mt1_dasarian_mulai']);
+        $this->assertSame(4, $rule->parameter['mt1_bulan_selesai']);
+        $this->assertSame(2, $rule->parameter['mt1_dasarian_selesai']);
     }
 
     /** @test */
@@ -239,6 +282,38 @@ class RuleEngineServiceTest extends TestCase
         $this->assertSame(3, $rule->parameter['min_hari_hujan_dasarian']);
     }
 
+    /** @test */
+    public function migration_data_melengkapi_parameter_mt1_tanpa_menimpa_nilai_lain(): void
+    {
+        $rule = RuleRekomendasi::create([
+            'nama_rule' => 'Rule sebelum kalender MT1',
+            'deskripsi' => 'Parameter lengkap sebelum MT1.',
+            'parameter' => [
+                'min_curah_hujan_dasarian' => 60,
+                'min_dasarian_berturut' => 3,
+                'total_alternatif_mm' => 180,
+                'pakai_kriteria_hari_hujan' => false,
+                'min_hari_hujan_dasarian' => 3,
+            ],
+            'is_active' => true,
+            'dibuat_oleh' => $this->superAdmin->id,
+            'diubah_oleh' => $this->superAdmin->id,
+        ]);
+
+        $migration = require database_path(
+            'migrations/2026_07_30_000017_add_mt1_parameters_to_rule_rekomendasi.php'
+        );
+        $migration->up();
+        $rule->refresh();
+
+        $this->assertSame(60, $rule->parameter['min_curah_hujan_dasarian']);
+        $this->assertFalse($rule->parameter['pakai_kriteria_hari_hujan']);
+        $this->assertSame(11, $rule->parameter['mt1_bulan_mulai']);
+        $this->assertSame(1, $rule->parameter['mt1_dasarian_mulai']);
+        $this->assertSame(4, $rule->parameter['mt1_bulan_selesai']);
+        $this->assertSame(2, $rule->parameter['mt1_dasarian_selesai']);
+    }
+
     private function buatRule(string $nama, bool $pakaiHariHujan): RuleRekomendasi
     {
         return RuleRekomendasi::create([
@@ -262,6 +337,10 @@ class RuleEngineServiceTest extends TestCase
             'total_alternatif_mm' => 150,
             'pakai_kriteria_hari_hujan' => $pakaiHariHujan,
             'min_hari_hujan_dasarian' => 3,
+            'mt1_bulan_mulai' => 11,
+            'mt1_dasarian_mulai' => 1,
+            'mt1_bulan_selesai' => 4,
+            'mt1_dasarian_selesai' => 2,
         ];
     }
 

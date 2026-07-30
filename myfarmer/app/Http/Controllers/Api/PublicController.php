@@ -16,6 +16,7 @@ use App\Models\KontenLandingPage;
 use App\Models\RingkasanAi;
 use App\Models\RuleRekomendasi;
 use App\Models\StasiunIklim;
+use App\Services\KalenderMt1Service;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 
@@ -43,8 +44,10 @@ class PublicController extends Controller
      * memiliki hasil untuk stasiun default. Jika belum ada hasil evaluasi,
      * gunakan rule aktif paling awal agar batas grafik tetap berasal dari DB.
      */
-    public function grafikCurahHujan(GrafikCurahHujanRequest $request): JsonResponse
-    {
+    public function grafikCurahHujan(
+        GrafikCurahHujanRequest $request,
+        KalenderMt1Service $kalenderMt1Service
+    ): JsonResponse {
         $jumlahPeriode = (int) ($request->validated()['jumlah_periode'] ?? 12);
         $stasiun = StasiunIklim::orderBy('id')->first();
 
@@ -83,6 +86,36 @@ class PublicController extends Controller
         }
 
         $parameter = $rule?->parameter ?? [];
+        $kalenderMt1 = $rule && $kalenderMt1Service->parameterLengkap($parameter)
+            ? [
+                'mulai' => [
+                    'bulan' => (int) $parameter['mt1_bulan_mulai'],
+                    'periode_ke' => (int) $parameter['mt1_dasarian_mulai'],
+                ],
+                'selesai' => [
+                    'bulan' => (int) $parameter['mt1_bulan_selesai'],
+                    'periode_ke' => (int) $parameter['mt1_dasarian_selesai'],
+                ],
+                'label' => $kalenderMt1Service->labelRentang($parameter),
+            ]
+            : null;
+
+        $periode->each(function (DataIklimDasarian $item) use (
+            $kalenderMt1,
+            $kalenderMt1Service,
+            $parameter
+        ): void {
+            $item->setAttribute(
+                'dalam_mt1',
+                $kalenderMt1 === null
+                    ? null
+                    : $kalenderMt1Service->dalamRentang(
+                        $parameter,
+                        (int) $item->bulan,
+                        (int) $item->dasarian_ke
+                    )
+            );
+        });
 
         return $this->successResponse([
             'stasiun' => [
@@ -106,6 +139,7 @@ class PublicController extends Controller
                 'batas_hari_hujan' => isset($parameter['min_hari_hujan_dasarian'])
                     ? (int) $parameter['min_hari_hujan_dasarian']
                     : null,
+                'kalender_mt1' => $kalenderMt1,
             ] : null,
             'jumlah_periode' => $periode->count(),
             'periode' => GrafikCurahHujanResource::collection($periode)->resolve($request),
@@ -158,12 +192,12 @@ class PublicController extends Controller
      * Mengambil hasil rekomendasi terbaru berdasarkan generated_at,
      * dengan relasi ke data dasarian dan nama rule.
      */
-    public function rekomendasiTerkini(): JsonResponse
+    public function rekomendasiTerkini(KalenderMt1Service $kalenderMt1Service): JsonResponse
     {
         $rekomendasi = HasilRekomendasi::with([
             'dasarian:id,stasiun_id,tahun,bulan,dasarian_ke,total_curah_hujan_mm,status_musim',
             'dasarian.stasiun:id,nama_stasiun',
-            'rule:id,nama_rule',
+            'rule:id,nama_rule,parameter',
         ])
             ->orderBy('generated_at', 'desc')
             ->first();
@@ -171,6 +205,31 @@ class PublicController extends Controller
         if (! $rekomendasi) {
             return $this->successResponse(null, 'Belum ada hasil rekomendasi.');
         }
+
+        $parameter = $rekomendasi->rule?->parameter ?? [];
+        $kalenderMt1 = null;
+
+        if (
+            $rekomendasi->dasarian
+            && $kalenderMt1Service->parameterLengkap($parameter)
+        ) {
+            $dalamMt1 = $kalenderMt1Service->dalamRentang(
+                $parameter,
+                (int) $rekomendasi->dasarian->bulan,
+                (int) $rekomendasi->dasarian->dasarian_ke
+            );
+
+            $kalenderMt1 = [
+                'dalam_mt1' => $dalamMt1,
+                'keterangan' => $kalenderMt1Service->keteranganRekomendasi(
+                    $dalamMt1,
+                    (string) $rekomendasi->status_rekomendasi
+                ),
+                'rentang' => $kalenderMt1Service->labelRentang($parameter),
+            ];
+        }
+
+        $rekomendasi->setAttribute('kalender_mt1', $kalenderMt1);
 
         return $this->successResponse(
             new RekomendasiPublicResource($rekomendasi),

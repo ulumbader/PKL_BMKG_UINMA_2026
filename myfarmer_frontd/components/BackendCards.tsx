@@ -13,6 +13,11 @@ type RecommendationData = {
   status_rekomendasi: string;
   label_rekomendasi: string;
   tanggal_evaluasi: string;
+  kalender_mt1?: {
+    dalam_mt1: boolean;
+    keterangan: string;
+    rentang: string;
+  } | null;
   rule?: { nama?: string };
 };
 
@@ -103,6 +108,12 @@ function statusClass(status: string) {
   return "text-gray-600 bg-gray-50 border-gray-200";
 }
 
+function seasonContextClass(data: RecommendationData) {
+  if (!data.kalender_mt1?.dalam_mt1) return "text-gray-700 bg-gray-50 border-gray-200";
+  if (data.status_rekomendasi === "optimal_tanam") return "text-green-700 bg-green-50 border-green-200";
+  return "text-amber-700 bg-amber-50 border-amber-200";
+}
+
 export function useBackendCards() {
   const recommendation = usePublicData<RecommendationData>("/publik/rekomendasi-terkini");
   const summary = usePublicData<SummaryData>("/publik/ringkasan-terkini");
@@ -127,6 +138,14 @@ export function useBackendCards() {
                 {recommendation.data.label_rekomendasi}
               </span>
             </div>
+            {recommendation.data.kalender_mt1 && (
+              <div
+                className={`mb-4 self-start rounded-xl border px-3 py-1.5 text-sm font-medium leading-snug ${seasonContextClass(recommendation.data)}`}
+                title={`Rentang MT1: ${recommendation.data.kalender_mt1.rentang}`}
+              >
+                {recommendation.data.kalender_mt1.keterangan}
+              </div>
+            )}
             <div className="mt-auto grid grid-cols-2 gap-4 text-sm">
               <div>
                 <div className="text-xs text-[#a9a9b0]">Evaluasi</div>

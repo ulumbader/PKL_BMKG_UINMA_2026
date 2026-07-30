@@ -8,6 +8,106 @@ Format tanggal: YYYY-MM-DD.
 
 ## [Unreleased]
 
+## [Tahap 32] - URL Sumber Konten Media Opsional - 2026-07-30
+### Ditambahkan
+- Pengujian regresi untuk pembuatan poster tanpa URL sumber dan pengosongan URL PDF saat edit.
+
+### Diubah
+- Validasi create dan update konten menerima `url_sumber` kosong untuk poster maupun PDF, tetapi tetap menolak URL non-HTTP/HTTPS ketika diisi.
+- Dokumentasi API menandai URL sumber sebagai field opsional dan menjelaskan perilaku tombol sumber pada landing page.
+
+### File Terkait
+- `app/Http/Requests/Admin/StoreKontenLandingPageRequest.php`
+- `app/Http/Requests/Admin/UpdateKontenLandingPageRequest.php`
+- `tests/Feature/MediaKontenTest.php`
+- `../API_DOCUMENTATION.md`
+- `CHANGELOG.md`
+
+### Catatan
+- Tidak ada perubahan skema database; kolom `url_sumber` sudah nullable.
+- Endpoint publik tetap mengirim `url_sumber: null` ketika kosong sehingga frontend dapat menyembunyikan tombol sumber.
+- Verifikasi berhasil: 64 test backend dengan 240 assertion, enam test khusus media dengan 48 assertion, Laravel Pint, pemeriksaan syntax PHP, dan `git diff --check` lulus.
+
+## [Tahap 31] - Pembatalan Konteks MT1 pada Ringkasan AI - 2026-07-30
+### Dihapus
+- Pengiriman status dan rentang MT1 secara eksplisit ke `GroqService`.
+- Pengujian khusus integrasi MT1 pada prompt dan proses generate ringkasan AI.
+
+### Diubah
+- `RingkasanAiController` kembali mengirim status rekomendasi, catatan teknis, dan nama rule tanpa struktur `kalender_mt1`.
+- Prompt serta ringkasan fallback `GroqService` dikembalikan ke perilaku sebelum integrasi kalender musim tanam.
+
+### File Terkait
+- `app/Http/Controllers/Api/RingkasanAiController.php`
+- `app/Services/GroqService.php`
+- `tests/Unit/GroqServiceTest.php`
+- `tests/Feature/RingkasanAiMt1Test.php`
+- `CHANGELOG.md`
+
+### Catatan
+- Pembatalan hanya berlaku pada integrasi AI. Guard MT1 di rule engine, konfigurasi admin, penanda grafik, dan keterangan card rekomendasi tetap dipertahankan.
+- Groq masih menerima status rekomendasi dan catatan teknis seperti sebelum perubahan, tetapi tidak menerima status kalender MT1 sebagai field khusus.
+- Verifikasi setelah pembatalan berhasil: 63 test backend dengan 232 assertion, pemeriksaan syntax PHP, dan `git diff --check` lulus.
+
+## [Tahap 30] - Konteks MT1 pada Rekomendasi Publik - 2026-07-30
+### Ditambahkan
+- Informasi `kalender_mt1` pada endpoint rekomendasi terkini, meliputi posisi periode, keterangan sederhana untuk petani, dan rentang MT1 aktif.
+- Feature test untuk kondisi optimal di dalam MT1, belum optimal di dalam MT1, dan hasil historis di luar MT1.
+
+### Diubah
+- Endpoint rekomendasi terkini memuat parameter kalender dari rule terkait dan menentukan konteks MT1 melalui `KalenderMt1Service`.
+- Dokumentasi kontrak endpoint rekomendasi publik diselaraskan dengan informasi kalender baru.
+
+### File Terkait
+- `app/Http/Controllers/Api/PublicController.php`
+- `app/Http/Resources/RekomendasiPublicResource.php`
+- `app/Services/KalenderMt1Service.php`
+- `tests/Feature/PublicRekomendasiTerkiniTest.php`
+- `../API_DOCUMENTATION.md`
+- `CHANGELOG.md`
+
+### Catatan
+- Hasil rule engine tetap menjadi status utama; keterangan kalender hanya memberikan konteks apakah periode berada di dalam MT1.
+- Jika konfigurasi MT1 pada rule belum lengkap, endpoint mengirim `kalender_mt1: null` agar tetap kompatibel dengan data lama.
+- Verifikasi berhasil: 63 test backend dengan 232 assertion, Laravel Pint, pemeriksaan syntax PHP, respons API aktual, dan `git diff --check` lulus.
+
+## [Tahap 29] - Guard Kalender Musim Tanam Pertama - 2026-07-30
+### Ditambahkan
+- `KalenderMt1Service` untuk memeriksa rentang MT1 secara inklusif dan mendukung rentang lintas tahun.
+- Migration data yang melengkapi parameter JSON rule existing dengan awal November periode 1 dan akhir April periode 2 tanpa mengubah skema tabel.
+- Pengujian guard MT1 untuk hujan yang lulus di luar musim, batas awal yang memakai riwayat sebelum MT1, validasi API, migration data, serta penanda periode grafik.
+
+### Diubah
+- `RuleEngineService` hanya menghasilkan `optimal_tanam` ketika kriteria CH/HH lulus dan dasarian target berada dalam MT1; di luar MT1 menghasilkan `tidak_disarankan` dengan alasan teknis.
+- Form Request, seeder, endpoint grafik publik, dokumentasi API, rule base, dan spesifikasi guard diselaraskan dengan empat parameter MT1 yang dapat dikonfigurasi.
+- Endpoint grafik mengirim konfigurasi kalender dan nilai `dalam_mt1` untuk setiap periode agar frontend tidak menghitung rentang secara mandiri.
+
+### File Terkait
+- `app/Services/KalenderMt1Service.php`
+- `app/Services/RuleEngineService.php`
+- `app/Http/Requests/Admin/StoreRuleRekomendasiRequest.php`
+- `app/Http/Requests/Admin/UpdateRuleRekomendasiRequest.php`
+- `app/Http/Controllers/Api/PublicController.php`
+- `app/Http/Resources/GrafikCurahHujanResource.php`
+- `database/migrations/2026_07_30_000017_add_mt1_parameters_to_rule_rekomendasi.php`
+- `database/seeders/RuleRekomendasiSeeder.php`
+- `tests/Feature/RuleEngineServiceTest.php`
+- `tests/Feature/PublicGrafikCurahHujanTest.php`
+- `../API_DOCUMENTATION.md`
+- `../RULE_BASE.md`
+- `../KNOWLEDGE_BASE.md`
+- `../flowchart_rule_engine_onset_tanam.md`
+- `../diagram_data_flow_tiga_layer_data.md`
+- `../diagram_erd.md`
+- `../RULE_SPEC_kalender_musim_tanam_guard.md`
+- `CHANGELOG.md`
+
+### Catatan
+- Migration development sudah diterapkan. Lima histori rule aktif di luar MT1 (hasil ID 56, 57, 58, 65, dan 72) dievaluasi ulang menjadi `tidak_disarankan`; periode terbaru hasil ID 78 tetap `optimal_tanam`.
+- Ringkasan AI ID 4 yang terkait hasil ID 65 masih berstatus draft dan harus dibuat ulang sebelum dipublikasikan karena hasil dasariannya berubah.
+- Audit akhir terhadap 36 hasil rule aktif menemukan nol status yang tidak konsisten.
+- Verifikasi berhasil: 62 test backend dengan 223 assertion, Laravel Pint pada sepuluh file, migration, route, dan respons API aktual 36 periode lulus.
+
 ## [Tahap 28] - Penyempurnaan Urutan Kriteria Rule Engine - 2026-07-30
 ### Ditambahkan
 - Pengujian regresi untuk kasus dasarian ID 33 dengan CH `38,4 + 49,2 + 268,6 = 356,2 mm` yang harus lulus melalui kriteria alternatif.

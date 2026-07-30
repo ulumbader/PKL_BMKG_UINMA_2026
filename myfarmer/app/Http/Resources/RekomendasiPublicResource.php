@@ -22,14 +22,15 @@ class RekomendasiPublicResource extends JsonResource
     {
         return [
             'status_rekomendasi' => $this->status_rekomendasi,
-            'label_rekomendasi'  => $this->getLabelRekomendasi(),
-            'tanggal_evaluasi'   => $this->generated_at?->format('Y-m-d H:i'),
+            'label_rekomendasi' => $this->getLabelRekomendasi(),
+            'tanggal_evaluasi' => $this->generated_at?->format('Y-m-d H:i'),
+            'kalender_mt1' => $this->getAttribute('kalender_mt1'),
             'rule' => $this->whenLoaded('rule', fn () => [
                 'nama' => $this->rule->nama_rule,
             ]),
             'dasarian' => $this->whenLoaded('dasarian', fn () => [
-                'tahun'       => $this->dasarian->tahun,
-                'bulan'       => $this->dasarian->bulan,
+                'tahun' => $this->dasarian->tahun,
+                'bulan' => $this->dasarian->bulan,
                 'dasarian_ke' => $this->dasarian->dasarian_ke,
                 'total_curah_hujan_mm' => $this->dasarian->total_curah_hujan_mm,
                 'status_musim' => $this->dasarian->status_musim,
@@ -46,10 +47,10 @@ class RekomendasiPublicResource extends JsonResource
     private function getLabelRekomendasi(): string
     {
         return match ($this->status_rekomendasi) {
-            'optimal_tanam'    => 'Waktu yang baik untuk menanam padi',
-            'tunggu'           => 'Belum waktunya, pantau terus cuaca',
+            'optimal_tanam' => 'Waktu yang baik untuk menanam padi',
+            'tunggu' => 'Belum waktunya, pantau terus cuaca',
             'tidak_disarankan' => 'Belum disarankan untuk menanam',
-            default            => $this->status_rekomendasi,
+            default => $this->status_rekomendasi,
         };
     }
 }

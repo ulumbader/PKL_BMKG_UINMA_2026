@@ -35,7 +35,7 @@ class StoreKontenLandingPageRequest extends FormRequest
                 ? ['nullable', File::types(['jpg', 'jpeg', 'png', 'webp'])->max(5 * 1024)]
                 : ['prohibited'],
             'url_sumber' => [
-                in_array($tipe, ['poster', 'pdf'], true) ? 'required' : 'nullable',
+                'nullable',
                 'string',
                 'max:2048',
                 $this->httpUrlRule(),
@@ -102,7 +102,6 @@ class StoreKontenLandingPageRequest extends FormRequest
             'tipe.in' => 'Tipe konten tidak didukung.',
             'file_media.required' => 'File media wajib diunggah.',
             'file_media.prohibited' => 'File media tidak boleh diunggah untuk konten teks.',
-            'url_sumber.required' => 'URL sumber wajib diisi.',
             'is_active.boolean' => 'Status aktif harus berupa true/false.',
             'urutan_tampil.integer' => 'Urutan tampil harus berupa angka.',
             'urutan_tampil.min' => 'Urutan tampil tidak boleh negatif.',
