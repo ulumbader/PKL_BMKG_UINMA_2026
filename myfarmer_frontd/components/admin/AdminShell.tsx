@@ -6,7 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 
-import { AdminIcon } from "@/components/admin/AdminUI";
+import { AdminIcon, ConfirmDialog } from "@/components/admin/AdminUI";
 import { Button, Spinner } from "@/components/ui";
 import { useAuth } from "@/context/AuthContext";
 
@@ -43,6 +43,14 @@ export function AdminShell({ children }: { children: ReactNode }) {
   const { isReady, isAuthenticated, logout, nama_role, user } = useAuth();
   const isLoginRoute = pathname === "/admin/login";
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
+
+  async function handleLogout() {
+    setLoggingOut(true);
+    await logout();
+    router.replace("/admin/login");
+  }
 
   useEffect(() => {
     const closeSidebar = window.setTimeout(() => setSidebarOpen(false), 0);
@@ -118,7 +126,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
         </nav>
 
         <div className="border-t border-border p-3">
-          <Button type="button" variant="secondary" size="sm" className="w-full" onClick={() => logout().then(() => router.replace("/admin/login"))}>
+          <Button type="button" variant="secondary" size="sm" className="w-full" onClick={() => setLogoutDialogOpen(true)}>
             <AdminIcon name="logout" className="size-4" />
             Keluar
           </Button>
@@ -142,6 +150,17 @@ export function AdminShell({ children }: { children: ReactNode }) {
         </nav>
         <div className="mx-auto w-full max-w-[1480px]">{children}</div>
       </main>
+
+      <ConfirmDialog
+        open={logoutDialogOpen}
+        title="Keluar dari panel admin?"
+        confirmLabel="Keluar"
+        busy={loggingOut}
+        destructive={false}
+        showNotice={false}
+        onCancel={() => setLogoutDialogOpen(false)}
+        onConfirm={handleLogout}
+      />
     </div>
   );
 }

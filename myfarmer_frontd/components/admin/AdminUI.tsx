@@ -294,23 +294,25 @@ export function ConfirmDialog({
   confirmLabel = "Konfirmasi",
   busy = false,
   destructive = true,
+  showNotice = true,
   onCancel,
   onConfirm,
 }: {
   open: boolean;
   title: string;
-  description: string;
+  description?: string;
   confirmLabel?: string;
   busy?: boolean;
   destructive?: boolean;
+  showNotice?: boolean;
   onCancel: () => void;
   onConfirm: () => void | Promise<void>;
 }) {
   return (
     <Modal open={open} onClose={busy ? () => undefined : onCancel} title={title} description={description} size="sm">
-      <Alert variant={destructive ? "warning" : "info"} className="mb-5">
+      {showNotice ? <Alert variant={destructive ? "warning" : "info"} className="mb-5">
         Aksi ini perlu konfirmasi sebelum dilanjutkan.
-      </Alert>
+      </Alert> : null}
       <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
         <Button type="button" variant="secondary" disabled={busy} onClick={onCancel}>Batal</Button>
         <Button type="button" variant={destructive ? "danger" : "primary"} disabled={busy} onClick={onConfirm}>{busy ? "Memproses..." : confirmLabel}</Button>

@@ -8,6 +8,27 @@ Format tanggal: YYYY-MM-DD.
 
 ## [Unreleased]
 
+## [Tahap 33] - Akurasi Fakta Ringkasan AI - 2026-07-31
+### Ditambahkan
+- Unit test prompt Groq untuk memastikan data periode terbaru dibedakan dari total jendela evaluasi.
+
+### Diubah
+- Prompt Groq memberi label eksplisit pada cakupan CH dan HH periode terbaru serta memisahkannya dari catatan evaluasi beberapa periode.
+- Instruksi akurasi melarang perubahan angka, konversi dasarian menjadi minggu, dan kesimpulan mengenai kelembapan tanah atau data lain yang tidak tersedia.
+- Kalimat fakta periode terbaru dibentuk secara deterministik oleh backend dan diwajibkan menjadi pembuka ringkasan tanpa perubahan angka.
+- Temperature Groq diturunkan dari `0.7` menjadi `0.2` agar ringkasan lebih konsisten dan faktual.
+- Parameter output Groq diperbarui dari `max_tokens` menjadi `max_completion_tokens` 1024; respons yang terpotong tidak digunakan dan dialihkan ke ringkasan fallback deterministik.
+
+### File Terkait
+- `app/Services/GroqService.php`
+- `tests/Unit/GroqServicePromptTest.php`
+- `CHANGELOG.md`
+
+### Catatan
+- Perubahan tidak mengubah rule engine, struktur database, controller, maupun arsitektur integrasi AI.
+- Verifikasi berhasil: 66 test dengan 253 assertion, dua test khusus prompt/fallback dengan 13 assertion, Laravel Pint, pemeriksaan syntax PHP, dan `git diff --check` lulus.
+- Uji Groq aktual untuk kasus hasil rekomendasi ID 84 membedakan 196,8 mm pada periode terbaru dari total 289,2 mm beberapa periode, menghasilkan respons lengkap, dan tidak menyimpan data uji ke database.
+
 ## [Tahap 32] - URL Sumber Konten Media Opsional - 2026-07-30
 ### Ditambahkan
 - Pengujian regresi untuk pembuatan poster tanpa URL sumber dan pengosongan URL PDF saat edit.

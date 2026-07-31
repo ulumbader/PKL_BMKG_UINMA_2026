@@ -152,6 +152,7 @@ export default function Page() {
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [pendingDelete, setPendingDelete] = useState<ClimateRow | null>(null);
 
+  const [importOpen, setImportOpen] = useState(false);
   const [importStationId, setImportStationId] = useState("");
   const [importFile, setImportFile] = useState<File | null>(null);
   const [importErrors, setImportErrors] = useState<FieldErrors>({});
@@ -235,11 +236,21 @@ export default function Page() {
     setFormOpen(true);
   }
 
+  function openImportForm() {
+    setImportStationId("");
+    setImportFile(null);
+    setImportErrors({});
+    setImportMessage("");
+    setImportResult(null);
+    setFileInputKey((value) => value + 1);
+    setImportOpen(true);
+  }
+
   function openEditForm(row: ClimateRow) {
     setEditing(row);
     setForm({
       stasiun_id: String(row.stasiun_id),
-      tanggal: row.tanggal,
+      tanggal: row.tanggal.slice(0, 10),
       curah_hujan_mm: row.curah_hujan_mm == null ? "" : String(row.curah_hujan_mm),
       kode_status: row.kode_status || "normal",
     });
@@ -319,6 +330,8 @@ export default function Page() {
       const response = await apiPost<ImportResult>("/admin/data-iklim/import", body);
       setImportMessage(response.message);
       setImportResult(response.data.ringkasan ?? null);
+      setNotice(response.message);
+      setImportOpen(false);
       setImportFile(null);
       setFileInputKey((value) => value + 1);
       refreshRows();
@@ -332,7 +345,16 @@ export default function Page() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Data Iklim Harian" description="Kelola observasi curah hujan harian dan import data CSV BMKG." action={<Button type="button" onClick={openCreateForm}>Input Data Manual</Button>} />
+      <PageHeader
+        title="Data Iklim Harian"
+        description="Kelola observasi curah hujan harian dan import data CSV BMKG."
+        action={(
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" onClick={openImportForm}>Import CSV</Button>
+            <Button type="button" onClick={openCreateForm}>Input Data Manual</Button>
+          </div>
+        )}
+      />
 
       <ToastNotice message={notice} onDismiss={() => setNotice("")} />
       {tableError ? <Alert variant="error">{tableError}</Alert> : null}
@@ -477,12 +499,14 @@ export default function Page() {
         <Pagination page={meta.current_page} totalPages={totalPages} total={meta.total} loading={loading} onPageChange={setPage} />
       </Card>
 
-      <Card>
+      <Modal
+        open={importOpen}
+        onClose={importing ? () => undefined : () => setImportOpen(false)}
+        title="Import CSV"
+        description="Upload file CSV curah hujan, maksimal 5MB."
+        size="lg"
+      >
         <form onSubmit={submitImport} className="space-y-4">
-          <div>
-            <h2 className="text-lg font-semibold">Import CSV</h2>
-            <p className="mt-1 text-sm text-muted">Upload file CSV atau TXT BMKG, maksimal 5MB.</p>
-          </div>
           {importMessage ? (
             <Alert variant={importResult ? "success" : "error"}>{importMessage}</Alert>
           ) : null}
@@ -493,8 +517,8 @@ export default function Page() {
               <ImportSummary label="Gagal" value={importResult.gagal ?? 0} />
             </div>
           ) : null}
-          <div className="grid gap-3 md:grid-cols-[1fr_2fr_auto] md:items-start">
-            <Field label="Stasiun" error={importErrors.stasiun_id}>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="Stasiun" error={importErrors.stasiun_id} required>
               <select
                 className={controlClass}
                 disabled={optionsLoading}
@@ -509,7 +533,7 @@ export default function Page() {
                 ))}
               </select>
             </Field>
-            <Field label="File CSV" error={importErrors.file}>
+            <Field label="File CSV" error={importErrors.file} required>
               <input
                 key={fileInputKey}
                 accept=".csv,.txt,text/csv,text/plain"
@@ -518,13 +542,18 @@ export default function Page() {
                 onChange={(event) => setImportFile(event.target.files?.[0] ?? null)}
               />
             </Field>
-            <Button type="submit" disabled={importing} className="md:mt-6">
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="secondary" disabled={importing} onClick={() => setImportOpen(false)}>
+              {importResult ? "Tutup" : "Batal"}
+            </Button>
+            <Button type="submit" disabled={importing}>
               {importing ? <Spinner className="mr-2 size-4" label="Mengimport" /> : null}
-              Import
+              Import CSV
             </Button>
           </div>
         </form>
-      </Card>
+      </Modal>
 
       <Modal open={formOpen} onClose={() => setFormOpen(false)} title={editing ? "Edit Data Iklim" : "Input Data Manual"} description="Lengkapi stasiun, tanggal, curah hujan, dan status observasi.">
             <form onSubmit={submitClimate} className="space-y-4">

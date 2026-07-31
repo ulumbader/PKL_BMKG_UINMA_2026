@@ -9,6 +9,72 @@ Format tanggal: YYYY-MM-DD.
 
 ## [Unreleased]
 
+## [Tahap 52] - Penyederhanaan Dialog Keluar - 2026-08-01
+### Diubah
+- Teks penjelasan dan pemberitahuan generik dihapus dari dialog konfirmasi keluar agar tampil lebih ringkas.
+- `ConfirmDialog` mendukung penyembunyian pemberitahuan secara opsional tanpa mengubah tampilan dialog lain.
+
+### File Terkait
+- `components/admin/AdminShell.tsx`
+- `components/admin/AdminUI.tsx`
+- `CHANGELOG.md`
+
+### Catatan
+- Dialog konfirmasi untuk tindakan penghapusan tetap menampilkan penjelasan dan pemberitahuan seperti sebelumnya.
+- Verifikasi TypeScript, pemeriksaan whitespace, dan build produksi Next.js 16.2.10 berhasil; ESLint tanpa error dengan satu warning lama pada `page_backup.tsx`.
+
+## [Tahap 51] - Konfirmasi Keluar Panel Admin - 2026-08-01
+### Diubah
+- Tombol `Keluar` kini membuka dialog konfirmasi sebelum mengakhiri sesi admin.
+- Dialog menampilkan status proses saat logout berlangsung untuk mencegah aksi berulang.
+
+### File Terkait
+- `components/admin/AdminShell.tsx`
+- `CHANGELOG.md`
+
+### Catatan
+- Implementasi menggunakan kembali komponen `ConfirmDialog`; alur autentikasi, endpoint logout, dan arsitektur proyek tidak berubah.
+- Verifikasi TypeScript, pemeriksaan whitespace, dan build produksi Next.js 16.2.10 berhasil; ESLint tanpa error dengan satu warning lama pada `page_backup.tsx`.
+
+## [Tahap 50] - Perbaikan Tanggal Form Edit Data Iklim - 2026-08-01
+### Diubah
+- Nilai tanggal pada form edit Data Iklim dinormalisasi ke format `Y-m-d` agar tetap terisi ketika API mengirim tanggal dalam format ISO lengkap.
+
+### File Terkait
+- `app/admin/data-iklim/page.tsx`
+- `CHANGELOG.md`
+
+### Catatan
+- Perubahan hanya diterapkan saat membuka form edit; endpoint, payload, dan struktur halaman tidak berubah.
+- Verifikasi normalisasi tanggal ISO dan `Y-m-d`, TypeScript, pemeriksaan whitespace, serta build produksi Next.js 16.2.10 berhasil; ESLint tanpa error dengan satu warning lama pada `page_backup.tsx`.
+
+## [Tahap 49] - Tutup Modal Setelah Import Berhasil - 2026-07-31
+### Diubah
+- Modal Import CSV otomatis ditutup setelah backend menyatakan proses import berhasil.
+- Pesan hasil import tetap ditampilkan melalui notifikasi halaman setelah modal tertutup; kegagalan tetap mempertahankan modal agar input dapat diperbaiki.
+
+### File Terkait
+- `app/admin/data-iklim/page.tsx`
+- `CHANGELOG.md`
+
+### Catatan
+- Endpoint, payload, validasi file, dan pemuatan ulang tabel tidak berubah.
+- Verifikasi berhasil: TypeScript, pemeriksaan jalur sukses/error, dan build produksi Next.js 16.2.10 lulus; ESLint tanpa error dengan satu warning lama pada `page_backup.tsx`.
+
+## [Tahap 48] - Modal Import CSV Data Iklim - 2026-07-31
+### Diubah
+- Tombol `Import CSV` dipindahkan ke header halaman Data Iklim, tepat di sebelah kiri tombol `Input Data Manual`.
+- Form import CSV kini ditampilkan dalam modal yang konsisten dengan form input manual, termasuk validasi, status proses, dan ringkasan hasil import.
+- Section Import CSV lama di bawah tabel dihapus tanpa mengubah endpoint maupun batas file 5 MB.
+
+### File Terkait
+- `app/admin/data-iklim/page.tsx`
+- `CHANGELOG.md`
+
+### Catatan
+- Modal mempertahankan pilihan stasiun, upload CSV/TXT, pesan error, dan ringkasan jumlah sukses, dilewati, serta gagal.
+- Verifikasi berhasil: TypeScript, pemeriksaan whitespace, dan build produksi Next.js 16.2.10 lulus; ESLint tanpa error dengan satu warning lama pada `page_backup.tsx`.
+
 ## [Tahap 47] - URL Sumber Konten Opsional - 2026-07-30
 ### Diubah
 - Isian URL sumber pada form poster dan PDF tidak lagi ditandai wajib dan sekarang menjelaskan bahwa alamat bersifat opsional.

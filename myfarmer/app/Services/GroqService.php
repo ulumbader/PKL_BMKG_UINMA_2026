@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Log;
 class GroqService
 {
     private const BASE_URL = 'https://api.groq.com/openai/v1/chat/completions';
+
     private const TIMEOUT = 30;
 
     /**
@@ -42,13 +43,14 @@ class GroqService
     {
         if (empty($this->apiKey)) {
             Log::error('GroqService: GROQ_API_KEY tidak dikonfigurasi di .env');
+
             return $this->fallbackRingkasan($dataDasarian, $dataRekomendasi);
         }
 
         try {
             $response = $this->httpClient->post(self::BASE_URL, [
                 'headers' => [
-                    'Authorization' => 'Bearer ' . $this->apiKey,
+                    'Authorization' => 'Bearer '.$this->apiKey,
                     'Content-Type' => 'application/json',
                 ],
                 'json' => [
@@ -56,25 +58,29 @@ class GroqService
                     'messages' => [
                         [
                             'role' => 'system',
-                            'content' => 'Kamu adalah penasihat pertanian padi yang membantu petani di Kecamatan Karangploso, Kabupaten Malang, Jawa Timur. Gunakan Bahasa Indonesia yang sederhana, hangat, dan mudah dipahami petani.',
+                            'content' => 'Kamu adalah penasihat pertanian padi yang membantu petani di Kecamatan Karangploso, Kabupaten Malang, Jawa Timur. Gunakan Bahasa Indonesia yang sederhana, hangat, dan mudah dipahami petani. Utamakan ketepatan fakta: jangan mengubah angka, mencampur cakupan waktu, atau menyimpulkan data yang tidak diberikan.',
                         ],
                         [
                             'role' => 'user',
                             'content' => $this->buildPrompt($dataDasarian, $dataRekomendasi),
                         ],
                     ],
-                    'temperature' => 0.7,
-                    'max_tokens' => 500,
+                    'temperature' => 0.2,
+                    'max_completion_tokens' => 1024,
                 ],
             ]);
 
             $body = json_decode($response->getBody()->getContents(), true);
-            $text = $body['choices'][0]['message']['content'] ?? null;
+            $choice = $body['choices'][0] ?? [];
+            $text = $choice['message']['content'] ?? null;
+            $finishReason = $choice['finish_reason'] ?? null;
 
-            if (empty($text)) {
-                Log::warning('GroqService: Response Groq tidak mengandung teks.', [
+            if (empty($text) || $finishReason !== 'stop') {
+                Log::warning('GroqService: Response Groq kosong atau tidak selesai.', [
+                    'finish_reason' => $finishReason,
                     'response_body' => $body,
                 ]);
+
                 return $this->fallbackRingkasan($dataDasarian, $dataRekomendasi);
             }
 
@@ -126,26 +132,39 @@ class GroqService
 
         $statusAwam = $statusMap[$statusRekomendasi] ?? $statusRekomendasi;
         $periodeLabel = "Dasarian {$dasarianKe} bulan {$namaBulan} {$tahun}";
+        $kalimatFakta = "Pada periode terbaru, curah hujan tercatat {$totalCH} mm dengan {$hariHujan} hari hujan dari {$hariValid} hari data valid.";
 
         return <<<PROMPT
-Berikut data yang perlu kamu ringkas:
+Berikut data yang perlu kamu ringkas. Perhatikan bahwa data periode terbaru dan catatan evaluasi dapat memiliki cakupan waktu yang berbeda.
 
-=== DATA CURAH HUJAN ===
-- Periode: {$periodeLabel}
+=== FAKTA PERIODE TERBARU ===
+- Periode: {$periodeLabel} saja, bukan total beberapa periode
 - Stasiun: {$namaStasiun}
-- Total curah hujan: {$totalCH} mm
-- Jumlah hari hujan: {$hariHujan} hari
+- Curah hujan periode terbaru: {$totalCH} mm
+- Hari hujan periode terbaru: {$hariHujan} hari
 - Jumlah hari data valid: {$hariValid} hari
 - Kondisi musim: {$statusMusim}
+- Kalimat fakta wajib: {$kalimatFakta}
 
-=== HASIL ANALISIS REKOMENDASI ===
+=== KONTEKS KEPUTUSAN ===
 - Rule yang digunakan: {$namaRule}
 - Kesimpulan: {$statusAwam}
-- Detail teknis: {$catatanTeknis}
+- Catatan evaluasi yang dapat mencakup beberapa periode: {$catatanTeknis}
 
-=== INSTRUKSI ===
+=== ATURAN AKURASI WAJIB ===
+1. Bedakan angka periode terbaru dari total beberapa periode pada catatan evaluasi.
+2. Pertahankan angka sesuai sumber; jangan membulatkan, menjumlahkan, atau menebak angka baru.
+3. Jangan mengubah beberapa dasarian menjadi "beberapa minggu" karena satu dasarian bukan satu minggu.
+4. Jika menyebut total beberapa periode, gunakan hanya total yang tertulis eksplisit pada catatan evaluasi dan sebut sebagai "beberapa periode terakhir".
+5. Nilai hari hujan pada fakta periode terbaru hanya berlaku untuk periode terbaru, bukan seluruh jendela evaluasi.
+6. Jangan menggunakan kata "lembap", "kelembapan", "tanah", "irigasi", atau membuat pernyataan mengenai hasil panen dan prakiraan cuaca karena data tersebut tidak diberikan.
+7. Ikuti kesimpulan rekomendasi yang diberikan tanpa mengubah statusnya.
+8. Gunakan kalimat fakta wajib sebagai kalimat pertama secara persis tanpa mengubah angka maupun susunan faktanya.
+9. Jika catatan evaluasi menyebut "total CH" secara eksplisit, jelaskan angka itu secara terpisah sebagai total curah hujan beberapa periode terakhir tanpa menebak durasinya.
+
+=== TUGAS ===
 Buatlah ringkasan singkat 3-5 kalimat dalam Bahasa Indonesia yang:
-1. Menjelaskan kondisi curah hujan saat ini dengan bahasa sederhana.
+1. Dimulai dengan kalimat fakta wajib, kemudian menjelaskan kondisi curah hujan dengan bahasa sederhana.
 2. Memberikan rekomendasi tanam padi berdasarkan kesimpulan di atas.
 3. Tidak memakai istilah teknis seperti dasarian, threshold, agregasi, atau rule engine.
 4. Terdengar hangat dan mendukung, seperti bicara langsung ke petani.
@@ -170,8 +189,8 @@ PROMPT;
         };
 
         return '[Ringkasan otomatis - AI sedang tidak tersedia] '
-            . "Pada periode {$periodeLabel}, total curah hujan tercatat {$totalCH} mm. "
-            . $pesanRekomendasi;
+            ."Pada periode {$periodeLabel}, total curah hujan tercatat {$totalCH} mm. "
+            .$pesanRekomendasi;
     }
 
     private function getNamaBulan(int $bulan): string
