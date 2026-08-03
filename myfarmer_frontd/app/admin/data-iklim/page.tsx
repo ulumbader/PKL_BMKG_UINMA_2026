@@ -327,7 +327,9 @@ export default function Page() {
     setImporting(true);
 
     try {
-      const response = await apiPost<ImportResult>("/admin/data-iklim/import", body);
+      const response = await apiPost<ImportResult>("/admin/data-iklim/import", body, {
+        signal: AbortSignal.timeout(180_000),
+      });
       setImportMessage(response.message);
       setImportResult(response.data.ringkasan ?? null);
       setNotice(response.message);

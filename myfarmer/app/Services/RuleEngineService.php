@@ -67,7 +67,7 @@ class RuleEngineService
      *   - Semua N dasarian memiliki CH >= min_curah_hujan_dasarian.
      *
      * Kriteria alternatif (hanya diperiksa jika kriteria utama gagal):
-     *   - Total CH seluruh jendela >= total_alternatif_mm.
+     *   - Jika toggle aktif, total CH seluruh jendela >= total_alternatif_mm.
      *
      * Penguatan hari hujan (opsional):
      *   - Jika toggle aktif, semua N dasarian memiliki
@@ -85,6 +85,7 @@ class RuleEngineService
         $minCurahHujan = $parameter['min_curah_hujan_dasarian'] ?? null;
         $minBerturut = $parameter['min_dasarian_berturut'] ?? null;
         $totalAlternatif = $parameter['total_alternatif_mm'] ?? null;
+        $pakaiKriteriaTotalAlternatif = $parameter['pakai_kriteria_total_alternatif'] ?? null;
         $pakaiKriteriaHariHujan = $parameter['pakai_kriteria_hari_hujan'] ?? null;
         $minHariHujan = $parameter['min_hari_hujan_dasarian'] ?? null;
         $mt1BulanMulai = $parameter['mt1_bulan_mulai'] ?? null;
@@ -96,6 +97,7 @@ class RuleEngineService
             $minCurahHujan === null
             || $minBerturut === null
             || $totalAlternatif === null
+            || $pakaiKriteriaTotalAlternatif === null
             || $pakaiKriteriaHariHujan === null
             || $minHariHujan === null
             || $mt1BulanMulai === null
@@ -107,7 +109,8 @@ class RuleEngineService
                 'status' => 'tunggu',
                 'catatan' => "Parameter rule '{$rule->nama_rule}' tidak lengkap. "
                     .'Dibutuhkan: min_curah_hujan_dasarian, min_dasarian_berturut, '
-                    .'total_alternatif_mm, pakai_kriteria_hari_hujan, dan '
+                    .'total_alternatif_mm, pakai_kriteria_total_alternatif, '
+                    .'pakai_kriteria_hari_hujan, dan '
                     .'min_hari_hujan_dasarian, mt1_bulan_mulai, mt1_dasarian_mulai, '
                     .'mt1_bulan_selesai, dan mt1_dasarian_selesai. Parameter saat ini: '
                     .json_encode($parameter, JSON_UNESCAPED_UNICODE),
@@ -117,6 +120,7 @@ class RuleEngineService
         $minCurahHujan = (float) $minCurahHujan;
         $minBerturut = (int) $minBerturut;
         $totalAlternatif = (float) $totalAlternatif;
+        $pakaiKriteriaTotalAlternatif = (bool) $pakaiKriteriaTotalAlternatif;
         $pakaiKriteriaHariHujan = (bool) $pakaiKriteriaHariHujan;
         $minHariHujan = (int) $minHariHujan;
 
@@ -156,7 +160,9 @@ class RuleEngineService
 
         // Kriteria alternatif adalah fallback. Jika kriteria utama sudah lulus,
         // nilai total alternatif tidak ikut menentukan jenis kelulusan.
-        $kondisiAlternatif = ! $kondisiUtama && $totalCurahHujan >= $totalAlternatif;
+        $kondisiAlternatif = $pakaiKriteriaTotalAlternatif
+            && ! $kondisiUtama
+            && $totalCurahHujan >= $totalAlternatif;
 
         $kondisiCurahHujanTerpenuhi = $kondisiUtama || $kondisiAlternatif;
         $jenisKriteriaCurahHujan = $kondisiUtama
@@ -221,22 +227,24 @@ class RuleEngineService
         // Pertahankan semantik status lama: jika periode terkini sudah memenuhi
         // minimum, tunggu konfirmasi jendela; jika belum, tanam tidak disarankan.
         $terkiniMemenuhi = (float) $dasarianTerkini->total_curah_hujan_mm >= $minCurahHujan;
+        $keteranganAlternatifGagal = $pakaiKriteriaTotalAlternatif
+            ? "total CH {$totalCurahHujan}mm masih di bawah minimum alternatif {$totalAlternatif}mm"
+            : 'kriteria total CH alternatif dinonaktifkan';
 
         if ($terkiniMemenuhi) {
             return [
                 'status' => 'tunggu',
                 'catatan' => "Rule '{$rule->nama_rule}': TUNGGU - dasarian terkini memiliki "
-                    ."CH >= {$minCurahHujan}mm, tetapi kriteria utama gagal dan total CH "
-                    ."{$totalCurahHujan}mm masih di bawah minimum alternatif "
-                    ."{$totalAlternatif}mm. Detail kronologis: {$catatanDetail}",
+                    ."CH >= {$minCurahHujan}mm, tetapi kriteria utama gagal dan "
+                    ."{$keteranganAlternatifGagal}. Detail kronologis: {$catatanDetail}",
             ];
         }
 
         return [
             'status' => 'tidak_disarankan',
             'catatan' => "Rule '{$rule->nama_rule}': TIDAK DISARANKAN - dasarian terkini "
-                ."memiliki CH < {$minCurahHujan}mm, kriteria utama gagal, dan total CH "
-                ."{$totalCurahHujan}mm masih di bawah minimum alternatif {$totalAlternatif}mm. "
+                ."memiliki CH < {$minCurahHujan}mm, kriteria utama gagal, dan "
+                ."{$keteranganAlternatifGagal}. "
                 ."Detail kronologis: {$catatanDetail}",
         ];
     }

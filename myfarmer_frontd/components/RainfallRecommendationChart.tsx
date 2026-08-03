@@ -57,6 +57,7 @@ type RainfallChartResponse = {
     batas_curah_hujan_mm: number | null;
     jumlah_periode_berturut: number | null;
     batas_total_alternatif_mm: number | null;
+    kriteria_total_alternatif_aktif: boolean | null;
     kriteria_hari_hujan_aktif: boolean | null;
     batas_hari_hujan: number | null;
     kalender_mt1: {

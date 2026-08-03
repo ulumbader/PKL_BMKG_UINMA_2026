@@ -15,6 +15,8 @@ flowchart TD
 
     C{"Kriteria Utama:<br/>Semua CH dasarian<br/>≥ 50 mm?"}
 
+    T_ALT{"Toggle total CH<br/>alternatif aktif?"}
+
     D{"Kriteria Alternatif:<br/>Total CH jendela<br/>≥ 150 mm?"}
 
     E{"Toggle HH<br/>aktif?"}
@@ -40,7 +42,10 @@ flowchart TD
     B -- Ya --> C
 
     C -- Ya --> E
-    C -- Tidak --> D
+    C -- Tidak --> T_ALT
+
+    T_ALT -- Ya --> D
+    T_ALT -- Tidak --> H_CH
 
     D -- Ya --> E
     D -- Tidak --> H_CH
@@ -70,13 +75,14 @@ flowchart TD
 
 ### 1. Validasi Parameter Rule
 
-Langkah pertama memastikan sembilan parameter rule tersedia dan lengkap sebelum evaluasi dimulai:
+Langkah pertama memastikan sepuluh parameter rule tersedia dan lengkap sebelum evaluasi dimulai:
 
 | Parameter | Tipe | Default | Fungsi |
 |---|---|---|---|
 | `min_curah_hujan_dasarian` | number | 50 mm | Batas minimum CH per dasarian |
 | `min_dasarian_berturut` | integer | 3 | Jumlah dasarian dalam jendela evaluasi |
 | `total_alternatif_mm` | number | 150 mm | Minimum total CH seluruh jendela |
+| `pakai_kriteria_total_alternatif` | boolean | true | Toggle fallback total CH alternatif |
 | `pakai_kriteria_hari_hujan` | boolean | true | Toggle penguatan hari hujan |
 | `min_hari_hujan_dasarian` | integer | 3 hari | Minimum hari hujan per dasarian |
 | `mt1_bulan_mulai` | integer | 11 | Bulan mulai MT1 |
@@ -99,11 +105,11 @@ Kriteria utama memeriksa apakah **seluruh** dasarian dalam jendela evaluasi meme
 Kriteria ini mengadopsi prinsip penentuan awal musim hujan yang umum digunakan BMKG, yaitu curah hujan sekurang-kurangnya 50 mm dalam tiga dasarian berturut-turut (Surmaini & Syahbuddin, 2016).
 
 - **Terpenuhi** → lanjut ke pemeriksaan hari hujan.
-- **Tidak terpenuhi** → lanjut ke kriteria alternatif.
+- **Tidak terpenuhi** → periksa toggle kriteria alternatif.
 
 ### 4. Kriteria Alternatif (Total Curah Hujan Jendela)
 
-Jika kriteria utama tidak terpenuhi, sistem baru memeriksa kriteria alternatif. Jalur alternatif lulus ketika **total** curah hujan seluruh jendela ≥ 150 mm, tanpa syarat minimum tambahan pada dasarian tertentu.
+Jika kriteria utama tidak terpenuhi, sistem memeriksa `pakai_kriteria_total_alternatif`. Saat toggle nonaktif, total jendela dilewati dan sistem langsung memeriksa curah hujan dasarian terbaru. Saat toggle aktif, jalur alternatif lulus ketika **total** curah hujan seluruh jendela ≥ 150 mm, tanpa syarat minimum tambahan pada dasarian tertentu.
 
 Kriteria ini mengakomodasi kondisi distribusi hujan yang tidak merata antar dasarian namun secara akumulatif masih memadai.
 

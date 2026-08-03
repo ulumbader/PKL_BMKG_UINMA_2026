@@ -29,6 +29,7 @@ type RuleParameter = {
   min_curah_hujan_dasarian: number;
   min_dasarian_berturut: number;
   total_alternatif_mm: number;
+  pakai_kriteria_total_alternatif: boolean;
   pakai_kriteria_hari_hujan: boolean;
   min_hari_hujan_dasarian: number;
   mt1_bulan_mulai: number;
@@ -41,6 +42,7 @@ type RuleParameterForm = {
   min_curah_hujan_dasarian: string;
   min_dasarian_berturut: string;
   total_alternatif_mm: string;
+  pakai_kriteria_total_alternatif: boolean;
   pakai_kriteria_hari_hujan: boolean;
   min_hari_hujan_dasarian: string;
   mt1_bulan_mulai: string;
@@ -53,6 +55,7 @@ const defaultParameter: RuleParameterForm = {
   min_curah_hujan_dasarian: "50",
   min_dasarian_berturut: "3",
   total_alternatif_mm: "150",
+  pakai_kriteria_total_alternatif: true,
   pakai_kriteria_hari_hujan: true,
   min_hari_hujan_dasarian: "3",
   mt1_bulan_mulai: "11",
@@ -129,6 +132,9 @@ function makeRuleForm(rule: Rule): RuleForm {
       total_alternatif_mm: String(
         parameter.total_alternatif_mm ?? defaultParameter.total_alternatif_mm,
       ),
+      pakai_kriteria_total_alternatif:
+        parameter.pakai_kriteria_total_alternatif
+        ?? defaultParameter.pakai_kriteria_total_alternatif,
       pakai_kriteria_hari_hujan:
         parameter.pakai_kriteria_hari_hujan ?? defaultParameter.pakai_kriteria_hari_hujan,
       min_hari_hujan_dasarian: String(
@@ -156,6 +162,7 @@ function makePayload(form: RuleForm, isSuperAdmin: boolean) {
     min_curah_hujan_dasarian: Number(form.parameter.min_curah_hujan_dasarian),
     min_dasarian_berturut: Number(form.parameter.min_dasarian_berturut),
     total_alternatif_mm: Number(form.parameter.total_alternatif_mm),
+    pakai_kriteria_total_alternatif: form.parameter.pakai_kriteria_total_alternatif,
     pakai_kriteria_hari_hujan: form.parameter.pakai_kriteria_hari_hujan,
     min_hari_hujan_dasarian: Number(form.parameter.min_hari_hujan_dasarian),
     mt1_bulan_mulai: Number(form.parameter.mt1_bulan_mulai),
@@ -180,6 +187,7 @@ const parameterDisplay: Array<{
 }> = [
   { key: "min_curah_hujan_dasarian", label: "CH minimum", unit: "mm/dasarian" },
   { key: "min_dasarian_berturut", label: "Jendela evaluasi", unit: "dasarian" },
+  { key: "pakai_kriteria_total_alternatif", label: "Kriteria total alternatif" },
   { key: "total_alternatif_mm", label: "Total CH alternatif", unit: "mm" },
   { key: "pakai_kriteria_hari_hujan", label: "Kriteria hari hujan" },
   { key: "min_hari_hujan_dasarian", label: "HH minimum", unit: "hari/dasarian" },
@@ -187,7 +195,9 @@ const parameterDisplay: Array<{
 
 function formatParameterValue(key: keyof RuleParameter, value: RuleParameter[keyof RuleParameter] | undefined, unit?: string) {
   if (value == null) return "-";
-  if (key === "pakai_kriteria_hari_hujan") return value ? "Aktif" : "Nonaktif";
+  if (key === "pakai_kriteria_total_alternatif" || key === "pakai_kriteria_hari_hujan") {
+    return value ? "Aktif" : "Nonaktif";
+  }
   return unit ? `${value} ${unit}` : String(value);
 }
 
@@ -503,8 +513,8 @@ export default function Page() {
                 <div>
                   <h3 className="text-sm font-semibold">Parameter Metodologi AMH</h3>
                   <p className="mt-1 text-xs text-muted">
-                    Kriteria utama dan alternatif memakai curah hujan. Kriteria hari hujan dapat diaktifkan
-                    untuk penguatan metodologi Jawa Timur.
+                    Kriteria utama selalu digunakan. Total curah hujan alternatif dan kriteria hari hujan
+                    dapat diaktifkan sesuai metodologi yang dipakai.
                   </p>
                 </div>
 
@@ -564,15 +574,65 @@ export default function Page() {
                     </div>
                   </Field>
 
+                  <div className="rounded-control border border-border bg-surface p-3 sm:col-span-2">
+                    <div className="flex items-center justify-between gap-4">
+                      <div>
+                        <p className="text-sm font-medium">Gunakan Total Curah Hujan Alternatif</p>
+                        <p className="mt-1 text-xs text-muted">
+                          Jika aktif, minimum total CH diperiksa hanya ketika kriteria utama gagal.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={form.parameter.pakai_kriteria_total_alternatif}
+                        className={[
+                          "relative h-6 w-11 shrink-0 rounded-full border transition-colors",
+                          form.parameter.pakai_kriteria_total_alternatif
+                            ? "border-primary bg-primary"
+                            : "border-border bg-background",
+                        ].join(" ")}
+                        onClick={() => setForm({
+                          ...form,
+                          parameter: {
+                            ...form.parameter,
+                            pakai_kriteria_total_alternatif:
+                              !form.parameter.pakai_kriteria_total_alternatif,
+                          },
+                        })}
+                      >
+                        <span
+                          className={[
+                            "absolute left-0.5 top-0.5 size-4 rounded-full bg-white transition-transform",
+                            form.parameter.pakai_kriteria_total_alternatif
+                              ? "translate-x-5"
+                              : "translate-x-0",
+                          ].join(" ")}
+                        />
+                        <span className="sr-only">
+                          {form.parameter.pakai_kriteria_total_alternatif
+                            ? "Kriteria total alternatif aktif"
+                            : "Kriteria total alternatif nonaktif"}
+                        </span>
+                      </button>
+                    </div>
+                    {formErrors["parameter.pakai_kriteria_total_alternatif"] ? (
+                      <p className="mt-2 text-xs text-danger">
+                        {formErrors["parameter.pakai_kriteria_total_alternatif"]}
+                      </p>
+                    ) : null}
+                  </div>
+
                   <Field
                     label="Total Curah Hujan Alternatif"
-                    hint="Minimum total CH yang diperiksa hanya ketika kriteria utama gagal."
+                    hint="Nilainya tetap disimpan, tetapi hanya dipakai ketika toggle alternatif aktif."
                     error={formErrors["parameter.total_alternatif_mm"]}
                   >
                     <div className="relative">
                       <input
                         required
                         className={`${controlClass} pr-12`}
+                        disabled={!form.parameter.pakai_kriteria_total_alternatif}
                         min="0"
                         step="0.1"
                         type="number"

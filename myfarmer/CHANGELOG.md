@@ -8,6 +8,55 @@ Format tanggal: YYYY-MM-DD.
 
 ## [Unreleased]
 
+## [Tahap 35] - Toggle Total Curah Hujan Alternatif - 2026-08-03
+### Ditambahkan
+- Parameter boolean `pakai_kriteria_total_alternatif` untuk mengaktifkan atau menonaktifkan fallback total CH pada setiap rule.
+- Migration data yang menambahkan toggle default aktif dan memulihkan `total_alternatif_mm` dari CH minimum dikali jumlah dasarian jika key tersebut belum tersedia.
+- Regression test untuk membandingkan hasil fallback aktif/nonaktif, penyimpanan nilai `false` melalui API, migration, dan respons grafik publik.
+
+### Diubah
+- `RuleEngineService` hanya memeriksa total CH alternatif ketika kriteria utama gagal dan toggle alternatif aktif.
+- Catatan teknis menjelaskan ketika fallback total CH dinonaktifkan; kriteria utama, HH opsional, dan guard MT1 tetap berlaku.
+- Form Request, seeder, respons grafik publik, kontrak API, rule base, flowchart, DFD, dan ERD diselaraskan dengan parameter toggle baru.
+
+### File Terkait
+- `app/Services/RuleEngineService.php`
+- `app/Http/Requests/Admin/StoreRuleRekomendasiRequest.php`
+- `app/Http/Requests/Admin/UpdateRuleRekomendasiRequest.php`
+- `app/Http/Controllers/Api/PublicController.php`
+- `database/seeders/RuleRekomendasiSeeder.php`
+- `database/migrations/2026_08_03_000019_add_total_alternatif_toggle_to_rule_rekomendasi.php`
+- `tests/Feature/RuleEngineServiceTest.php`
+- `tests/Feature/PublicGrafikCurahHujanTest.php`
+- `../API_DOCUMENTATION.md`
+- `../RULE_BASE.md`
+- `../flowchart_rule_engine_onset_tanam.md`
+- `../diagram_data_flow_tiga_layer_data.md`
+- `../diagram_erd.md`
+- `CHANGELOG.md`
+
+### Catatan
+- Toggle default aktif agar rule existing mempertahankan perilaku sebelumnya; nilai batas total tetap tersimpan ketika toggle dimatikan.
+- Migration development sudah diterapkan; metadata migration penghapusan alternatif yang sebelumnya direject juga dibersihkan karena file tersebut tidak lagi ada.
+- Verifikasi berhasil: 68 test backend dengan 265 assertion, Laravel Pint, syntax PHP, dan regression test API/migration.
+
+## [Tahap 34] - Optimasi Performa Import CSV (Batch Upsert) - 2026-08-02
+### Diubah
+- `CsvImportService::importFromFile()` sekarang menggunakan **batch `DB::table()->upsert()`** (500 baris per batch) menggantikan per-baris `updateOrCreate()`, mengurangi jumlah query database ~500x.
+- Ditambahkan `set_time_limit(0)` untuk mencegah PHP timeout pada file CSV besar di deployment Railway.
+- Method `processRow()` diganti menjadi `parseRow()` (pure function tanpa side-effect database) + method `flushBatch()` terpisah untuk batch upsert.
+- Import `App\Models\DataIklimHarian` diganti `Illuminate\Support\Facades\DB` karena upsert langsung ke tabel.
+
+### File Terkait
+- `app/Services/CsvImportService.php`
+- `CHANGELOG.md`
+
+### Catatan
+- Tidak ada perubahan skema database, controller, route, maupun arsitektur.
+- Batch upsert mengandalkan unique constraint `(stasiun_id, tanggal)` yang sudah ada di migration.
+- Model `DataIklimHarian` memiliki `UPDATED_AT = null`, maka `created_at` diisi manual di array batch.
+- Verifikasi berhasil: 66 test dengan 253 assertion, syntax PHP clean.
+
 ## [Tahap 33] - Akurasi Fakta Ringkasan AI - 2026-07-31
 ### Ditambahkan
 - Unit test prompt Groq untuk memastikan data periode terbaru dibedakan dari total jendela evaluasi.

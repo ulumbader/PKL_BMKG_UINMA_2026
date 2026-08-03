@@ -293,6 +293,7 @@ Database terdiri dari **14 tabel**, dengan rincian:
       "min_curah_hujan_dasarian": 50,
       "min_dasarian_berturut": 3,
       "total_alternatif_mm": 150,
+      "pakai_kriteria_total_alternatif": true,
       "pakai_kriteria_hari_hujan": true,
       "min_hari_hujan_dasarian": 3,
       "mt1_bulan_mulai": 11,
@@ -306,6 +307,7 @@ Database terdiri dari **14 tabel**, dengan rincian:
   - `min_curah_hujan_dasarian`: minimum CH setiap dasarian untuk kriteria utama.
   - `min_dasarian_berturut`: jumlah dasarian dalam jendela evaluasi.
   - `total_alternatif_mm`: minimum total CH jendela pada kriteria alternatif yang diperiksa setelah kriteria utama gagal.
+  - `pakai_kriteria_total_alternatif`: mengaktifkan atau menonaktifkan fallback total CH alternatif.
   - `pakai_kriteria_hari_hujan`: mengaktifkan atau menonaktifkan penguatan HH untuk keperluan evaluasi metodologi.
   - `min_hari_hujan_dasarian`: minimum HH setiap dasarian ketika penguatan HH aktif.
   - `mt1_bulan_mulai` dan `mt1_dasarian_mulai`: awal rentang MT1.
@@ -693,7 +695,7 @@ Alur data utama sistem mengikuti pola *pipeline* bertahap:
 1. **`stasiun_iklim`** menjadi referensi induk bagi data iklim. Setiap stasiun memiliki banyak data harian dan data dasarian.
 2. **`data_iklim_harian`** (*raw layer*) menyimpan data curah hujan mentah per hari. Data ini bersumber dari input manual admin atau import CSV. Setiap record terikat ke satu stasiun dan (opsional) satu user sebagai pencatat.
 3. **`data_iklim_dasarian`** (*aggregated layer*) merupakan hasil agregasi data harian per periode 10 hari (dasarian). Proses agregasi hanya membaca dari `data_iklim_harian` tanpa mengubah data asli.
-4. **`hasil_rekomendasi`** menyimpan output evaluasi rule engine. Tabel `rule_rekomendasi` mendefinisikan kriteria utama CH berturut-turut, kriteria alternatif berdasarkan total CH, penguatan HH opsional, serta rentang kalender MT1 melalui parameter JSON. Setiap data dasarian dievaluasi terhadap rule yang aktif, menghasilkan status: `optimal_tanam`, `tunggu`, atau `tidak_disarankan`.
+4. **`hasil_rekomendasi`** menyimpan output evaluasi rule engine. Tabel `rule_rekomendasi` mendefinisikan kriteria utama CH berturut-turut, kriteria alternatif berdasarkan total CH yang dapat diaktifkan, penguatan HH opsional, serta rentang kalender MT1 melalui parameter JSON. Setiap data dasarian dievaluasi terhadap rule yang aktif, menghasilkan status: `optimal_tanam`, `tunggu`, atau `tidak_disarankan`.
 5. **`ringkasan_ai`** adalah tahap akhir pipeline — ringkasan bahasa Indonesia yang dihasilkan oleh Groq API berdasarkan hasil rekomendasi. Hubungannya bersifat one-to-one: satu hasil rekomendasi maksimal memiliki satu ringkasan.
 
 ### 6.2. Tabel Pendukung

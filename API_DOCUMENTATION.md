@@ -571,6 +571,7 @@ List semua rule rekomendasi.
         "min_curah_hujan_dasarian": 50,
         "min_dasarian_berturut": 3,
         "total_alternatif_mm": 150,
+        "pakai_kriteria_total_alternatif": true,
         "pakai_kriteria_hari_hujan": true,
         "min_hari_hujan_dasarian": 3,
         "mt1_bulan_mulai": 11,
@@ -608,6 +609,7 @@ Buat rule baru (**super_admin only**, dicek di Form Request authorize).
     "min_curah_hujan_dasarian": 75,
     "min_dasarian_berturut": 3,
     "total_alternatif_mm": 225,
+    "pakai_kriteria_total_alternatif": true,
     "pakai_kriteria_hari_hujan": true,
     "min_hari_hujan_dasarian": 3,
     "mt1_bulan_mulai": 11,
@@ -643,6 +645,7 @@ Update rule rekomendasi.
     "min_curah_hujan_dasarian": 60,
     "min_dasarian_berturut": 3,
     "total_alternatif_mm": 180,
+    "pakai_kriteria_total_alternatif": false,
     "pakai_kriteria_hari_hujan": false,
     "min_hari_hujan_dasarian": 3,
     "mt1_bulan_mulai": 11,
@@ -660,6 +663,7 @@ Semua key di dalam `parameter` wajib dikirim ketika parameter dibuat atau diperb
 | `min_curah_hujan_dasarian` | number | Minimum curah hujan setiap dasarian untuk kriteria utama |
 | `min_dasarian_berturut` | integer | Ukuran jendela dasarian yang dievaluasi |
 | `total_alternatif_mm` | number | Minimum total curah hujan seluruh jendela untuk kriteria alternatif |
+| `pakai_kriteria_total_alternatif` | boolean | Toggle fallback total curah hujan alternatif setelah kriteria utama gagal |
 | `pakai_kriteria_hari_hujan` | boolean | Toggle penguatan kriteria hari hujan Jawa Timur |
 | `min_hari_hujan_dasarian` | integer | Minimum jumlah hari hujan pada setiap dasarian jika toggle aktif |
 | `mt1_bulan_mulai` | integer | Bulan mulai MT1, nilai 1–12 |
@@ -669,7 +673,7 @@ Semua key di dalam `parameter` wajib dikirim ketika parameter dibuat atau diperb
 
 Rentang MT1 bersifat inklusif dan dapat melewati pergantian tahun, misalnya November periode 1 sampai April periode 2.
 
-> Untuk membandingkan metodologi dengan dan tanpa kriteria hari hujan, buat dua record rule dengan parameter yang sama dan nilai toggle berbeda. Jangan hanya mengganti toggle pada satu rule karena evaluasi ulang pasangan `dasarian_id` + `rule_id` akan memperbarui hasil lama.
+> Untuk membandingkan metodologi dengan dan tanpa kriteria total alternatif atau hari hujan, buat dua record rule dengan parameter yang sama dan nilai toggle berbeda. Jangan hanya mengganti toggle pada satu rule karena evaluasi ulang pasangan `dasarian_id` + `rule_id` akan memperbarui hasil lama.
 
 ---
 
@@ -711,7 +715,7 @@ Trigger evaluasi rule engine terhadap satu dasarian.
 Rule membaca jendela dasarian secara kronologis sampai periode yang dipilih:
 
 1. **Kriteria utama:** semua dasarian memiliki curah hujan minimal sesuai `min_curah_hujan_dasarian`.
-2. **Kriteria alternatif:** hanya diperiksa jika kriteria utama gagal; total seluruh jendela harus mencapai `total_alternatif_mm`.
+2. **Kriteria alternatif:** hanya diperiksa jika kriteria utama gagal dan `pakai_kriteria_total_alternatif = true`; total seluruh jendela harus mencapai `total_alternatif_mm`. Ketika toggle nonaktif, total jendela tidak dapat meluluskan evaluasi.
 3. **Penguatan hari hujan:** jika `pakai_kriteria_hari_hujan = true`, setiap dasarian juga wajib mencapai `min_hari_hujan_dasarian`.
 4. **Guard kalender MT1:** dasarian yang sedang direkomendasikan wajib berada dalam rentang awal dan akhir MT1. Di luar rentang, status akhir `tidak_disarankan` meskipun kriteria hujan lulus.
 
@@ -1099,6 +1103,7 @@ GET /api/publik/grafik-curah-hujan?jumlah_periode=12
       "batas_curah_hujan_mm": 50,
       "jumlah_periode_berturut": 3,
       "batas_total_alternatif_mm": 150,
+      "kriteria_total_alternatif_aktif": true,
       "kriteria_hari_hujan_aktif": true,
       "batas_hari_hujan": 3,
       "kalender_mt1": {

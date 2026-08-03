@@ -133,6 +133,9 @@ class PublicController extends Controller
                 'batas_total_alternatif_mm' => isset($parameter['total_alternatif_mm'])
                     ? (float) $parameter['total_alternatif_mm']
                     : null,
+                'kriteria_total_alternatif_aktif' => isset($parameter['pakai_kriteria_total_alternatif'])
+                    ? (bool) $parameter['pakai_kriteria_total_alternatif']
+                    : null,
                 'kriteria_hari_hujan_aktif' => isset($parameter['pakai_kriteria_hari_hujan'])
                     ? (bool) $parameter['pakai_kriteria_hari_hujan']
                     : null,

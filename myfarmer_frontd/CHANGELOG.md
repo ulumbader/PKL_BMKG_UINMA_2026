@@ -9,6 +9,37 @@ Format tanggal: YYYY-MM-DD.
 
 ## [Unreleased]
 
+## [Tahap 54] - Toggle Total Curah Hujan Alternatif - 2026-08-03
+### Ditambahkan
+- Toggle aksesibel `Gunakan Total Curah Hujan Alternatif` pada form rule rekomendasi.
+- Status aktif/nonaktif kriteria total alternatif pada ringkasan parameter tabel rule.
+
+### Diubah
+- Payload create/update rule mengirim `pakai_kriteria_total_alternatif` sebagai boolean.
+- Input batas total alternatif dinonaktifkan secara visual ketika fallback tidak digunakan, tetapi nilainya tetap tersimpan agar dapat diaktifkan kembali.
+- Tipe respons grafik publik diselaraskan dengan field `kriteria_total_alternatif_aktif` dari backend.
+
+### File Terkait
+- `app/admin/rules/page.tsx`
+- `components/RainfallRecommendationChart.tsx`
+- `CHANGELOG.md`
+
+### Catatan
+- Nilai awal toggle aktif untuk mempertahankan perilaku rule lama.
+- Verifikasi berhasil: TypeScript, build produksi Next.js 16.2.10, dan ESLint tanpa error; satu warning lama tetap ada pada `page_backup.tsx`.
+
+## [Tahap 53] - Timeout Import CSV Frontend - 2026-08-02
+### Diubah
+- Request import CSV kini menggunakan `AbortSignal.timeout(180_000)` (3 menit) untuk mencegah hanging tanpa batas saat backend memproses file besar di Railway.
+
+### File Terkait
+- `app/admin/data-iklim/page.tsx`
+- `CHANGELOG.md`
+
+### Catatan
+- Sebelumnya `fetch()` tidak punya timeout, sehingga jika koneksi terputus oleh proxy/gateway, browser menampilkan error generik yang membingungkan ("Import CSV gagal") padahal data sudah masuk di backend.
+- Verifikasi TypeScript clean, tidak ada error kompilasi.
+
 ## [Tahap 52] - Penyederhanaan Dialog Keluar - 2026-08-01
 ### Diubah
 - Teks penjelasan dan pemberitahuan generik dihapus dari dialog konfirmasi keluar agar tampil lebih ringkas.

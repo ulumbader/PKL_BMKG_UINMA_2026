@@ -52,6 +52,7 @@ class PublicGrafikCurahHujanTest extends TestCase
                 'min_curah_hujan_dasarian' => 42.5,
                 'min_dasarian_berturut' => 3,
                 'total_alternatif_mm' => 150,
+                'pakai_kriteria_total_alternatif' => true,
                 'pakai_kriteria_hari_hujan' => true,
                 'min_hari_hujan_dasarian' => 4,
                 'mt1_bulan_mulai' => 11,
@@ -92,6 +93,7 @@ class PublicGrafikCurahHujanTest extends TestCase
                         'batas_curah_hujan_mm' => 42.5,
                         'jumlah_periode_berturut' => 3,
                         'batas_total_alternatif_mm' => 150,
+                        'kriteria_total_alternatif_aktif' => true,
                         'kriteria_hari_hujan_aktif' => true,
                         'batas_hari_hujan' => 4,
                         'kalender_mt1' => [

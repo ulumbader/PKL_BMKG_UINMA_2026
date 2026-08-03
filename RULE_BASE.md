@@ -24,7 +24,7 @@ Sumber kebenaran implementasi:
 | AMH | Awal Musim Hujan, yang digunakan sebagai indikator ketersediaan hujan untuk memulai musim tanam. |
 | Jendela evaluasi | Sejumlah dasarian berurutan yang berakhir pada dasarian yang sedang dievaluasi. Nilai default-nya tiga dasarian. |
 | Kriteria utama | Seluruh dasarian dalam jendela memenuhi minimum CH. |
-| Kriteria alternatif | Jalur cadangan yang hanya diperiksa ketika kriteria utama gagal; total CH jendela harus mencapai batas alternatif. |
+| Kriteria alternatif | Jalur cadangan opsional yang hanya diperiksa ketika toggle aktif dan kriteria utama gagal; total CH jendela harus mencapai batas alternatif. |
 | Kriteria HH | Penguatan opsional yang mewajibkan setiap dasarian mencapai minimum jumlah hari hujan. |
 
 ## 3. Landasan Akademis dan Ketertelusuran Keputusan
@@ -106,6 +106,7 @@ Konfigurasi default:
   "min_curah_hujan_dasarian": 50,
   "min_dasarian_berturut": 3,
   "total_alternatif_mm": 150,
+  "pakai_kriteria_total_alternatif": true,
   "pakai_kriteria_hari_hujan": true,
   "min_hari_hujan_dasarian": 3,
   "mt1_bulan_mulai": 11,
@@ -120,6 +121,7 @@ Konfigurasi default:
 | `min_curah_hujan_dasarian` | number | 50 | Batas minimum CH setiap dasarian untuk kriteria utama. |
 | `min_dasarian_berturut` | integer | 3 | Banyaknya dasarian dalam jendela evaluasi. |
 | `total_alternatif_mm` | number | 150 | Minimum total CH seluruh jendela untuk meluluskan kriteria alternatif. |
+| `pakai_kriteria_total_alternatif` | boolean | `true` | Mengaktifkan atau menonaktifkan fallback total CH alternatif. |
 | `pakai_kriteria_hari_hujan` | boolean | `true` | Mengaktifkan atau menonaktifkan penguatan HH. |
 | `min_hari_hujan_dasarian` | integer | 3 | Minimum HH setiap dasarian ketika penguatan HH aktif. |
 | `mt1_bulan_mulai` | integer | 11 | Bulan awal rentang MT1. |
@@ -137,6 +139,7 @@ Misalkan jendela kronologis terdiri atas dasarian `D₁, D₂, ..., Dₙ`, denga
 - `HHᵢ`: jumlah hari hujan pada dasarian ke-i.
 - `CH_min`: `min_curah_hujan_dasarian`.
 - `CH_alt`: `total_alternatif_mm`.
+- `pakai_alt`: `pakai_kriteria_total_alternatif`.
 - `HH_min`: `min_hari_hujan_dasarian`.
 - `dalam_MT1`: posisi dasarian target berada dalam rentang awal dan akhir MT1 secara inklusif.
 
@@ -150,11 +153,12 @@ kondisi_utama = untuk setiap i=1..N, CHᵢ >= CH_min
 
 ### 7.2. Kriteria alternatif
 
-Kriteria alternatif hanya diperiksa jika kriteria utama gagal. Jalur ini terpenuhi jika total CH seluruh jendela mencapai batas alternatif:
+Kriteria alternatif hanya diperiksa jika toggle aktif dan kriteria utama gagal. Jalur ini terpenuhi jika total CH seluruh jendela mencapai batas alternatif:
 
 ```text
 kondisi_alternatif =
-    kondisi_utama = false
+    pakai_alt = true
+    DAN kondisi_utama = false
     DAN jumlah(CH₁..CHₙ) >= CH_alt
 ```
 
@@ -167,7 +171,9 @@ JIKA kondisi_utama terpenuhi:
     is_amh_curah_hujan = true
     jenis_kriteria = utama
 LAINNYA:
-    kondisi_alternatif = jumlah(CH₁..CHₙ) >= CH_alt
+    kondisi_alternatif =
+        pakai_kriteria_total_alternatif
+        DAN jumlah(CH₁..CHₙ) >= CH_alt
     is_amh_curah_hujan = kondisi_alternatif
     jenis_kriteria = alternatif jika kondisi_alternatif terpenuhi
 
@@ -189,7 +195,7 @@ Jika kriteria hujan lulus tetapi dasarian target berada di luar MT1, hasil akhir
 
 ```text
 FUNGSI evaluasiRule(dasarian_target, parameter):
-    validasi kelengkapan sembilan parameter
+    validasi kelengkapan sepuluh parameter
     JIKA parameter tidak lengkap:
         KEMBALIKAN TUNGGU
 
@@ -205,7 +211,7 @@ FUNGSI evaluasiRule(dasarian_target, parameter):
         kondisi_curah_hujan = true
         jenis_kriteria = utama
     LAINNYA:
-        kondisi_alternatif = total CH >= CH_alt
+        kondisi_alternatif = toggle alternatif aktif DAN total CH >= CH_alt
         kondisi_curah_hujan = kondisi_alternatif
         jenis_kriteria = alternatif jika kondisi_alternatif terpenuhi
 
@@ -237,29 +243,30 @@ FUNGSI evaluasiRule(dasarian_target, parameter):
 |---|---|---|
 | Data atau parameter belum lengkap | `tunggu` | Sistem belum memiliki dasar evaluasi yang cukup. |
 | Dasarian target berada di luar kalender MT1 | `tidak_disarankan` | Rekomendasi tanam tidak diberikan meskipun indikator hujan lulus. |
-| Dasarian target berada dalam MT1, kriteria CH utama/alternatif lulus, dan kriteria HH lulus atau dimatikan | `optimal_tanam` | Indikator hujan dan kalender MT1 mendukung awal tanam. |
+| Dasarian target berada dalam MT1, kriteria utama atau alternatif yang aktif lulus, dan kriteria HH lulus atau dimatikan | `optimal_tanam` | Indikator hujan dan kalender MT1 mendukung awal tanam. |
 | Kriteria CH lulus tetapi HH aktif dan gagal | `tunggu` | Akumulasi hujan cukup, tetapi frekuensi hari hujan belum merata. |
-| Kriteria utama/alternatif belum lulus, tetapi CH dasarian terbaru mencapai minimum | `tunggu` | Ada indikasi awal, namun jendela belum memenuhi rule. |
-| Kriteria alternatif gagal dan CH dasarian terbaru di bawah minimum | `tidak_disarankan` | Indikator hujan terkini belum mendukung awal tanam. |
+| Kriteria utama belum lulus dan alternatif gagal atau dimatikan, tetapi CH dasarian terbaru mencapai minimum | `tunggu` | Ada indikasi awal, namun jendela belum memenuhi rule. |
+| Kriteria utama belum lulus, alternatif gagal atau dimatikan, dan CH dasarian terbaru di bawah minimum | `tidak_disarankan` | Indikator hujan terkini belum mendukung awal tanam. |
 
-`catatan_teknis` menyimpan jenis kriteria yang lulus, total CH, status toggle HH, serta rincian CH dan HH setiap dasarian secara kronologis. Catatan ini penting untuk audit dan penjelasan hasil dalam laporan.
+`catatan_teknis` menyimpan jenis kriteria yang lulus, status fallback total alternatif ketika relevan, status toggle HH, serta rincian CH dan HH setiap dasarian secara kronologis. Catatan ini penting untuk audit dan penjelasan hasil dalam laporan.
 
 ## 10. Contoh Perhitungan
 
-Semua contoh menggunakan parameter default dan contoh A-F diasumsikan berada di dalam rentang MT1.
+Semua contoh menggunakan parameter default dan contoh A-G diasumsikan berada di dalam rentang MT1.
 
-| Contoh | CH per dasarian (mm) | HH per dasarian | Toggle HH | Hasil | Alasan |
-|---|---|---|---|---|---|
-| A | `[55, 60, 70]` | `[3, 4, 5]` | Aktif | `optimal_tanam` | Seluruh CH ≥ 50 dan seluruh HH ≥ 3; kriteria utama lulus. |
-| B | `[38.4, 49.2, 268.6]` | `[3, 3, 10]` | Aktif | `optimal_tanam` | Kriteria utama gagal, lalu total CH = 356,2 mm ≥ 150 mm; kriteria alternatif lulus. |
-| C | `[50, 50, 50]` | `[3, 2, 3]` | Aktif | `tunggu` | Kriteria CH lulus, tetapi HH dasarian kedua gagal. |
-| D | `[50, 50, 50]` | `[3, 2, 3]` | Nonaktif | `optimal_tanam` | Kriteria utama lulus dan HH diabaikan. |
-| E | `[60, 30, 50]` | `[3, 3, 3]` | Nonaktif | `tunggu` | Total hanya 140 mm, tetapi CH dasarian terbaru sudah mencapai 50 mm. |
-| F | `[60, 30, 40]` | `[3, 3, 3]` | Nonaktif | `tidak_disarankan` | Total hanya 130 mm dan CH dasarian terbaru di bawah 50 mm. |
+| Contoh | CH per dasarian (mm) | HH per dasarian | Toggle alternatif | Toggle HH | Hasil | Alasan |
+|---|---|---|---|---|---|---|
+| A | `[55, 60, 70]` | `[3, 4, 5]` | Aktif | Aktif | `optimal_tanam` | Seluruh CH ≥ 50 dan seluruh HH ≥ 3; kriteria utama lulus. |
+| B | `[38.4, 49.2, 268.6]` | `[3, 3, 10]` | Aktif | Aktif | `optimal_tanam` | Kriteria utama gagal, lalu total CH = 356,2 mm ≥ 150 mm; kriteria alternatif lulus. |
+| C | `[50, 50, 50]` | `[3, 2, 3]` | Aktif | Aktif | `tunggu` | Kriteria CH lulus, tetapi HH dasarian kedua gagal. |
+| D | `[50, 50, 50]` | `[3, 2, 3]` | Aktif | Nonaktif | `optimal_tanam` | Kriteria utama lulus dan HH diabaikan. |
+| E | `[60, 30, 50]` | `[3, 3, 3]` | Aktif | Nonaktif | `tunggu` | Total hanya 140 mm, tetapi CH dasarian terbaru sudah mencapai 50 mm. |
+| F | `[60, 30, 40]` | `[3, 3, 3]` | Aktif | Nonaktif | `tidak_disarankan` | Total hanya 130 mm dan CH dasarian terbaru di bawah 50 mm. |
+| G | `[0, 0, 150]` | `[0, 0, 3]` | Nonaktif | Nonaktif | `tunggu` | Total 150 mm diabaikan karena toggle alternatif nonaktif; CH terbaru sudah mencapai batas minimum. |
 
 Jika pola contoh A terjadi pada Juli, hasilnya tetap `tidak_disarankan` karena Juli berada di luar MT1 default November I sampai April II.
 
-## 11. Perbandingan dengan dan tanpa Kriteria HH
+## 11. Perbandingan Toggle Alternatif dan Kriteria HH
 
 Untuk kebutuhan eksperimen akademis, perbandingan tidak dilakukan dengan mengubah toggle berulang kali pada satu rule. Tabel `hasil_rekomendasi` menggunakan pasangan `dasarian_id + rule_id`, sehingga evaluasi ulang rule yang sama akan memperbarui hasil sebelumnya.
 
@@ -267,6 +274,8 @@ Gunakan dua record rule aktif:
 
 1. **Rule AMH tanpa HH** dengan `pakai_kriteria_hari_hujan = false`.
 2. **Rule AMH dengan HH Jawa Timur** dengan `pakai_kriteria_hari_hujan = true`.
+
+Pola yang sama berlaku untuk `pakai_kriteria_total_alternatif`: gunakan dua record rule jika hasil dengan dan tanpa fallback total CH perlu dibandingkan tanpa menimpa histori.
 
 Parameter lain harus dibuat sama agar variabel pembeda hanya kriteria HH. Panel admin frontend menyediakan aksi **Bandingkan HH** untuk membuat salinan rule dengan toggle yang dibalik.
 
@@ -307,12 +316,13 @@ Pengujian otomatis mencakup:
 - kriteria utama dengan HH;
 - prioritas kriteria utama sebelum kriteria alternatif;
 - kriteria alternatif total 150 mm, termasuk ketika dasarian pertama berada di bawah minimum;
+- perbandingan toggle total alternatif aktif/nonaktif;
 - perbandingan toggle HH aktif/nonaktif;
 - status `tunggu` dan `tidak_disarankan`;
 - data dasarian yang belum lengkap;
 - urutan kronologis lintas tahun;
 - guard MT1 di dalam dan di luar rentang serta batas awal lintas tahun;
-- validasi sembilan parameter melalui API;
+- validasi sepuluh parameter melalui API;
 - seeder dan migration data rule lama;
 - batas definisi HH pada CH harian 0,4 mm dan 0,5 mm.
 

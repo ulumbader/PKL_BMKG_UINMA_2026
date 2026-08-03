@@ -12,7 +12,7 @@ class RuleRekomendasiSeeder extends Seeder
      * Seed rule default: "Rule Awal Musim Tanam".
      *
      * Logika: kriteria utama diperiksa lebih dulu, kemudian total alternatif
-     * menjadi fallback, kriteria minimal hari hujan dapat memperkuat hasil,
+     * dapat diaktifkan sebagai fallback, kriteria minimal hari hujan dapat memperkuat hasil,
      * dan dasarian evaluasi wajib berada dalam rentang MT1.
      *
      * Parameter threshold disimpan di kolom JSON 'parameter' dan DIBACA
@@ -42,6 +42,7 @@ class RuleRekomendasiSeeder extends Seeder
                     'min_curah_hujan_dasarian' => 50,
                     'min_dasarian_berturut' => 3,
                     'total_alternatif_mm' => 150,
+                    'pakai_kriteria_total_alternatif' => true,
                     'pakai_kriteria_hari_hujan' => true,
                     'min_hari_hujan_dasarian' => 3,
                     'mt1_bulan_mulai' => 11,
