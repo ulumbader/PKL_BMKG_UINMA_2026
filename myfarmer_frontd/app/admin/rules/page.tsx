@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { type FormEvent, useEffect, useState } from "react";
 
@@ -436,7 +436,9 @@ export default function Page() {
                     <td className="whitespace-nowrap px-4 py-3">{formatDateTime(rule.updated_at)}</td>
                     <td className="px-4 py-3">
                       <div className="flex flex-wrap justify-end gap-2">
-                        {isSuperAdmin ? (
+                        {/* Tombol "Bandingkan HH" dinonaktifkan dari UI.
+                           Untuk mengaktifkan kembali, uncomment blok di bawah. */}
+                        {/* {isSuperAdmin ? (
                           <Button
                             type="button"
                             size="sm"
@@ -445,7 +447,7 @@ export default function Page() {
                           >
                             Bandingkan HH
                           </Button>
-                        ) : null}
+                        ) : null} */}
                         <Button type="button" size="sm" variant="secondary" onClick={() => openEditForm(rule)}>
                           Edit
                         </Button>
