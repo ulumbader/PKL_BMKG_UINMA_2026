@@ -332,7 +332,7 @@ export function PublicFooter() {
               />
               <div>
                 <div className="text-lg font-semibold leading-tight">Stasiun Klimatologi</div>
-                <div className="text-sm font-medium text-white/70">Jawa Timur</div>
+                <div className="text-sm font-medium text-white/70">Kelas I Jawa Timur</div>
               </div>
             </div>
             <p className="mt-5 max-w-xs text-sm leading-6 text-white/70">
@@ -490,7 +490,7 @@ export function PublicFooter() {
         </div>
         <div className="border-t border-white/10">
           <div className="mx-auto flex max-w-6xl flex-col gap-2 px-6 py-4 text-xs text-white/55 sm:flex-row sm:items-center sm:justify-between sm:px-8">
-            <span>© 2026 Stasiun Klimatologi Jawa Timur. Seluruh hak cipta dilindungi.</span>
+            <span>© 2026 Stasiun Klimatologi Kelas I Jawa Timur. Seluruh hak cipta dilindungi.</span>
             <span>MyFarmer</span>
           </div>
         </div>

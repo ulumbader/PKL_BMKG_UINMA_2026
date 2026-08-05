@@ -1,5 +1,5 @@
 "use client";
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   MenuIcon,
 } from './Icons';
@@ -164,19 +164,23 @@ export const MainContent = ({
   const locationText = weatherData ? weatherData.wilayah : 'Memuat lokasi...';
   const locationShort = weatherData ? weatherData.kecamatan : 'Memuat...';
 
-  // Navbar date/time
-  const now = new Date();
-  const navDateText = currentSlot
-    ? (() => {
-        const d = new Date(currentSlot.waktu_prakiraan.replace(' ', 'T'));
-        if (isNaN(d.getTime())) return '--';
-        const mm = String(d.getMonth() + 1).padStart(2, '0');
-        const dd = String(d.getDate()).padStart(2, '0');
-        return `${mm}/${dd}/${d.getFullYear()} - ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')} WIB`;
-      })()
-    : `${String(now.getMonth()+1).padStart(2,'0')}/${String(now.getDate()).padStart(2,'0')}/${now.getFullYear()} - ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')} WIB`;
+  // Real-time clock for navbar
+  const [currentTime, setCurrentTime] = useState(() => new Date());
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
 
-  const h = now.getHours();
+  const navDateText = (() => {
+    const d = currentTime;
+    const dd = String(d.getDate()).padStart(2, '0');
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const hh = String(d.getHours()).padStart(2, '0');
+    const mi = String(d.getMinutes()).padStart(2, '0');
+    return `${dd}/${mm}/${d.getFullYear()} - ${hh}:${mi} WIB`;
+  })();
+
+  const h = currentTime.getHours();
   const greeting = h < 12 ? 'Selamat Pagi...' : h < 17 ? 'Selamat Siang...' : 'Selamat Malam...';
 
   return (
