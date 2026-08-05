@@ -9,6 +9,34 @@ Format tanggal: YYYY-MM-DD.
 
 ## [Unreleased]
 
+## [Tahap 56] - Perbaikan State Suara dan Rasio Media Sorotan - 2026-08-03
+### Diubah
+- Pilihan suara aktif/bisu dipertahankan ketika berpindah sorotan dan ketika popup ditutup lalu dibuka kembali selama sesi landing page yang sama.
+- Foto dan video memakai rasio intrinsiknya dengan `object-contain`, sehingga media non-9:16 tidak lagi terpotong di dalam frame story.
+
+### File Terkait
+- `components/public/media/StoryViewerModal.tsx`
+- `CHANGELOG.md`
+
+### Catatan
+- Kondisi awal setelah reload halaman tetap bisu agar autoplay video tidak diblokir browser.
+- Verifikasi berhasil: ESLint file terkait, TypeScript, build produksi Next.js 16.2.10, pemeriksaan whitespace, dan smoke test Edge untuk alur video bersuara → foto → video serta tutup/buka kembali popup.
+
+## [Tahap 55] - Redesign Popup Sorotan - 2026-08-03
+### Diubah
+- Popup sorotan memakai frame vertikal 9:16 di desktop dan layar penuh di ponsel, lengkap dengan progress per cerita, area tap, serta kontrol jeda dan suara bergaya story.
+- Navigasi mendukung tombol panah keyboard, mempertahankan fokus saat cerita berganti, dan menghormati preferensi reduced motion.
+- Layout khusus sorotan ditambahkan tanpa mengubah tampilan popup poster.
+
+### File Terkait
+- `components/public/media/MediaModal.tsx`
+- `components/public/media/StoryViewerModal.tsx`
+- `CHANGELOG.md`
+
+### Catatan
+- Kontrak API dan backend tidak berubah.
+- Verifikasi berhasil: ESLint file terkait, TypeScript, build produksi Next.js 16.2.10, pemeriksaan whitespace, serta smoke test Edge untuk buka/navigasi/tutup, rasio frame, progress, fokus, scroll lock, dan reduced motion. Full lint tetap memiliki satu warning lama pada `page_backup.tsx`.
+
 ## [Tahap 54] - Toggle Total Curah Hujan Alternatif - 2026-08-03
 ### Ditambahkan
 - Toggle aksesibel `Gunakan Total Curah Hujan Alternatif` pada form rule rekomendasi.

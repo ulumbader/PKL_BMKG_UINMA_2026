@@ -11,12 +11,14 @@ export function MediaModal({
   onClose,
   children,
   dark = false,
+  layout = "default",
 }: {
   open: boolean;
   title: string;
   onClose: () => void;
   children: ReactNode;
   dark?: boolean;
+  layout?: "default" | "story";
 }) {
   const titleId = useId();
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -78,7 +80,9 @@ export function MediaModal({
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 p-3 sm:p-6"
+      className={layout === "story"
+        ? "fixed inset-0 z-[100] flex items-center justify-center bg-black p-0 sm:bg-black/90 sm:p-5"
+        : "fixed inset-0 z-[100] flex items-center justify-center bg-black/70 p-3 sm:p-6"}
       onMouseDown={(event) => {
         if (event.currentTarget === event.target) onClose();
       }}
@@ -89,10 +93,12 @@ export function MediaModal({
         aria-modal="true"
         aria-labelledby={titleId}
         tabIndex={-1}
-        className={[
-          "relative max-h-[calc(100svh-1.5rem)] w-full max-w-4xl overflow-auto rounded-[22px] border outline-none",
-          dark ? "border-white/15 bg-[#101713] text-white" : "border-green-100 bg-white text-[#0f1f17]",
-        ].join(" ")}
+        className={layout === "story"
+          ? "relative h-[100svh] w-full overflow-hidden bg-black text-white outline-none sm:h-[min(calc(100svh-2.5rem),800px)] sm:w-auto sm:aspect-[9/16] sm:rounded-2xl sm:border sm:border-white/15"
+          : [
+              "relative max-h-[calc(100svh-1.5rem)] w-full max-w-4xl overflow-auto rounded-[22px] border outline-none",
+              dark ? "border-white/15 bg-[#101713] text-white" : "border-green-100 bg-white text-[#0f1f17]",
+            ].join(" ")}
       >
         <h2 id={titleId} className="sr-only">{title}</h2>
         {children}
