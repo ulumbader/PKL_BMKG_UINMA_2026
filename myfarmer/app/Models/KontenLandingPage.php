@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Storage;
 
 class KontenLandingPage extends Model
 {
@@ -35,14 +36,14 @@ class KontenLandingPage extends Model
     public function getFileUrlAttribute(): ?string
     {
         return $this->path_file
-            ? asset('storage/'.$this->path_file)
+            ? Storage::disk('public')->url($this->path_file)
             : null;
     }
 
     public function getThumbnailUrlAttribute(): ?string
     {
         return $this->path_thumbnail
-            ? asset('storage/'.$this->path_thumbnail)
+            ? Storage::disk('public')->url($this->path_thumbnail)
             : null;
     }
 

@@ -272,12 +272,6 @@ export function ContentManager() {
     setError("");
     try {
       const response = await apiPut<AdminContent>(`/admin/konten/${row.id}`, {
-        judul: row.judul,
-        tipe: row.tipe,
-        ...(row.isi ? { isi: row.isi } : {}),
-        ...(row.url_sumber ? { url_sumber: row.url_sumber } : {}),
-        alt_text: row.alt_text,
-        urutan_tampil: row.urutan_tampil,
         is_active: !row.is_active,
       });
       setNotice(response.message);
